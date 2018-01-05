@@ -7,8 +7,6 @@ from test import *
 from multiprocessing import Process
 import time
 
-
-
 COLLECTION="txtest"
 
 parser = argparse.ArgumentParser()
@@ -45,7 +43,6 @@ server = Testserver()
 
 if not args.no_server:
     server.start(args.server_port)
-
 
 print("Loading data...")
 p = Process(target=load_data)
