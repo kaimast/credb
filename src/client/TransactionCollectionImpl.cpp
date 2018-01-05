@@ -1,0 +1,78 @@
+#include "TransactionCollectionImpl.h"
+#include "TransactionImpl.h"
+
+namespace credb
+{
+
+event_id_t TransactionCollectionImpl::put(const std::string &key, const json::Document &doc)
+{
+    m_transaction.assert_not_committed();
+    m_transaction.queue_op(new TransactionImpl::put_info_t(name(), key, doc));
+    return INVALID_EVENT;
+}
+
+event_id_t TransactionCollectionImpl::add(const std::string &key, const json::Document &doc)
+{
+    m_transaction.assert_not_committed();
+    m_transaction.queue_op(new TransactionImpl::add_info_t(name(), key, doc));
+    return INVALID_EVENT;
+}
+
+event_id_t TransactionCollectionImpl::remove(const std::string &key)
+{
+    m_transaction.assert_not_committed();
+    m_transaction.queue_op(new TransactionImpl::remove_info_t(name(), key));
+    return INVALID_EVENT;
+}
+
+bool TransactionCollectionImpl::has_object(const std::string &key)
+{
+    m_transaction.assert_not_committed();
+    auto res = CollectionImpl::has_object(key);
+    m_transaction.queue_op(new TransactionImpl::has_obj_info_t(name(), key, res));
+    return res;
+}
+
+json::Document TransactionCollectionImpl::get(const std::string &key, event_id_t &event_id)
+{
+    m_transaction.assert_not_committed();
+    auto doc = CollectionImpl::get(key, event_id);
+    m_transaction.queue_op(new TransactionImpl::get_info_t(name(), key, event_id));
+    return doc;
+}
+
+std::vector<std::tuple<std::string, json::Document>>
+TransactionCollectionImpl::find(const json::Document &predicates, const std::vector<std::string> &projection, int32_t limit)
+{
+    m_transaction.assert_not_committed();
+
+    auto res = CollectionImpl::internal_find(predicates, projection, limit);
+
+    std::vector<std::tuple<std::string, json::Document>> r;
+    std::vector<std::pair<std::string, event_id_t>> v;
+
+    for(auto & [key, eid, doc] : res)
+    {
+        r.emplace_back(key, std::move(doc));
+        v.emplace_back(key, eid);
+    }
+
+    m_transaction.queue_op(
+    new TransactionImpl::find_info_t(name(), predicates, projection, limit, std::move(v)));
+    return r;
+}
+
+std::tuple<std::string, json::Document>
+TransactionCollectionImpl::find_one(const json::Document &predicates, const std::vector<std::string> &projection)
+{
+    auto res = find(predicates, projection, 1);
+    if(res.empty())
+    {
+        throw std::runtime_error("didn't find anything!");
+    }
+
+    return std::move(res[0]);
+}
+
+
+} // namespace credb

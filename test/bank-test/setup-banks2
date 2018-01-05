@@ -1,0 +1,22 @@
+#! /usr/bin/python3 
+
+import credb
+from sys import argv
+
+ID = int(argv[1])
+NUM_BANKS = int(argv[2])
+NUM_CLIENTS = int(argv[3])
+
+bank_name = "bank" + str(ID)
+bank_port = 9000 + ID
+
+admin_conn = credb.create_client("admin", bank_name, "localhost", port=bank_port)
+admin = admin_conn.get_collection('test')
+
+for i in range(NUM_BANKS):
+    other = "bank" + str(i)
+
+    if i != ID:
+        admin.call("accounts.link_account", [other, bank_name])
+
+

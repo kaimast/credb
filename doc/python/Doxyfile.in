@@ -1,0 +1,17 @@
+DOXYFILE_ENCODING      = UTF-8
+PROJECT_NAME           = "CreDB"
+
+INPUT = "@TOP_SRCDIR@/src/client/python_api.cpp"
+
+# Label is only used for our custom scripts
+ALIASES += label{1}=""
+
+ENABLE_PREPROCESSING = YES
+MACRO_EXPANSION      = YES 
+PREDEFINED           = __attribute__((x))=
+
+FULL_PATH_NAMES = NO
+PROJECT_NUMBER = @VERSION@
+QUIET = YES
+WARN_AS_ERROR = YES
+

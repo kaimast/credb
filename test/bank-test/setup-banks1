@@ -1,0 +1,26 @@
+#! /usr/bin/python3 
+
+import credb
+from sys import argv
+
+ID = int(argv[1])
+NUM_BANKS = int(argv[2])
+NUM_CLIENTS = int(argv[3])
+
+bank_name = "bank" + str(ID)
+bank_port = 9000 + ID
+
+admin_conn = credb.create_client("admin", bank_name, "localhost", port=bank_port)
+admin = admin_conn.get_collection('test')
+
+admin.put_from_file("accounts", "../test/bank-test/bank.type")
+for i in range(NUM_CLIENTS):
+    bank = i % NUM_BANKS
+
+    if bank == ID:
+        admin.call("accounts.create_account", ["client" + str(i)])
+        admin.call("accounts.credit", ["client" + str(i), str(1000000)])
+
+for i in range(0, NUM_BANKS):
+    admin.call("accounts.create_account", ["bank" + str(i)])
+

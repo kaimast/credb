@@ -1,0 +1,3 @@
+option('sgx_mode', type : 'string', value : 'simulation', description : 'Can be simulation, fake_enclave, prerelease')
+option('always_page', type : 'boolean', value : false, description : '')
+option('debug_mutex', type : 'boolean', value : false, description : 'Use the debugging version of mutex. WARNING: this may cause running out of memory!')

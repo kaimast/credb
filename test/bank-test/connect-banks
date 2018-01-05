@@ -1,0 +1,21 @@
+#! /usr/bin/python3 
+
+import credb
+from sys import argv
+
+ID = int(argv[1])
+NUM_BANKS = int(argv[2])
+NUM_CLIENTS = int(argv[3])
+
+P="128.84.167."
+SERVERS=[P+"101", P+"102", P+"104", P+"105", P+"106"]
+
+bank_name = "bank" + str(ID)
+bank_port = 9000 + ID
+
+admin = credb.create_client("admin", bank_name, "localhost", port=bank_port)
+
+for i in range(ID+1, NUM_BANKS):
+    s = SERVERS[i % len(SERVERS)]
+    other = "bank" + str(i)
+    admin.peer("localhost:" + str(10000 + i))

@@ -1,0 +1,55 @@
+enclave {
+    from "sgx_tkey_exchange.edl" import *;
+
+    include "sgx_key_exchange.h"
+    include "sgx_trts.h"
+    include "stdbool.h"
+
+    include "util/status.h"
+    include "util/types.h"
+
+    trusted {
+        public credb_status_t credb_init_enclave([in, string] const char *name);
+        public void credb_set_upstream(remote_party_id upstream_id);
+        public sgx_ec256_public_t credb_get_public_key();
+        public sgx_ec256_public_t credb_get_upstream_public_key();
+
+        public void credb_init_client(remote_party_id identifier);
+        public void credb_handle_client_disconnect(remote_party_id identifier);
+
+        public credb_status_t credb_handle_peer_message(remote_party_id identifier, [in, size=in_len] const uint8_t *in_data, size_t in_len);
+        public credb_status_t credb_handle_client_message(remote_party_id identifier, [in, size=in_len] const uint8_t *in_data, size_t in_len);
+
+        public credb_status_t credb_init_peer(remote_party_id id, [in, string] const char *ip, uint16_t port, bool initiator);
+        public credb_status_t credb_handle_peer_disconnect(remote_party_id id);
+
+        public credb_status_t credb_ra_init(remote_party_id id, [out] sgx_ra_context_t *context);
+
+        public void credb_set_attestation_context(remote_party_id identifier, sgx_ra_context_t context);
+        public void credb_peer_insert_response(remote_party_id peer_id, uint32_t op_id, [in, size=length] const uint8_t *data, uint32_t length);
+    };
+
+    untrusted {
+        void send_to_remote_party(remote_party_id identifier, [in, size=length] const uint8_t* data, uint32_t length);
+        void remote_party_wait(remote_party_id identifier);
+        void remote_party_notify_all(remote_party_id identifier);
+        void remote_party_lock(remote_party_id identifier);
+        void remote_party_unlock(remote_party_id identifier);
+
+        void print_info([in, string] const char *str);
+        void print_error([in, string] const char *str);
+
+        bool write_to_disk([in, string] const char *filename, [in, size=length] const uint8_t *data, uint32_t length);
+        int32_t get_file_size([in, string] const char *filename);
+        void remove_from_disk([in, string] const char *filename);
+        bool read_from_disk([in, string] const char *filename, [out, size=length] uint8_t *data, uint32_t length);
+        bool dump_everything([in, string] const char *filename, [in, size=length] const uint8_t* disk_key, size_t length);
+        bool load_everything([in, string] const char *filename, [out, size=length] uint8_t* disk_key, size_t length);
+
+        void attestation_notify_done(remote_party_id identifier);
+        void attestation_tell_groupid(remote_party_id identifier);
+        void attestation_queue_groupid_result(remote_party_id identifier, bool result);
+        void attestation_queue_msg2(remote_party_id identifier, [in, size=size] sgx_ra_msg2_t *p_msg2, uint32_t size);
+    };
+};
+
