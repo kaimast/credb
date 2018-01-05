@@ -1,6 +1,6 @@
 # CreDB
 
-[![Build Status](https://travis-ci.com/abcdabcd987/credb.svg?token=Q7BhRZyHsDyAsEuz2j5x&branch=bugfix)](https://travis-ci.com/abcdabcd987/credb)
+[![Build Status](https://travis-ci.org/kaimast/credb.svg?branch=master)](https://travis-ci.org/kaimsat/credb)
 
 A trustable peer-to-peer DB built on top of SGX.
 
@@ -42,7 +42,9 @@ PeerDB comes with C++ and python bindings. The following python code should just
 #! /usr/bin/python3
 import credb
 
-c = credb.create_client('test', 'testserver', 'localhost')
+conn = credb.create_client('test', 'testserver', 'localhost')
+
+c = conn.get_collection('test')
 
 c.put("foo", "bar")
 assert(c.get("foo") == "bar")
