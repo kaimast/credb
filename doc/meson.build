@@ -6,8 +6,10 @@ endif
 subdir('cpp')
 subdir('python')
 
+doc_theme_files = files('theme/style.css')
+
 cpp_html_target = custom_target('cpp',
-                            input: cpp_doxyfile,
+                            input: [cpp_doxyfile, cpp_doc_markdown, doc_theme_files],
                             output: 'cpp',
                             command: [doxygen, cpp_doxyfile],
                             build_by_default: false)

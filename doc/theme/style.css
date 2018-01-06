@@ -1,0 +1,94 @@
+body {
+    background-color: #EEEEEE;
+    color: black;
+    margin: 0;
+    font: 400 16px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-feature-settings: "kern" 1;
+        font-kerning: normal;
+}
+
+#top, div.header, div.contents {
+    max-width: 60em;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#top, div.header {
+    background-color: white;
+    background-image: none;
+    padding-left:  1em;
+    padding-right: 1em;
+}
+
+div#titlearea {
+    border: none;
+}
+
+#nav-path {
+    display: none;
+}
+
+#nav-path ul, #nav-path li {
+    border: none;
+    background-image: none;
+}
+
+#nav-path ul {
+    margin-top: 0.5em;
+    border-radius: 0.5em;
+    background-color: #e7e7e7;
+}
+
+.sm-dox {
+    border-style: solid;
+    border-left-width: 0em;
+    border-right-width: 0em;
+    border-bottom-width: 0.2em;
+    border-top-width: 0.2em;
+    border-color: #e7e7e7;
+    background-image: none;
+    margin-left: -1em;
+    margin-right: -1em;
+}
+
+div.header {
+    border-bottom-left-radius: 0.5em;
+    border-bottom-right-radius: 0.5em;
+}
+
+div.contents {
+    margin-bottom: 10px;
+    padding: 1em;
+    background-color: white;
+    border-radius: 0.5em;
+}
+
+#titlearea {
+        background-color: white;
+}
+
+hr.footer {
+        display: none;
+}
+
+.footer {
+        background-color: #AAA;
+}
+
+.memtitle {
+    background-image: none;
+    background-color: #DFE5F1;
+}
+
+.memproto {
+    box-shadow: none;
+}
+
+.memdoc {
+    background-image: none;
+    box-shadow: none;
+}
+
+address.footer {
+    display: none;
+}
