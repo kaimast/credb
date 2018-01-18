@@ -5,13 +5,11 @@ services:
 cache:
   directories:
     - $CACHE_DIR
+
 env:
   global:
     - CACHE_DIR=$HOME/.cache/docker
     - CACHE_FILE_PEERDB_DEP=$CACHE_DIR/credb-dep.tar.gz
-  matrix:
-    - sgx_mode=simulation
-    - sgx_mode=fake_enclave
 
 before_install:
   - mkdir -p $CACHE_DIR
@@ -23,11 +21,16 @@ before_install:
       docker build -t credb-dep -f docker/credb-dep.Dockerfile .
       docker save credb-dep | gzip > ${CACHE_FILE_PEERDB_DEP}
     fi
-install:
-  - docker build -t credb -f docker/credb.Dockerfile --build-arg sgx_mode=$sgx_mode --build-arg buildtype=release .
 
 jobs:
+    env:
+      matrix:
+        - sgx_mode=simulation
+        - sgx_mode=fake_enclave
+
     include:
+        - stage: build
+          script: docker build -t credb -f docker/credb.Dockerfile --build-arg sgx_mode=$sgx_mode --build-arg buildtype=release .
         - stage: unittest
           script: docker run --rm -it -e sgx_mode  credb ../docker/run-clang-tidy.sh
           script: docker run --rm -it -e sgx_mode  credb ../docker/run-doxygen.sh
