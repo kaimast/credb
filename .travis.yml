@@ -11,6 +11,9 @@ env:
     - CACHE_DIR=$HOME/.cache/docker
     - CACHE_FILE_CREDB_DEP=$CACHE_DIR/credb-dep
     - CACHE_FILE_CRED=$CACHE_DIR/credb
+  matrix:
+    - sgx_mode=simulation
+    - sgx_mode=fake_enclave
 
 before_install:
   - mkdir -p $CACHE_DIR
@@ -30,14 +33,14 @@ jobs:
                 - sgx_mode=simulation
                 - sgx_mode=fake_enclave
           script: docker build -t credb -f docker/credb.Dockerfile --build-arg sgx_mode=$sgx_mode --build-arg buildtype=release .
+          script: docker run --rm -it -e sgx_mode  credb ../docker/run-clang-tidy.sh
+          script: docker run --rm -it -e sgx_mode  credb ../docker/run-doxygen.sh
           script: docker save credb | gzip > ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz
         - stage: unittest
           env:
                 - sgx_mode=simulation
                 - sgx_mode=fake_enclave
           script: gunzip -c ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz | docker load
-          script: docker run --rm -it -e sgx_mode  credb ../docker/run-clang-tidy.sh
-          script: docker run --rm -it -e sgx_mode  credb ../docker/run-doxygen.sh
           script: docker run --rm -it -e sgx_mode -e run_test=unit_test -e downstream=0 credb ../docker/run-test.sh
           script: docker run --rm -it -e sgx_mode -e run_test=unit_test -e downstream=1 credb ../docker/run-test.sh
         - stage: multitest
