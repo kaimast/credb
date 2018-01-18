@@ -27,14 +27,12 @@ jobs:
     include:
         - stage: build
           env:
-              matrix:
                 - sgx_mode=simulation
                 - sgx_mode=fake_enclave
           script: docker build -t credb -f docker/credb.Dockerfile --build-arg sgx_mode=$sgx_mode --build-arg buildtype=release .
           script: docker save credb | gzip > ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz
         - stage: unittest
           env:
-              matrix:
                 - sgx_mode=simulation
                 - sgx_mode=fake_enclave
           script: gunzip -c ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz | docker load
@@ -42,9 +40,8 @@ jobs:
           script: docker run --rm -it -e sgx_mode  credb ../docker/run-doxygen.sh
           script: docker run --rm -it -e sgx_mode -e run_test=unit_test -e downstream=0 credb ../docker/run-test.sh
           script: docker run --rm -it -e sgx_mode -e run_test=unit_test -e downstream=1 credb ../docker/run-test.sh
-        - stage: multitest\
+        - stage: multitest
           env:
-              matrix:
                 - sgx_mode=simulation
                 - sgx_mode=fake_enclave
           script: gunzip -c ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz | docker load
@@ -54,7 +51,6 @@ jobs:
           script: docker run --rm -it -e sgx_mode -e run_test=multi_update              credb ../docker/run-test.sh
         - stage: integration
           env:
-              matrix:
                 - sgx_mode=simulation
                 - sgx_mode=fake_enclave
           script: gunzip -c ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz | docker load
