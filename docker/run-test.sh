@@ -81,11 +81,12 @@ witness() {
 }
 
 case $run_test in
-    unit_test_upstream_only)
-        unit_test_upstream_only
-        ;;
-    unit_test_with_downstream)
-        unit_test_with_downstream
+    unit_test)
+        if [[ $downstream == 0 ]]; then
+            unit_test_upstream_only
+        else
+            unit_test_with_downstream
+        fi
         ;;
     multi_get)
         multi_get

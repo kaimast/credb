@@ -10,8 +10,10 @@ env:
     - CACHE_DIR=$HOME/.cache/docker
     - CACHE_FILE_PEERDB_DEP=$CACHE_DIR/credb-dep.tar.gz
   matrix:
-    - sgx_mode=simulation
-    - sgx_mode=fake_enclave
+    - sgx_mode=simulation downstream=1
+    - sgx_mode=simulation downstream=0
+    - sgx_mode=fake_enclave downstream=1
+    - sgx_mode=fake_encalve downstream=0
 
 before_install:
   - mkdir -p $CACHE_DIR
@@ -28,8 +30,7 @@ install:
 script:
   - docker run --rm -it -e sgx_mode  credb ../docker/run-clang-tidy.sh
   - docker run --rm -it -e sgx_mode  credb ../docker/run-doxygen.sh
-  - docker run --rm -it -e sgx_mode -e run_test=unit_test_upstream_only   credb ../docker/run-test.sh
-  - docker run --rm -it -e sgx_mode -e run_test=unit_test_with_downstream credb ../docker/run-test.sh
+  - docker run --rm -it -e sgx_mode -e run_test=unit_test -e downstream   credb ../docker/run-test.sh
   - docker run --rm -it -e sgx_mode -e run_test=multi_get                 credb ../docker/run-test.sh
   - docker run --rm -it -e sgx_mode -e run_test=multi_put                 credb ../docker/run-test.sh
   - docker run --rm -it -e sgx_mode -e run_test=multi_downstream          credb ../docker/run-test.sh

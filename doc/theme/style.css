@@ -3,8 +3,8 @@ body {
     color: black;
     margin: 0;
     font: 400 16px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
-      font-feature-settings: "kern" 1;
-        font-kerning: normal;
+    font-feature-settings: "kern" 1;
+    font-kerning: normal;
 }
 
 #top, div.header, div.contents {
@@ -28,9 +28,13 @@ div#titlearea {
     display: none;
 }
 
-#nav-path ul, #nav-path li {
-    border: none;
-    background-image: none;
+#main-menu li {
+    border-color: #e7e7e7;
+    border-style: solid;
+    border-left-width: 0;
+    border-right-width: 0.2em;
+    border-top-width: 0;
+    border-bottom-width: 0;
 }
 
 #nav-path ul {
@@ -52,27 +56,37 @@ div#titlearea {
 }
 
 div.header {
-    border-bottom-left-radius: 0.5em;
-    border-bottom-right-radius: 0.5em;
+   margin-top: 1em;
+   margin-bottom: 0em;
+
+   border-top-left-radius: 0.5em;
+   border-top-right-radius: 0.5em;
+
+   padding-bottom: none;
+   border: none;
 }
 
 div.contents {
+    margin-top: 0em;
     margin-bottom: 10px;
     padding: 1em;
+    padding-top: none;
     background-color: white;
-    border-radius: 0.5em;
+    border-bottom-left-radius: 0.5em;
+    border-bottom-right-radius: 0.5em;
+ 
 }
 
 #titlearea {
-        background-color: white;
+    background-color: white;
 }
 
 hr.footer {
-        display: none;
+    display: none;
 }
 
 .footer {
-        background-color: #AAA;
+    background-color: #AAA;
 }
 
 .memtitle {
