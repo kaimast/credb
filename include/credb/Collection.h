@@ -12,6 +12,8 @@ namespace credb
 {
 
 /**
+ * @label{Collection}
+ *
  * Handle to access and modify a collection
  * A collection corresponds to a "table" in RDBMs
  */

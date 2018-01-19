@@ -15,7 +15,7 @@ cpp_html_target = custom_target('cpp',
                             build_by_default: false)
 
 python_html_target = custom_target('python',
-                            input: py_doxyfile,
+                            input: [py_doxyfile, python_doc_file],
                             output: 'python',
                             command: [doxygen, py_doxyfile],
                             build_by_default: false)

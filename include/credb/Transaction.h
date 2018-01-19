@@ -26,6 +26,8 @@ struct TransactionResult
 };
 
 /**
+ * @label{Transaction}
+ *
  * @brief Interface to a serializeable transaction
  */
 class Transaction
