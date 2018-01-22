@@ -8,7 +8,10 @@ cdata.set('TOP_BUILDDIR', meson.build_root())
 python_doc_file = custom_target('gen-doc-python-file',
                 input: [],
                 output: ['credb.py'],
-                command: [meson.source_root() + '/doc/python/docparse.py', '@OUTPUT@'])
+                command: [meson.source_root() + '/doc/docparse.py', '@OUTPUT@'])
+
+py_doc_markdown = files('main.md')
+
 
 py_doxyfile = configure_file(input: 'Doxyfile.in',
                           output: 'Doxyfile',
