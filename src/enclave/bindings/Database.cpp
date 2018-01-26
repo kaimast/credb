@@ -9,6 +9,7 @@
 #include "../logging.h"
 
 #include "Collection.h"
+#include "Transaction.h"
 
 using namespace cow;
 
@@ -51,6 +52,17 @@ cow::ValuePtr Database::get_member(const std::string &name)
             }
 
             return mem.create_string(m_enclave.name());
+        });
+    }
+    else if(name == "init_transaction")
+    {
+        return make_value<Function>(mem, [&mem, this](const std::vector<ValuePtr> &args) -> ValuePtr {
+            if(!args.empty())
+            {
+                throw std::runtime_error("Invalid number of arguments");
+            }
+            
+            return cow::make_value<Transaction>(mem, m_op_context, m_ledger, m_lock_handle);
         });
     }
     else if(name == "peers")
@@ -169,7 +181,7 @@ cow::ValuePtr Database::get_member(const std::string &name)
     }
     else
     {
-        throw std::runtime_error("Unknown function name");
+        throw std::runtime_error("No such method Database::" + name);
     }
 }
 

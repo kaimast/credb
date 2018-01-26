@@ -87,7 +87,7 @@ void ProgramRunner::work()
     {
         m_result = m_interpreter.execute();
     }
-    catch(std::runtime_error &e)
+    catch(std::exception &e)
     {
         // log_error(std::string("Program execution failed: ") + e.what());
 

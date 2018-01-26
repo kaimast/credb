@@ -3,7 +3,10 @@ liabilities: dict := {}
 assets     : dict := {}
     
 create_account: func :=
-import self
+import db
+
+tx = db.init_transaction()
+
 
 name = argv[0]
 
@@ -63,6 +66,10 @@ if not rname:
 
 if amount <= 0:
     print("Can only move values > 0")
+    return False
+
+if not self.get("liabilities."+acc_from) < amount:
+    print("Not enough money in account")
     return False
 
 res = db.call_on_peer(collection, rbank, "accounts.move_money_locally", [rname, acc_to, str(amount)])

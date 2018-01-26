@@ -153,13 +153,15 @@ bool ObjectIterator::check_event(ObjectEventHandle &event)
         return false;
     }
 
+    //FIXME not sure how to check the collection policy here without causing a deadlock
+
     json::Document policy(event.value(), "policy", false);
     bool policy_ok = true;
 
     if(!policy.empty())
     {
         // FIXME path?
-        policy_ok = m_ledger.check_security_policy(policy, m_context, m_collection, m_key, "",
+        policy_ok = m_ledger.check_object_policy(policy, m_context, m_collection, m_key, "",
                                                    OperationType::GetObject, *m_lock_handle);
     }
 

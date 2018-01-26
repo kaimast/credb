@@ -32,14 +32,14 @@ BOOST_PYTHON_MODULE(credb)
     .value("RepeatableRead", IsolationLevel::RepeatableRead)
     .value("Serializable", IsolationLevel::Serializable);
 
-    py::class_<Witness>("Witness", "@DocString(Client)", py::init<const std::string &>())
+    py::class_<Witness>("Witness", "@DocString(Witness)", py::init<const std::string &>())
     .def("is_valid", &Witness::is_valid, "@DocString(Witness_is_valid)")
     .def("digest", &Witness::digest, "@DocString(Witness_digest)")
     .def("armor", &Witness::armor, "@DocString(Witness_armor)")
     .def("pretty_print_content", &Witness::pretty_print_content, "@DocString(Witness_pretty_print_content)");
-
+    
     py::class_<Transaction, std::shared_ptr<Transaction>, boost::noncopyable>("Transaction", "@DocString(Transaction)", py::no_init)
-    .def("commit", &Transaction::commit, "@DocString(Transaction_commit)")
+    .def("commit", &Transaction_commit_python, "@DocString(Transaction_commit)")
     .def("get_collection", &Transaction::get_collection, "@DocString(Transaction_get_collection)");
 
     py::class_<Client, std::shared_ptr<Client>, boost::noncopyable>("Client", "@DocString(Client)", py::no_init)

@@ -45,17 +45,25 @@ private:
         LockInfo(Shard &shard_, LockType type) : shard(shard_), read_count(0), write_count(0)
         {
             if(type == LockType::Read)
+            {
                 read_count = 1;
+            }
             else
+            {
                 write_count = 1;
+            }
         }
 
         LockType lock_type() const
         {
             if(write_count > 0)
+            {
                 return LockType::Write;
+            }
             else
+            {
                 return LockType::Read;
+            }
         }
 
         Shard &shard;

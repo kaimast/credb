@@ -185,6 +185,28 @@ TEST(ProgramsTest, security_policy3)
     EXPECT_TRUE(res4);
 }
 
+TEST(ProgramsTest, collection_policy)
+{
+    const std::string code = "import op_info\n"
+                             "return not op_info.is_modification";
+
+    bitstream data = cow::compile_code(code);
+    json::Binary binary(data);
+    json::String val1("foo");
+    json::String val2("bar");
+
+    Enclave enclave;
+    enclave.init(TESTENCLAVE);
+    Ledger &ledger = enclave.ledger();
+
+    auto res1 = ledger.put(TESTSRC, COLLECTION, "key1", val1);
+    ledger.put(TESTSRC, COLLECTION, "policy", binary);
+    auto res2 = ledger.put(TESTSRC, COLLECTION, "key2", val2);
+
+    EXPECT_TRUE(res1);
+    EXPECT_FALSE(res2);
+}
+
 TEST(ProgramsTest, security_policy)
 {
     const std::string code = "from op_info import type\n"

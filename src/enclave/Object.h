@@ -94,7 +94,9 @@ public:
         ObjectEventHandle hdl;
         auto res = next(hdl);
         if(!res)
+        {
             return INVALID_EVENT;
+        }
 
         try
         {

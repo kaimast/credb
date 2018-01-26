@@ -786,9 +786,19 @@ void RemoteParty::handle_request_upstream_mode(bitstream &input,
     }
     case OperationType::CommitTransaction:
     {
-        Transaction tx(m_ledger, op_context, input);
-        tx.commit();
-        tx.get_output(output);
+        Transaction tx(input, m_ledger, op_context);
+
+        bitstream bs;
+
+        try {
+            auto witness = tx.commit();
+            bs << true << witness;
+        } catch (std::exception &e) {
+            const std::string error_msg = e.what();
+            bs << false << error_msg;
+        }
+
+        output << bs;
         break;
     }
     case OperationType::TellPeerType:

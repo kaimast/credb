@@ -23,6 +23,7 @@ namespace credb
 {
 
 /**
+ * @label{Witness}
  * @brief Witnesses hold a record about event(s) on the datastore's timeline
  */
 class Witness

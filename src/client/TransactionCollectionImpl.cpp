@@ -1,27 +1,29 @@
 #include "TransactionCollectionImpl.h"
 #include "TransactionImpl.h"
 
+#include "op_info.h"
+
 namespace credb
 {
 
 event_id_t TransactionCollectionImpl::put(const std::string &key, const json::Document &doc)
 {
     m_transaction.assert_not_committed();
-    m_transaction.queue_op(new TransactionImpl::put_info_t(name(), key, doc));
+    m_transaction.queue_op(new put_info_t(name(), key, doc));
     return INVALID_EVENT;
 }
 
 event_id_t TransactionCollectionImpl::add(const std::string &key, const json::Document &doc)
 {
     m_transaction.assert_not_committed();
-    m_transaction.queue_op(new TransactionImpl::add_info_t(name(), key, doc));
+    m_transaction.queue_op(new add_info_t(name(), key, doc));
     return INVALID_EVENT;
 }
 
 event_id_t TransactionCollectionImpl::remove(const std::string &key)
 {
     m_transaction.assert_not_committed();
-    m_transaction.queue_op(new TransactionImpl::remove_info_t(name(), key));
+    m_transaction.queue_op(new remove_info_t(name(), key));
     return INVALID_EVENT;
 }
 
@@ -29,7 +31,7 @@ bool TransactionCollectionImpl::has_object(const std::string &key)
 {
     m_transaction.assert_not_committed();
     auto res = CollectionImpl::has_object(key);
-    m_transaction.queue_op(new TransactionImpl::has_obj_info_t(name(), key, res));
+    m_transaction.queue_op(new has_obj_info_t(name(), key, res));
     return res;
 }
 
@@ -37,7 +39,7 @@ json::Document TransactionCollectionImpl::get(const std::string &key, event_id_t
 {
     m_transaction.assert_not_committed();
     auto doc = CollectionImpl::get(key, event_id);
-    m_transaction.queue_op(new TransactionImpl::get_info_t(name(), key, event_id));
+    m_transaction.queue_op(new get_info_t(name(), key, event_id));
     return doc;
 }
 
@@ -58,7 +60,7 @@ TransactionCollectionImpl::find(const json::Document &predicates, const std::vec
     }
 
     m_transaction.queue_op(
-    new TransactionImpl::find_info_t(name(), predicates, projection, limit, std::move(v)));
+    new find_info_t(name(), predicates, projection, limit, std::move(v)));
     return r;
 }
 
