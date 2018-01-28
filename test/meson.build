@@ -16,6 +16,7 @@ test_extra_cpp_files = files(
     '../src/enclave/RWLockable.cpp',
     '../src/enclave/Ledger.cpp',
     '../src/enclave/Object.cpp',
+    '../src/enclave/ObjectIterator.cpp',
     '../src/enclave/ObjectEventHandle.cpp',
     '../src/enclave/Block.cpp',
     '../src/enclave/Enclave.cpp',

@@ -7,6 +7,7 @@
 
 #include "ObjectIterator.h"
 #include <cowlang/cow.h>
+#include <cowlang/unpack.h>
 
 using namespace cow;
 
@@ -97,6 +98,20 @@ cow::ValuePtr Collection::get_member(const std::string &name)
 
             it.clear();
             return res;
+        });
+    }
+    else if(name == "has_object")
+    {
+        return make_value<Function>(mem, [&](const std::vector<ValuePtr> &args) -> ValuePtr {
+            if(args.size() != 1 && args[0]->type() != ValueType::String)
+            {
+                throw std::runtime_error("Invalid number of arguments");
+            }
+
+            auto key = unpack_string(args[0]);
+            auto res = m_ledger.has_object(m_name, key);
+
+            return mem.create_boolean(res);
         });
     }
     else if(name == "find")

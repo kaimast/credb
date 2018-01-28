@@ -11,16 +11,21 @@ bank_name = "bank" + str(ID)
 bank_port = 9000 + ID
 
 admin_conn = credb.create_client("admin", bank_name, "localhost", port=bank_port)
-admin = admin_conn.get_collection('test')
 
-admin.put_from_file("accounts", "../test/bank-test/bank.type")
+programs = admin_conn.get_collection('programs')
+programs.put_code_from_file("create_account", "../test/bank-test/create_account.py")
+programs.put_code_from_file("move_money_locally", "../test/bank-test/move_money_locally.py")
+programs.put_code_from_file("move_money_remotely", "../test/bank-test/move_money_remotely.py")
+programs.put_code_from_file("link_account", "../test/bank-test/link_account.py")
+programs.put_code_from_file("credit", "../test/bank-test/credit.py")
+
 for i in range(NUM_CLIENTS):
     bank = i % NUM_BANKS
 
     if bank == ID:
-        admin.call("accounts.create_account", ["client" + str(i)])
-        admin.call("accounts.credit", ["client" + str(i), str(1000000)])
+        programs.call("create_account", ["client" + str(i)])
+        programs.call("credit", ["client" + str(i), str(1000000)])
 
 for i in range(0, NUM_BANKS):
-    admin.call("accounts.create_account", ["bank" + str(i)])
+    programs.call("create_account", ["bank" + str(i)])
 

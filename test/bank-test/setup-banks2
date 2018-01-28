@@ -11,12 +11,12 @@ bank_name = "bank" + str(ID)
 bank_port = 9000 + ID
 
 admin_conn = credb.create_client("admin", bank_name, "localhost", port=bank_port)
-admin = admin_conn.get_collection('test')
+programs = admin_conn.get_collection('programs')
 
 for i in range(NUM_BANKS):
     other = "bank" + str(i)
 
     if i != ID:
-        admin.call("accounts.link_account", [other, bank_name])
+        programs.call("link_account", [other, bank_name])
 
 

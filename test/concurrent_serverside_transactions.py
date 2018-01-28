@@ -26,6 +26,10 @@ while not success:
     tx = db.init_transaction()
     c = tx.get_collection("txtest")
 
+    if not c.has_object('value'):
+        # not good
+        return False
+
     i = c.get('value')
     c.put('value', i+1)
 

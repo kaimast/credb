@@ -9,23 +9,24 @@ namespace credb
 namespace trusted
 {
 
-Transaction::Transaction(IsolationLevel isolation, Ledger &ledger_, const OpContext &op_context_)
-    : m_isolation(isolation), ledger(ledger_), op_context(op_context_), lock_handle(ledger), m_state(State::Pending)
+Transaction::Transaction(IsolationLevel isolation, Ledger &ledger_, const OpContext &op_context_, LockHandle *lock_handle_)
+    : m_isolation(isolation), ledger(ledger_), op_context(op_context_), lock_handle(ledger_, lock_handle_)
 {
-    if(isolation_level()  == IsolationLevel::Serializable)
-    {
+}
+
+Transaction::Transaction(bitstream &request, Ledger &ledger_, const OpContext &op_context_)
+    : ledger(ledger_), op_context(op_context_), lock_handle(ledger) 
+{
+    request >> reinterpret_cast<uint8_t&>(m_isolation) >> generate_witness;
+
+    if(isolation_level() == IsolationLevel::Serializable)
+    {    
         // FIXME: how to avoid phantom read while avoiding locking all shards?
         for(shard_id_t i = 0; i < NUM_SHARDS; ++i)
         {
             shards_lock_type[i] = LockType::Read;
         }
     }
-}
-
-Transaction::Transaction(bitstream &request, Ledger &ledger_, const OpContext &op_context_)
-    : ledger(ledger_), op_context(op_context_), lock_handle(ledger), m_state(State::Pending)
-{
-    request >> reinterpret_cast<uint8_t&>(m_isolation) >> generate_witness;
 
     // construct op history and also collect shards_lock_type
     uint32_t ops_size = 0;
@@ -41,18 +42,7 @@ Transaction::Transaction(bitstream &request, Ledger &ledger_, const OpContext &o
 
         register_operation(op);
     }
-
-    if(isolation_level()  == IsolationLevel::Serializable)
-    {
-        // FIXME: how to avoid phantom read while avoiding locking all shards?
-        for(shard_id_t i = 0; i < NUM_SHARDS; ++i)
-        {
-            shards_lock_type[i] = LockType::Read;
-        }
-    }
-
 }
-
 
 void Transaction::set_read_lock_if_not_present(shard_id_t sid)
 {
@@ -113,10 +103,8 @@ void Transaction::register_operation(operation_info_t *op)
     op->collect_shard_lock_type();
 }
 
-Witness Transaction::commit()
+bool Transaction::phase_one()
 {
-    m_state = State::Failed;
-
     // first acquire locks for all pending shards to ensure atomicity
     for(auto &kv : shards_lock_type)
     {
@@ -150,11 +138,15 @@ Witness Transaction::commit()
     {
         if(!op->validate_read())
         {
-            assert(!error.empty());
-            throw std::runtime_error(error);
+            return false;
         }
     }
 
+    return true;
+}
+
+Witness Transaction::phase_two()
+{
     // then do writes
     for(auto op : m_ops)
     {
@@ -194,27 +186,34 @@ Witness Transaction::commit()
         throw std::runtime_error(error);
     }
 
-    m_state = State::Committed;
     return witness;
+}
+
+Witness Transaction::commit()
+{
+    if(!phase_one())
+    {
+        throw std::runtime_error(error);
+    }
+
+    return phase_two();
 }
 
 Transaction::~Transaction()
 {
-    // If the state is still pending, we haven't acquired the locks yet
-    if(m_state != State::Pending)
+    clear();
+}
+
+void Transaction::clear()
+{
+    lock_handle.clear();
+
+    if(!lock_handle.has_parent())
     {
-        // release previously locked shards
         for(auto &kv : shards_lock_type)
         {
-            lock_handle.release_shard(kv.first, kv.second);
+            ledger.organize_ledger(kv.first);
         }
-    }
-
-    // check evict
-    lock_handle.clear();
-    for(auto &kv : shards_lock_type)
-    {
-        ledger.organize_ledger(kv.first);
     }
 }
 

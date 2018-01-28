@@ -8,7 +8,7 @@ from multiprocessing import Process
 from test import *
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--server_port", type=int, default=52424)
+parser.add_argument("--server_port", type=int, default=5042)
 parser.add_argument("--no_server", action="store_true")
 parser.add_argument("--num_calls", type=int, default=1000)
 parser.add_argument("--num_clients", type=int, default=10)

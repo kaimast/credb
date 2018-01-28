@@ -27,7 +27,7 @@
 
 #include "DocParser.h"
 
-#include "PendingBitstreamResponse.h"
+#include "PendingCallResponse.h"
 #include "PendingBooleanResponse.h"
 #include "PendingListResponse.h"
 #include "PendingSetResponse.h"
@@ -193,21 +193,17 @@ cow::ValuePtr ClientImpl::execute(const std::string &code, const std::vector<std
 
     send_encrypted(req);
 
-    bitstream bs;
-    PendingBitstreamResponse resp(op_id, *this, bs);
+    PendingCallResponse resp(op_id, *this, memory_manager());
     resp.wait();
 
-    bool success = false;
-    bs >> success;
-
-    if(success)
+    if(resp.success())
     {
-        return cow::read_value(bs, memory_manager());
+        return resp.return_value();
     }
-
-    std::string error_str;
-    bs >> error_str;
-    throw std::runtime_error("ClientImpl Execute failed: [" + error_str + "]");
+    else
+    {
+        throw std::runtime_error("ClientImpl Execute failed: [" + resp.error() + "]");
+    }
 }
 
 const sgx_ec256_public_t &ClientImpl::get_server_cert() const

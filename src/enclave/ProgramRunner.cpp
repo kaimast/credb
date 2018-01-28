@@ -20,7 +20,7 @@ ProgramRunner::ProgramRunner(Enclave &enclave,
                              const std::string &program_name,
                              const std::vector<std::string> &args)
 : Task(enclave), m_op_context(enclave.identity(), collection + "/" + program_name),
-  m_lock_handle(enclave.ledger()), m_data(std::move(data)), m_interpreter(m_data)
+  m_lock_handle(enclave.ledger()), m_data(std::move(data)), m_interpreter(m_data, true)
 {
     auto &ledger = enclave.ledger();
 

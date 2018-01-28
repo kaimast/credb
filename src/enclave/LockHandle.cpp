@@ -52,6 +52,7 @@ void LockHandle::clear()
             }
         }
     }
+
     m_locks.clear();
 }
 

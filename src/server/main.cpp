@@ -170,8 +170,7 @@ int main(int ac, char *av[])
     "port", po::value<uint16_t>(),
     "which client port to use")("listen", po::value<uint16_t>()->implicit_value(SERVER_PORT),
                                 "should be listen for peers?")("help,h", "produce help message")(
-    "connect,c", po::value<std::string>(),
-    "Address to connect to")("num_threads", po::value<uint32_t>(), "Number of threads the server should use")(
+    "connect,c", po::value<std::string>())(
     "upstream", po::value<std::string>(),
     "upstream server address")("dbpath", po::value<std::string>(), "path to data storage. in-memory if not set.");
 
@@ -210,14 +209,8 @@ int main(int ac, char *av[])
         hostname = vm["hostname"].as<std::string>();
     }
 
-    if(vm.count("num_threads"))
-    {
-        EventLoop::initialize(vm["num_threads"].as<uint32_t>());
-    }
-    else
-    {
-        EventLoop::initialize(8);
-    }
+    // set this to match TCSnum in Enclave.config.xml
+    EventLoop::initialize(30);
 
     uint16_t port = 0;
 

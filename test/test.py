@@ -61,7 +61,7 @@ class Testserver:
         self.p = None
 
     def start(self, port, listen=None, server_name=DEFAULT_SERVER_NAME, sleep_time=3, quiet=True):
-        args = ["./credb", server_name, "--port", str(port), "--num_threads=8"]
+        args = ["./credb", server_name, "--port", str(port)]
         if listen:
             args.append("--listen="+str(listen))
         self.p = Popen(args,
