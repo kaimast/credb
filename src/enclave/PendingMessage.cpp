@@ -12,7 +12,7 @@ PendingMessage::PendingMessage(operation_id_t op_id, Peer &peer)
     peer.increment_pending_count();
 }
 
-PendingMessage::PendingMessage(PendingMessage &&other)
+PendingMessage::PendingMessage(PendingMessage &&other) noexcept
 : m_has_message(other.m_has_message), m_operation_id(other.m_operation_id), m_peer(other.m_peer)
 {
 }

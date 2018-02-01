@@ -199,7 +199,7 @@ cow::ValuePtr Transaction::get_member(const std::string &name)
                 throw std::runtime_error("Invalid arguments!");
             }
 
-            if(args.size() == 0)
+            if(args.empty())
             {
                 m_transaction.generate_witness = true;
             }

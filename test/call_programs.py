@@ -6,7 +6,7 @@ import multiprocessing
 import credb
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--server_port", type=int, default=52424)
+parser.add_argument("--server_port", type=int, default=5042)
 parser.add_argument("--no_server", action="store_true")
 
 args = parser.parse_args()

@@ -24,7 +24,7 @@ public:
     /**
      * Move constructor
      */
-    PendingMessage(PendingMessage &&other);
+    PendingMessage(PendingMessage &&other) noexcept;
 
     virtual ~PendingMessage() {}
 
