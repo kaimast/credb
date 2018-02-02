@@ -25,8 +25,8 @@ Transaction::Transaction(cow::MemoryManager &mem,
                 credb::trusted::ProgramRunner &runner,
                 credb::trusted::Ledger &ledger,
                 credb::trusted::Peers &peers,
-                LockHandle &lock_handle)
-    : cow::Module(mem), m_transaction(IsolationLevel::Serializable, ledger, op_context, &lock_handle), m_op_context(op_context), m_runner(runner), m_ledger(ledger), m_peers(peers), m_lock_handle(lock_handle)
+                LockHandle &lock_handle_)
+    : cow::Module(mem), m_lock_handle(lock_handle_), m_transaction(IsolationLevel::Serializable, ledger, op_context, &m_lock_handle), m_op_context(op_context), m_runner(runner), m_ledger(ledger), m_peers(peers)
 {
 }
 
@@ -194,7 +194,7 @@ cow::ValuePtr Transaction::get_member(const std::string &name)
     else if(name == "commit")
     {
        return make_value<Function>(mem, [this, &mem](const std::vector<ValuePtr> &args) -> ValuePtr {
-            if(!(args.size() == 0 || (args.size() == 1 && args[0]->type() == ValueType::Bool)))
+            if(!(args.empty() || (args.size() == 1 && args[0]->type() == ValueType::Bool)))
             {
                 throw std::runtime_error("Invalid arguments!");
             }

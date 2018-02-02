@@ -103,6 +103,12 @@ ClientImpl::~ClientImpl()
     EventLoop::destroy();
 }
 
+void ClientImpl::close()
+{
+    socket().close();
+    m_state = ClientState::Closed;
+}
+
 bool ClientImpl::connect(const std::string &server_name, const std::string &address, uint16_t port)
 {
     lock();

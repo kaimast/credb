@@ -31,13 +31,13 @@ public:
     cow::ValuePtr get_member(const std::string &name) override;
 
 private:
+    LockHandle &m_lock_handle;
     credb::trusted::Transaction m_transaction;
 
     const OpContext &m_op_context;
     credb::trusted::ProgramRunner &m_runner;
     credb::trusted::Ledger &m_ledger;
     credb::trusted::Peers &m_peers;
-    LockHandle &m_lock_handle;
 };
 
 }

@@ -112,6 +112,12 @@ public:
      * @brief Get the name of this client
      */
     virtual const std::string &name() const = 0;
+
+    /**
+     * @label{Client_close}
+     * @brief Close the connection to the server
+     */
+    virtual void close() = 0;
 };
 
 /**
