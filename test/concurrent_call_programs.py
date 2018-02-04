@@ -12,6 +12,7 @@ parser.add_argument("--server_port", type=int, default=5042)
 parser.add_argument("--no_server", action="store_true")
 parser.add_argument("--num_calls", type=int, default=1000)
 parser.add_argument("--num_clients", type=int, default=10)
+parser.add_argument("--verbose", action="store_true")
 
 args = parser.parse_args()
 
@@ -19,7 +20,7 @@ if args.no_server:
     server = None
 else:
     server = Testserver()
-    server.start(args.server_port)
+    server.start(args.server_port, quiet=(not args.verbose))
 
 func = """
 val = int(argv[0])

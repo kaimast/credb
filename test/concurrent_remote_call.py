@@ -13,6 +13,7 @@ parser.add_argument("--server_port2", type=int, default=52425)
 parser.add_argument("--no_server", action="store_true")
 parser.add_argument("--num_calls", type=int, default=1000)
 parser.add_argument("--one_way", action="store_true")
+parser.add_argument("--verbose", action="store_true")
 
 args = parser.parse_args()
 
@@ -22,8 +23,8 @@ if args.no_server:
 else:
     server1 = Testserver()
     server2 = Testserver()
-    server1.start(args.server_port1, server_name="testserver1", listen=42000, sleep_time=0)
-    server2.start(args.server_port2, server_name="testserver2", listen=42001, sleep_time=0)
+    server1.start(args.server_port1, server_name="testserver1", listen=42000, sleep_time=0, quiet=(not args.verbose))
+    server2.start(args.server_port2, server_name="testserver2", listen=42001, sleep_time=0, quiet=(not args.verbose))
     sleep(4.0)
 
 func1 = """
@@ -31,7 +32,7 @@ import db
 collection = argv[0]
 other_server = argv[1]
 val = argv[2]
-res = db.call_on_peer(collection, other_server, "func2", [val])
+res = db.call_on_peer(other_server, collection, "func2", [val])
 print("func1 done! val=" + val + " res=" + str(res))
 return res
 """

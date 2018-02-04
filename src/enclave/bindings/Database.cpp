@@ -136,8 +136,7 @@ cow::ValuePtr Database::get_member(const std::string &name)
                 if(!peer)
                 {
                     // FIXME implement exception handling...
-                    throw std::runtime_error(
-                    "Failed to find the peer in the database module of python binding");
+                    throw std::runtime_error("Failed to find peer '" + peer_name + "' in the database module of python binding");
                     return m_mem.create_boolean(false);
                 }
 
