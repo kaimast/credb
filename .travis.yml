@@ -16,7 +16,7 @@ before_install:
 jobs:
     include:
         - stage: prereq
-        - script:
+          script:
             - mkdir -p $CACHE_DIR
             - |
                 if [ -f ${CACHE_FILE_CREDB_DEP} ]; then
@@ -27,10 +27,9 @@ jobs:
                 fi
         - stage: build
           env:
-            - matrix:
-               - sgx_mode=simulation
-               - sgx_mode=fake_enclave
-        - script:
+             sgx_mode=simulation
+             sgx_mode=fake_enclave
+          script:
             - docker build -t credb -f docker/credb.Dockerfile --build-arg sgx_mode=$sgx_mode --build-arg buildtype=release .
             - docker run --rm -it -e sgx_mode  credb ../docker/run-clang-tidy.sh
             - docker run --rm -it -e sgx_mode  credb ../docker/run-doxygen.sh
