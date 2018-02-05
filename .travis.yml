@@ -37,7 +37,7 @@ jobs:
     script:
     - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASS"
     - docker pull $DOCKER_USERNAME/credb-dep
-    - docker tag $DOCKER_USERNAME/credb-de` credb-dep
+    - docker tag $DOCKER_USERNAME/credb-dep credb-dep
     - docker build -t credb-${sgx_mode} -f docker/credb.Dockerfile --build-arg sgx_mode=$sgx_mode
       --build-arg buildtype=release .
     - docker tag credb-${sgx_mode} $DOCKER_USERNAME/credb-${sgx_mode}
