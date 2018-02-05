@@ -27,7 +27,7 @@ jobs:
                 fi
         - stage: build
           env:
-            matrix:
+            - matrix:
                - sgx_mode=simulation
                - sgx_mode=fake_enclave
         - script:
@@ -43,13 +43,13 @@ jobs:
             -  gunzip -c ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz | docker load
             - docker run --rm -it -e sgx_mode -e run_test=unit_test -e downstream=0 credb ../docker/run-test.sh
             -  docker run --rm -it -e sgx_mode -e run_test=unit_test -e downstream=1 credb ../docker/run-test.sh
-         - script:
+        - script:
             - gunzip -c ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz | docker load
             - docker run --rm -it -e sgx_mode -e run_test=multi_get                 credb ../docker/run-test.sh
             - docker run --rm -it -e sgx_mode -e run_test=multi_put                 credb ../docker/run-test.sh
             - docker run --rm -it -e sgx_mode -e run_test=multi_downstream          credb ../docker/run-test.sh
             - docker run --rm -it -e sgx_mode -e run_test=multi_update              credb ../docker/run-test.sh
-          - script:
+        - script:
             - gunzip -c ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz | docker load
             - docker run --rm -it -e sgx_mode -e run_test=witness                   credb ../docker/run-test.sh
             - docker run --rm -it -e sgx_mode -e run_test=call_program              credb ../docker/run-test.sh
