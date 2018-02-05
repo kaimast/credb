@@ -42,8 +42,6 @@ jobs:
       --build-arg buildtype=release .
     - docker tag credb-${sgx_mode} $DOCKER_USERNAME/credb-${sgx_mode}
     - docker push $DOCKER_USERNAME/credb-${sgx_mode}
-    - docker run --rm -it -e sgx_mode credb ../docker/run-clang-tidy.sh
-    - docker run --rm -it -e sgx_mode credb ../docker/run-doxygen.sh
   - stage: test
     env: sgx_mode=simulation
     script:
