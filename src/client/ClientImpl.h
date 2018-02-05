@@ -26,7 +26,8 @@ enum class ClientState
     WaitingForMsg1,
     WaitingForMsg3,
     Connected,
-    Failure
+    Failure,
+    Closed
 };
 
 class ClientImpl : public Client, public yael::NetworkSocketListener
@@ -40,6 +41,8 @@ public:
 
     // Perform SGX attestation and setup encrypted channel
     void setup();
+
+    void close() override;
 
     std::shared_ptr<Transaction> init_transaction(IsolationLevel isolation) override;
 

@@ -143,8 +143,7 @@ void Enclave::set_upstream(remote_party_id upstream_id)
     upstream->unlock();
     log_debug("recv from upstream");
 
-    bitstream bstream;
-    resp.move(bstream);
+    auto bstream = resp.get_result();
     uint8_t *disk_key = nullptr;
     bstream.read_raw_data(&disk_key, sizeof(sgx_aes_gcm_128bit_key_t));
 
@@ -200,8 +199,8 @@ bool Enclave::read_from_upstream_disk(const std::string &filename, bitstream &da
     resp.wait();
     upstream->unlock();
 
-    bitstream encrypted;
-    resp.move(encrypted);
+    auto encrypted = resp.get_result();
+    
     if(encrypted.empty())
     {
         return false;

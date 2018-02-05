@@ -15,6 +15,7 @@ enclave_cpp_file_names=[
     'Ledger.cpp',
     'Peer.cpp',
     'Object.cpp',
+    'ObjectIterator.cpp',
     'Transaction.cpp',
     'ObjectEventHandle.cpp',
     'Block.cpp',

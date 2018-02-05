@@ -73,7 +73,7 @@ protected:
 
     void handle_execute_request(bitstream &input, const OpContext &op_context, taskid_t task_id, operation_id_t op_id);
 
-    void handle_call_request(bitstream &input, const OpContext &op_context, taskid_t task_id, operation_id_t op_id);
+    virtual void handle_call_request(bitstream &input, const OpContext &op_context, taskid_t task_id, operation_id_t op_id, bool could_deadlock);
     
     void handle_request_has_object(bitstream &input, const OpContext &op_context, bitstream &output);
 

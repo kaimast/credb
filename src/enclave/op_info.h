@@ -90,11 +90,10 @@ protected:
 struct has_obj_info_t : public read_op_t
 {
 public:
-    has_obj_info_t(Transaction &tx, bitstream &req)
-        : read_op_t(tx)
-    {
-        read_from_req(req);
-    }
+    has_obj_info_t(Transaction &tx, bitstream &req);
+
+    has_obj_info_t(Transaction &tx, const std::string &collection, const std::string &key, bool result);
+
 
     OperationType type() const override
     {
@@ -106,12 +105,10 @@ public:
     bool validate_read() override;
 
 private:
-    void read_from_req(bitstream &req);
-
-    std::string collection;
-    std::string key;
-    bool result;
-    shard_id_t sid;
+    std::string m_collection;
+    std::string m_key;
+    bool m_result;
+    shard_id_t m_sid;
 };
 
 struct get_info_t : public read_op_t

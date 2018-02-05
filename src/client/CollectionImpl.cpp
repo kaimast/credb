@@ -3,6 +3,7 @@
 #include "DocParser.h"
 
 #include "PendingPutWithoutKeyResponse.h"
+#include "PendingCallResponse.h"
 #include "PendingBitstreamResponse.h"
 #include "PendingBooleanResponse.h"
 #include "PendingDocumentResponse.h"
@@ -206,25 +207,21 @@ cow::ValuePtr CollectionImpl::call(const std::string &program_name, const std::v
 {
     auto op_id = m_client.get_next_operation_id();
     auto req = m_client.generate_op_request(op_id, OperationType::CallProgram);
-    req << m_name << program_name << args;
+    req << m_name << program_name << args << false;
 
     m_client.send_encrypted(req);
 
-    bitstream bs;
-    PendingBitstreamResponse resp(op_id, m_client, bs);
+    PendingCallResponse resp(op_id, m_client, m_client.memory_manager());
     resp.wait();
 
-    bool success = false;
-    bs >> success;
-
-    if(success)
+    if(resp.success())
     {
-        return cow::read_value(bs, m_client.memory_manager());
+        return resp.return_value();
     }
-
-    std::string error_str;
-    bs >> error_str;
-    throw std::runtime_error("CollectionImpl Call failed: [" + error_str + "]");
+    else
+    {
+        throw std::runtime_error("CollectionImpl Call failed: [" + resp.error() + "]");
+    }
 }
 
 event_id_t CollectionImpl::put_code(const std::string &key, const std::string &code)

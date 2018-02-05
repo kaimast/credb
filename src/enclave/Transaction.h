@@ -43,7 +43,7 @@ public:
 
     std::string error;
 
-    Transaction(IsolationLevel isolation_, Ledger &ledger_, const OpContext &op_context_);
+    Transaction(IsolationLevel isolation, Ledger &ledger_, const OpContext &op_context_, LockHandle *lock_handle_);
     Transaction(bitstream &request, Ledger &ledger_, const OpContext &op_context_);
 
     /**
@@ -53,6 +53,9 @@ public:
      * Throws an exception if commit fails
      */
     Witness commit();
+
+    bool phase_one();
+    Witness phase_two();
     
     void get_output(bitstream &output);
 
@@ -70,10 +73,9 @@ public:
     
     json::Writer writer;
 
-private:
-    enum class State { Pending, Committed, Failed };
-    State m_state;
+    void clear();
 
+private:
     operation_info_t* new_operation_info_from_req(bitstream &req);
 
     std::vector<operation_info_t*> m_ops;

@@ -8,15 +8,21 @@ namespace credb
 namespace trusted
 {
 
-void has_obj_info_t::read_from_req(bitstream &req)
+has_obj_info_t::has_obj_info_t(Transaction &tx, bitstream &req)
+    : read_op_t(tx)
 {
-    req >> collection >> key >> result;
-    sid = transaction().ledger.get_shard(collection, key);
+    req >> m_collection >> m_key >> m_result;
+    m_sid = transaction().ledger.get_shard(m_collection, m_key);
 }
+
+has_obj_info_t::has_obj_info_t(Transaction &tx, const std::string &collection, const std::string &key, bool result)
+    : read_op_t(tx), m_collection(collection), m_key(key), m_result(result),
+      m_sid(transaction().ledger.get_shard(m_collection, m_key))
+{}
 
 void has_obj_info_t::collect_shard_lock_type()
 {
-    transaction().set_read_lock_if_not_present(sid);
+    transaction().set_read_lock_if_not_present(m_sid);
 }
 
 bool has_obj_info_t::validate_read()
@@ -24,11 +30,11 @@ bool has_obj_info_t::validate_read()
     ObjectEventHandle obj;
 
     {
-        auto res = transaction().ledger.has_object(collection, key);
+        auto res = transaction().ledger.has_object(m_collection, m_key);
         
-        if(res != result)
+        if(res != m_result)
         {
-            transaction().error = "Key [" + key + "] reads outdated value";
+            transaction().error = "Key [" + m_key + "] reads outdated value";
             return false;
         }
     }
@@ -39,8 +45,8 @@ bool has_obj_info_t::validate_read()
 
         writer.start_map("");
         writer.write_string("type", "HasObject");
-        writer.write_string("key", key);
-        writer.write_boolean("result", result);
+        writer.write_string("key", m_key);
+        writer.write_boolean("result", m_result);
         writer.end_map();
     }
 
@@ -229,9 +235,21 @@ void find_info_t::read_from_req(bitstream &req)
 
 void find_info_t::collect_shard_lock_type()
 {
-    for(const auto &it : res)
+    if(transaction().isolation_level() == IsolationLevel::Serializable)
     {
-        transaction().set_read_lock_if_not_present(std::get<1>(it));
+        // Lock all shards to avoid phantom reads
+        for(shard_id_t i = 0; i < NUM_SHARDS; ++i)
+        {
+            transaction().set_read_lock_if_not_present(i);
+        }
+    }
+    else
+    {
+        // Only lock what we read
+        for(const auto &it : res)
+        {
+            transaction().set_read_lock_if_not_present(std::get<1>(it));
+        }
     }
 }
 

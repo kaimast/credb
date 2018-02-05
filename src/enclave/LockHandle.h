@@ -39,6 +39,11 @@ public:
 
     void release_shard(shard_id_t shard_no,LockType lock_type);
 
+    bool has_parent() const
+    {
+        return m_parent != nullptr;
+    }
+
 private:
     struct LockInfo
     {

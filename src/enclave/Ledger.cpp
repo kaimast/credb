@@ -461,7 +461,7 @@ bool Ledger::check_collection_policy(const OpContext &op_context,
 
     bitstream bs = hdl.value().as_bitstream();
 
-    cow::Interpreter pyint(bs);
+    cow::Interpreter pyint(bs, true);
     auto object_hook = cow::make_value<bindings::Object>(pyint.memory_manager(), empty_context,
                                                          *this, collection, key, lock_handle);
     auto db_hook = cow::make_value<bindings::Database>(pyint.memory_manager(), empty_context, *this,
@@ -500,7 +500,7 @@ bool Ledger::check_object_policy(const json::Document &policy,
 
     bitstream bs = policy.as_bitstream();
 
-    cow::Interpreter pyint(bs);
+    cow::Interpreter pyint(bs, true);
 
     // Needed so we don't call the security policy recursively
     OpContext empty_context(INVALID_IDENTITY);

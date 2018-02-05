@@ -14,15 +14,17 @@ class Peer;
 class PendingMessage
 {
 public:
-    PendingMessage(operation_id_t op_id, Peer &peer)
-    : m_has_message(false), m_operation_id(op_id), m_peer(peer)
-    {
-    }
+    /**
+     * Represents a future message to be received from a peer
+     * 
+     * @note only call this while holding the lock on peer
+     */
+    PendingMessage(operation_id_t op_id, Peer &peer);
 
-    PendingMessage(PendingMessage &&other)
-    : m_has_message(other.m_has_message), m_operation_id(other.m_operation_id), m_peer(other.m_peer)
-    {
-    }
+    /**
+     * Move constructor
+     */
+    PendingMessage(PendingMessage &&other) noexcept;
 
     virtual ~PendingMessage() {}
 
@@ -30,7 +32,10 @@ public:
 
     Peer &peer() { return m_peer; }
 
-    /// Waits until the message has been received
+    /**
+     * @brief Waits until the message has been received
+     * @note only call this while holding the lock on peer
+     */
     bool wait(bool block = true);
 
 protected:

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <atomic>
 
 #include "RWLockable.h"
 #include "RemoteParty.h"
@@ -27,6 +28,7 @@ class Peer : public RemoteParty
 {
 public:
     Peer(Enclave &enclave, remote_party_id id, const std::string &hostname, uint16_t port, bool is_initiator);
+
     Peer(const Peer &other) = delete;
 
     bitstream *receive_response(operation_id_t op_id, bool wait = true);
@@ -49,13 +51,47 @@ public:
                         taskid_t task_id,
                         const std::string &key,
                         const std::string &path,
-                        const std::vector<std::string> &args);
+                        const std::vector<std::string> &args,
+                        bool is_transaction);
 
     operation_id_t get_next_operation_id();
 
+    /**
+     * Is this peer connected?
+     *
+     * This means the attestation has been completed successfully
+     */
     bool connected() const override { return m_state == PeerState::Connected; }
 
+    void increment_pending_count()
+    {
+         m_pending_count += 1;
+    }
+
+    void decrement_pending_count()
+    {
+        if(m_pending_count <= 0)
+        {
+            throw std::runtime_error("Pending count broken!");
+        }
+
+        m_pending_count -= 1;
+    }
+
+    /**
+     * Are we waiting on messages form this peer?
+     *
+     * (Used for deadlock detection)
+     */
+    bool has_pending_messages() const
+    {
+        return m_pending_count > 0;
+    }
+
     void insert_response(operation_id_t op_id, const uint8_t *data, uint32_t length);
+
+protected:
+    void handle_call_request(bitstream &input, const OpContext &op_context, taskid_t task_id, operation_id_t op_id, bool could_deadlock) override;
 
 private:
     void handle_op_response(bitstream &input);
@@ -75,6 +111,7 @@ private:
     uint32_t m_group_id;
 
     operation_id_t m_next_operation_id = 1;
+    std::atomic<uint16_t> m_pending_count = 0;
 
 #ifndef FAKE_ENCLAVE
     // Diffie Hellman Exchange stuff
