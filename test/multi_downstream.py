@@ -16,6 +16,7 @@ parser.add_argument("--server", type=str, default="localhost")
 parser.add_argument("--listen_port", type=int, default=5042)
 parser.add_argument("--server_port", type=int, default=5033)
 parser.add_argument("--no_upstream", action='store_true')
+parser.add_argument("--verbose", action='store_true')
 
 args = parser.parse_args()
 
@@ -57,7 +58,7 @@ print('done loading data')
 downstreams = []
 for i in range(args.num_clients):
     p = Downstream()
-    p.start(args.server_port+1+i, args.listen_port)
+    p.start(args.server_port+1+i, args.listen_port, quiet=(not args.verbose))
     downstreams.append(p)
 sleep(3 * args.num_clients)
 

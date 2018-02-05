@@ -43,7 +43,7 @@ public:
 
     std::string error;
 
-    Transaction(IsolationLevel isolation, Ledger &ledger_, const OpContext &op_context_, LockHandle *locK_handle_);
+    Transaction(IsolationLevel isolation, Ledger &ledger_, const OpContext &op_context_, LockHandle *lock_handle_);
     Transaction(bitstream &request, Ledger &ledger_, const OpContext &op_context_);
 
     /**

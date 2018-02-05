@@ -26,7 +26,7 @@ public:
                 credb::trusted::ProgramRunner &runner,
                 credb::trusted::Ledger &ledger,
                 credb::trusted::Peers &peers,
-                LockHandle &lock_handle);
+                LockHandle &lock_handle_);
 
     cow::ValuePtr get_member(const std::string &name) override;
 

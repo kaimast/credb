@@ -48,7 +48,7 @@ class Downstream:
         self.p = None
 
     def start(self, dport, upstream_listen=5042, quiet=True):
-        self.p = Popen(["./credb", "testserver" + str(dport), "--upstream", "localhost:"+str(upstream_listen), "--port", str(dport), "--num_threads=4"],
+        self.p = Popen(["./credb", "testserver" + str(dport), "--upstream", "localhost:"+str(upstream_listen), "--port", str(dport)],
                        stdout=DEVNULL if quiet else None,
                        stderr=DEVNULL if quiet else None)
 
