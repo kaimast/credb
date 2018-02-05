@@ -26,7 +26,7 @@ jobs:
                   docker save credb-dep | gzip > ${CACHE_FILE_CREDB_DEP}.tar.gz
                 fi
         - stage: build
-          env:
+          matrix:
              sgx_mode=simulation
              sgx_mode=fake_enclave
           script:
