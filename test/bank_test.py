@@ -56,7 +56,7 @@ def run_bank_client(CID):
     BID = CID % NUM_BANKS
     
     conn = credb.create_client("client" + str(CID), "bank" + str(BID), "localhost", port=9000+BID)
-    c = conn.get_collection('test')
+    programs = conn.get_collection('programs')
 
     other_clients = []
 
@@ -69,12 +69,15 @@ def run_bank_client(CID):
         other_bank = other_client % NUM_BANKS
 
         if other_bank == BID:
-            res = c.call("accounts.move_money_locally", ["client" + str(CID), "client" + str(other_client), str(1), 'test'])
-        else:
-            res = c.call("accounts.move_money_remotely",["client" + str(CID), "client" + str(other_client), "bank" + str(other_bank), str(1), 'test'])
+            res = programs.call("move_money_locally", ["client" + str(CID), "client" + str(other_client), str(1)])
 
-        if not res:
-            raise RuntimeError("Failed to move money")
+            if not res:
+                raise RuntimeError("Failed to move money locally")
+        else:
+            res = programs.call("move_money_remotely", ["client" + str(CID), "client" + str(other_client), "bank" + str(other_bank), str(1)])
+
+            if not res:
+                raise RuntimeError("Failed to move money remotely")
 
 clients=[]
 count = 0

@@ -23,7 +23,9 @@ class Collection;
 class Transaction;
 
 /**
- * Main interface to interact with a server through the client API
+ * @label{Client}
+ *
+ * @brief Main interface to interact with a server through the client API
  */
 class Client
 {
@@ -45,54 +47,77 @@ public:
     std::shared_ptr<Collection> operator[](const std::string &name) { return get_collection(name); }
 
     /**
-     * Ship code to the server and execute it
+     * @label{Client_execute}
+     * @brief Ship code to the server and execute it
      */
     virtual cow::ValuePtr execute(const std::string &code, const std::vector<std::string> &args = {}) = 0;
 
     /**
-     * Get the certificate of the server's public key
+     * @label{Client_get_server_cert}
+     * @brief Get the certificate of the server's public key
      */
     virtual const sgx_ec256_public_t &get_server_cert() const = 0;
 
     /**
-     * Get the certificate of the server's public key
-     * (base 64 encoded)
+     * @label{Client_get_server_cert_base64}
+     * @brief Get the certificate of the server's public key (base 64 encoded)
      */
     virtual std::string get_server_cert_base64() const = 0;
 
     /**
+     * @label{Client_init_transaction}
      * @brief Initialize a new transaction object
-     * @note isolation
+     * @param isolation
      *      The isolation level to use
      */
     virtual std::shared_ptr<Transaction> init_transaction(IsolationLevel isolation = IsolationLevel::Serializable) = 0;
 
     /**
+     * @label{Client_peer}
      * @brief Establish a connection between the server and a remove party
      */
     virtual bool peer(const std::string &remote_addr) = 0;
  
     /**
+     * @label{Client_list_peers}
      * @brief List all other servers the server is connected to
      */
     virtual std::vector<json::Document> list_peers() = 0;
 
     /**
-     * Send a no-op (an operation that doesn't do anything) to the server
+     * @label{Client_nop}
+     * @brief Send a no-op (an operation that doesn't do anything) to the server
      * @note this function is provided for debugging purposes only
      */
     virtual bool nop(const std::string &garbage)  = 0;
    
-    /// For development TODO REMOVE 
+    /**
+     * @label{Client_dump_everything}
+     * @brief Dump contents of database
+     * @note used only for development
+     * TODO REMOVE
+     */
     virtual bool dump_everything(const std::string &filename) = 0;
  
-    /// For development TODO REMOVE 
+    /**
+     * @label{Client_load_everything}
+     * @brief Load contents of the datastore
+     * @note only used for development
+     * TODO REMOVE
+     */
     virtual bool load_everything(const std::string &filename) = 0;
 
     /**
-     * Get the name of this client
+     * @label{Client_name}
+     * @brief Get the name of this client
      */
     virtual const std::string &name() const = 0;
+
+    /**
+     * @label{Client_close}
+     * @brief Close the connection to the server
+     */
+    virtual void close() = 0;
 };
 
 /**

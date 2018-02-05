@@ -1,7 +1,16 @@
 DOXYFILE_ENCODING      = UTF-8
 PROJECT_NAME           = "CreDB"
 
-INPUT = "@TOP_SRCDIR@/src/client/python_api.cpp"
+INPUT = "@TOP_SRCDIR@/doc/python/" \
+        "@TOP_BUILDDIR@/doc/python"
+
+# THEME
+GENERATE_HTML=YES
+HTML_EXTRA_STYLESHEET="@TOP_SRCDIR@/doc/theme/style.css"
+
+OPTIMIZE_OUTPUT_JAVA = TRUE
+
+OUTPUT_DIRECTORY="python-doc"
 
 # Label is only used for our custom scripts
 ALIASES += label{1}=""
@@ -15,3 +24,4 @@ PROJECT_NUMBER = @VERSION@
 QUIET = YES
 WARN_AS_ERROR = YES
 
+USE_MDFILE_AS_MAINPAGE = main.md

@@ -11,9 +11,12 @@ def parse_doc_string(istr):
             continue
         if line == '*/':
             return docstring
-        line = line.lstrip('* ')
+
+        line = line.lstrip('*')
         line = line.replace('"', '\\"')
-        docstring.append(line)
+
+        if not line.isspace():
+            docstring.append(line)
 
         #match = pattern.match(line)
         #if match:
@@ -44,7 +47,7 @@ def substitute(istr, ostr, docstrings):
         print(line, file=ostr)
 
 if __name__ == '__main__':
-    cpp_files = ['Witness.h', 'Client.h', 'Transaction.h', 'Collection.h']
+    cpp_files = ['Witness.h', 'Client.h', 'Transaction.h', 'Collection.h', 'IsolationLevel.h']
     sourcefile = "src/client/python_api.cpp.in"
 
     path = sys.argv[1]

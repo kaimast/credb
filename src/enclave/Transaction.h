@@ -16,25 +16,46 @@ struct operation_info_t;
 class Ledger;
 class OpContext;
 
+/**
+ * Server-side logic for transaction processing
+ */
 class Transaction
 {
+private:
+    IsolationLevel m_isolation;
+
 public:
+    IsolationLevel isolation_level() const
+    {
+        return m_isolation;
+    }
+
     Ledger &ledger;
     const OpContext &op_context;
-    bitstream &req;
-    IsolationLevel isolation;
     bool generate_witness;
     LockHandle lock_handle;
-    std::map<shard_id_t, LockType> shards_lock_type; // need to be ordered
-    std::string error;
-    json::Writer writer;
 
-    Transaction(Ledger &ledger_, const OpContext &op_context_, bitstream &req_)
-    : ledger(ledger_), op_context(op_context_), req(req_), lock_handle(ledger)
-    {
-    }
-    
-    void commit();
+    /**
+     * Keep a list of all locks that need to be aquired
+     * @note this needs to be ordered so we don't deadlock
+     */
+    std::map<shard_id_t, LockType> shards_lock_type;
+
+    std::string error;
+
+    Transaction(IsolationLevel isolation, Ledger &ledger_, const OpContext &op_context_, LockHandle *lock_handle_);
+    Transaction(bitstream &request, Ledger &ledger_, const OpContext &op_context_);
+
+    /**
+     * @brief Performs main transaction logic (verification of reads + application of writes)
+     *
+     * Returns a witness on success (witness may be empty if generate witness is set to false
+     * Throws an exception if commit fails
+     */
+    Witness commit();
+
+    bool phase_one();
+    Witness phase_two();
     
     void get_output(bitstream &output);
 
@@ -48,11 +69,16 @@ public:
 
     ~Transaction();
 
+    void register_operation(operation_info_t *op);
+    
+    json::Writer writer;
+
+    void clear();
+
 private:
-    std::vector<operation_info_t *> ops;
-    Witness witness;
+    operation_info_t* new_operation_info_from_req(bitstream &req);
 
-
+    std::vector<operation_info_t*> m_ops;
 };
 
 }

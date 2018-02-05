@@ -171,13 +171,24 @@ public:
 
     // Needed by object iterators
     // TODO move out of ledger class?
-    bool check_security_policy(const json::Document &policy,
-                               const OpContext &op_context,
-                               const std::string &collection,
-                               const std::string &key,
-                               const std::string &path,
-                               OperationType type,
-                               LockHandle &lock_handle);
+    bool check_object_policy(const json::Document &policy,
+                             const OpContext &op_context,
+                             const std::string &collection,
+                             const std::string &key,
+                             const std::string &path,
+                             OperationType type,
+                             LockHandle &lock_handle);
+
+    /**
+     * check the collection's policy (if it exists)
+     *
+     * @note make sure to call this before holding any locks to the object
+     */
+    bool check_collection_policy(const OpContext &op_context,
+                                 const std::string &collection,
+                                 const std::string &key,
+                                 const std::string &path,
+                                 OperationType type);
 
 private:
     Enclave &m_enclave;

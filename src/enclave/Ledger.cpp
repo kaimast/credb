@@ -248,7 +248,14 @@ event_id_t Ledger::add(const OpContext &op_context,
         return INVALID_EVENT;
     }
 
+    if(!check_collection_policy(op_context, collection, key, path, OperationType::AddToObject))
+    {
+        log_debug("rejected add because of collection policy");
+        return INVALID_EVENT;
+    }
+
     auto s = get_shard(collection, key);
+
     LockHandle lock_handle(*this, lock_handle_);
 
     event_id_t previous_id = INVALID_EVENT;
@@ -288,10 +295,10 @@ event_id_t Ledger::add(const OpContext &op_context,
         json::Document view = previous_version.value();
         json::Document policy(view, "policy", false);
 
-        if(!policy.empty() && !check_security_policy(policy, op_context, collection, key, path,
-                                                     OperationType::AddToObject, lock_handle))
+        if(!policy.empty() && !check_object_policy(policy, op_context, collection, key, path,
+                                                   OperationType::AddToObject, lock_handle))
         {
-            log_debug("rejected add because of policy");
+            log_debug("rejected add because of object policy");
             res = INVALID_EVENT;
         }
         else
@@ -427,13 +434,64 @@ bool Ledger::create_witness(Witness &witness, const std::vector<event_id_t> &eve
     return sign_witness(m_enclave, witness);
 }
 
-bool Ledger::check_security_policy(const json::Document &policy,
-                                   const OpContext &op_context,
-                                   const std::string &collection,
-                                   const std::string &key,
-                                   const std::string &path,
-                                   OperationType type,
-                                   LockHandle &lock_handle)
+bool Ledger::check_collection_policy(const OpContext &op_context,
+                                     const std::string &collection,
+                                     const std::string &key,
+                                     const std::string &path,
+                                     OperationType type)
+{
+    if(!op_context.valid())
+    {
+        return true;
+    }
+
+    // Needed so we don't call the policy recursively
+    OpContext empty_context(INVALID_IDENTITY);
+
+    LockHandle lock_handle(*this);
+
+    auto it = iterate(empty_context, collection, "policy", &lock_handle);
+
+    ObjectEventHandle hdl;
+    
+    if(!it.next(hdl))
+    {
+        return true;
+    }
+
+    bitstream bs = hdl.value().as_bitstream();
+
+    cow::Interpreter pyint(bs, true);
+    auto object_hook = cow::make_value<bindings::Object>(pyint.memory_manager(), empty_context,
+                                                         *this, collection, key, lock_handle);
+    auto db_hook = cow::make_value<bindings::Database>(pyint.memory_manager(), empty_context, *this,
+                                                       m_enclave, nullptr, lock_handle);
+    auto op_ctx_hook = cow::make_value<bindings::OpContext>(pyint.memory_manager(), op_context);
+    auto op_info_hook = cow::make_value<bindings::OpInfo>(pyint.memory_manager(), type, path);
+
+    
+    pyint.set_module("db", db_hook);
+    pyint.set_module("op_context", op_ctx_hook);
+    pyint.set_module("op_info", op_info_hook);
+
+    try
+    {
+        return cow::unpack_bool(pyint.execute());
+    }
+    catch(std::exception &e)
+    {
+        log_error(std::string("Collection policy failed: ") + e.what());
+        return false;
+    }
+}
+
+bool Ledger::check_object_policy(const json::Document &policy,
+                                 const OpContext &op_context,
+                                 const std::string &collection,
+                                 const std::string &key,
+                                 const std::string &path,
+                                 OperationType type,
+                                 LockHandle &lock_handle)
 {
     if(!op_context.valid())
     {
@@ -442,7 +500,7 @@ bool Ledger::check_security_policy(const json::Document &policy,
 
     bitstream bs = policy.as_bitstream();
 
-    cow::Interpreter pyint(bs);
+    cow::Interpreter pyint(bs, true);
 
     // Needed so we don't call the security policy recursively
     OpContext empty_context(INVALID_IDENTITY);
@@ -465,7 +523,7 @@ bool Ledger::check_security_policy(const json::Document &policy,
     }
     catch(std::exception &e)
     {
-        log_error(std::string("Security policy failed: ") + e.what());
+        log_error(std::string("Object policy failed: ") + e.what());
         return false;
     }
 }
@@ -526,6 +584,12 @@ event_id_t Ledger::put(const OpContext &op_context,
         return INVALID_EVENT;
     }
 
+    if(!check_collection_policy(op_context, collection, key, path, OperationType::AddToObject))
+    {
+        log_debug("rejected add because of collection policy");
+        return INVALID_EVENT;
+    }
+
     LockHandle lock_handle(*this, lock_handle_);
 
     auto s = get_shard(collection, key);
@@ -554,7 +618,7 @@ event_id_t Ledger::put(const OpContext &op_context,
     json::Document policy("");
 
     if(has_previous_version && previous_version.get_policy(policy) &&
-       !check_security_policy(policy, op_context, collection, key, path, OperationType::PutObject, lock_handle))
+       !check_object_policy(policy, op_context, collection, key, path, OperationType::PutObject, lock_handle))
     {
         log_debug("rejected put because of policy");
         res = INVALID_EVENT;
@@ -926,7 +990,7 @@ bool Ledger::get_latest_version(ObjectEventHandle &event,
     }
     else
     {
-        return check_security_policy(policy, op_context, collection, key, path, access_type, lock_handle);
+        return check_object_policy(policy, op_context, collection, key, path, access_type, lock_handle);
     }
 }
 

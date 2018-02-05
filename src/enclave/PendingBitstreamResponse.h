@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bitstream.h>
 #include "PendingMessage.h"
 
 namespace credb
@@ -15,7 +16,14 @@ public:
     {
     }
 
-    void move(bitstream &bstream) { bstream = std::move(m_bitstream); }
+    /**
+     * Once we waited successfully for a message
+     * this will return the result bitstream
+     */
+    bitstream get_result()
+    {
+        return std::move(m_bitstream);
+    }
 
 protected:
     void parse(bitstream &msg) override { msg >> m_bitstream; }

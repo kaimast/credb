@@ -199,6 +199,10 @@ BufferManager::metas_map_t::iterator BufferManager::shard_t::unload_page(page_no
 
 void BufferManager::shard_t::check_evict()
 {
+#if defined(FAKE_ENCLAVE) && !defined(ALWAYS_PAGE)
+    // no paging for benchmarking purposes
+    return;
+#else
     if(m_loaded_size < m_buffer_size)
     {
         return;
@@ -231,13 +235,8 @@ void BufferManager::shard_t::check_evict()
         m_evict_mutex.unlock();
         m_lock.write_to_read_lock();
     }
-
-    //    if (evict_cnt)
-    //        log_debug("Evicted " + std::to_string(evict_cnt) + " pages (" +
-    //        std::to_string(evict_size) + " bytes) m_loaded_size=" + std::to_string(m_loaded_size)
-    //        + " m_metas.size()=" + std::to_string(m_metas.size()));
+#endif
 }
-
 
 BufferManager::BufferManager(EncryptedIO *encrypted_io, const std::string &file_prefix, size_t buffer_size)
 : m_encrypted_io(encrypted_io), m_file_prefix(file_prefix), m_buffer_size(buffer_size), m_next_page_no(1)

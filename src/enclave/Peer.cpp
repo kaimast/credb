@@ -7,6 +7,7 @@
 #include "util/OperationType.h"
 #include "util/defines.h"
 #include "util/ecp.h"
+#include "util/FunctionCallResult.h"
 
 #include "Enclave.h"
 #include "Ledger.h"
@@ -847,7 +848,8 @@ operation_id_t Peer::call(const std::string &collection,
                           taskid_t task_id,
                           const std::string &key,
                           const std::string &path,
-                          const std::vector<std::string> &args)
+                          const std::vector<std::string> &args,
+                          bool is_transaction)
 {
     bitstream bstream;
     auto op_id = get_next_operation_id();
@@ -868,7 +870,7 @@ operation_id_t Peer::call(const std::string &collection,
         bstream << (key + '.' + path);
     }
 
-    bstream << args;
+    bstream << args << is_transaction;
 
     send(bstream);
 
@@ -929,6 +931,12 @@ void Peer::insert_response(operation_id_t op_id, const uint8_t *data, uint32_t l
 {
     auto bstream = new bitstream(data, length);
     m_responses.insert({ op_id, bstream });
+}
+
+void Peer::handle_call_request(bitstream &input, const OpContext &op_context, taskid_t task_id, operation_id_t op_id, bool could_deadlock)
+{
+    could_deadlock = has_pending_messages() || could_deadlock;
+    RemoteParty::handle_call_request(input, op_context, task_id, op_id, could_deadlock);
 }
 
 } // namespace trusted

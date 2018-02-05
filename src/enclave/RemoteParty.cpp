@@ -9,6 +9,7 @@
 #include "logging.h"
 
 #include "ias_ra.h"
+#include "util/FunctionCallResult.h"
 #include "util/EncryptionType.h"
 #include "util/defines.h"
 #include "util/ecp.h"
@@ -268,7 +269,7 @@ void RemoteParty::handle_op_request(bitstream &input, bitstream &output, const O
     }
     else if(op_type == OperationType::CallProgram)
     {
-        handle_call_request(input, op_context, task_id, op_id);
+        handle_call_request(input, op_context, task_id, op_id, false);
     }
     else if(op_type == OperationType::ExecuteCode)
     {
@@ -343,7 +344,6 @@ void RemoteParty::handle_request_downstream_mode(bitstream &input,
 
         taskid_t task_id = 0;
         auto op_id = upstream->get_next_operation_id();
-        // log_debug("Forward client request to the upstream, op_id=" + std::to_string(op_id));
 
         bitstream req;
         req << static_cast<mtype_data_t>(MessageType::ForwardedOperationRequest);
@@ -356,8 +356,7 @@ void RemoteParty::handle_request_downstream_mode(bitstream &input,
         resp.wait();
 
         upstream->unlock();
-        resp.move(output);
-        // log_debug("Upstream done forwarded request, op_id=" + std::to_string(op_id));
+        output = resp.get_result();
         break;
     }
     default:
@@ -402,7 +401,7 @@ void RemoteParty::handle_execute_request(bitstream &input, const OpContext &op_c
     // This will continue asynchornously in its own userspace thread from here
 }
 
-void RemoteParty::handle_call_request(bitstream &input, const OpContext &op_context, taskid_t task_id, operation_id_t op_id)
+void RemoteParty::handle_call_request(bitstream &input, const OpContext &op_context, taskid_t task_id, operation_id_t op_id, bool could_deadlock)
 {
     std::string collection, key;
     input >> collection >> key;
@@ -417,19 +416,38 @@ void RemoteParty::handle_call_request(bitstream &input, const OpContext &op_cont
     }
 
     std::vector<std::string> args;
-    input >> args;
+    bool is_transaction;
 
-    auto data = m_ledger.prepare_call(op_context, collection, key, path);
-    // FIXME check failure
+    input >> args >> is_transaction;
 
-    auto runner = std::make_shared<RemotePartyRunner>(m_enclave, shared_from_this(), task_id, op_id,
-                                                      std::move(data), args, op_context, collection, key);
+    if(could_deadlock && is_transaction)
+    {
+        bitstream output;
 
-    m_enclave.task_manager().register_task(runner);
+        // FIXME task id?
+        output << static_cast<mtype_data_t>(MessageType::OperationResponse);
+        output << task_id << op_id;
 
-    runner->run();
+        output << FunctionCallResult::DeadlockDetected;
+   
+        this->lock(); 
+        send(output);
+        this->unlock();
+    }
+    else
+    {
+        auto data = m_ledger.prepare_call(op_context, collection, key, path);
+        // FIXME check failure
 
-    // This will continue asynchornously in its own userspace thread from here...
+        auto runner = std::make_shared<RemotePartyRunner>(m_enclave, shared_from_this(), task_id, op_id,
+                                                          std::move(data), args, op_context, collection, key);
+
+        m_enclave.task_manager().register_task(runner);
+
+        runner->run();
+
+        // This will continue asynchornously in its own userspace thread from here...
+    }
 }
 
 void RemoteParty::handle_request_upstream_mode(bitstream &input,
@@ -786,9 +804,19 @@ void RemoteParty::handle_request_upstream_mode(bitstream &input,
     }
     case OperationType::CommitTransaction:
     {
-        Transaction tx(m_ledger, op_context, input);
-        tx.commit();
-        tx.get_output(output);
+        Transaction tx(input, m_ledger, op_context);
+
+        bitstream bs;
+
+        try {
+            auto witness = tx.commit();
+            bs << true << witness;
+        } catch (std::exception &e) {
+            const std::string error_msg = e.what();
+            bs << false << error_msg;
+        }
+
+        output << bs;
         break;
     }
     case OperationType::TellPeerType:

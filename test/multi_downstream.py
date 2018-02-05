@@ -14,8 +14,9 @@ parser.add_argument("--num_ops", type=int, default=10000)
 parser.add_argument("--prob_write", type=int, default=50)
 parser.add_argument("--server", type=str, default="localhost")
 parser.add_argument("--listen_port", type=int, default=5042)
-parser.add_argument("--server_port", type=int, default=50333)
+parser.add_argument("--server_port", type=int, default=5033)
 parser.add_argument("--no_upstream", action='store_true')
+parser.add_argument("--verbose", action='store_true')
 
 args = parser.parse_args()
 
@@ -40,7 +41,6 @@ if not args.no_upstream:
     server = Testserver()
     server.start(args.server_port, args.listen_port)
 
-
 # load data
 processes = []
 NUM_WORKER_LOAD_DATA = 10
@@ -54,12 +54,11 @@ for p in processes:
 del processes[:]
 print('done loading data')
 
-
 # start downstream
 downstreams = []
 for i in range(args.num_clients):
     p = Downstream()
-    p.start(args.server_port+1+i, args.listen_port)
+    p.start(args.server_port+1+i, args.listen_port, quiet=(not args.verbose))
     downstreams.append(p)
 sleep(3 * args.num_clients)
 
@@ -80,5 +79,6 @@ for d in downstreams:
     d.stop()
 if not args.no_upstream:
     server.stop()
+
 print("done")
 exit(exitcode)

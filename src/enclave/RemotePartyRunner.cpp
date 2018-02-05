@@ -1,6 +1,7 @@
 #include "RemotePartyRunner.h"
 #include "RemoteParty.h"
 #include "logging.h"
+#include "util/FunctionCallResult.h"
 
 namespace credb
 {
@@ -31,28 +32,24 @@ void RemotePartyRunner::handle_done()
     output << static_cast<mtype_data_t>(MessageType::OperationResponse);
     output << m_task_id << m_op_id;
 
-    bitstream payload;
-
     try
     {
         if(has_errors())
         {
-            payload << false << get_errors();
+            output << FunctionCallResult::ProgramFailure << get_errors();
         }
         else
         {
             auto result = get_result();
-            payload << true << result;
+            output << FunctionCallResult::Success << result;
         }
     }
     catch(std::exception &e)
     {
-        std::string errorstr = "failed to convert result value";
+        std::string errorstr = std::string("failed to convert result value: ") + e.what();
         log_warning(errorstr);
-        payload << false << errorstr;
+        output << FunctionCallResult::ProgramFailure << errorstr;
     }
-
-    output << payload;
 
     m_remote_party->lock();
     m_remote_party->send(output);

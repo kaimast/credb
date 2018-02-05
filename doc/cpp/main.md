@@ -9,7 +9,7 @@ policy enforcement, timeline inspection, witness generation, and protected funct
 In this lesson you'll learn how to connect to a server. Further we'll talk about issuing basic operations such as reading or writing values.
 For the following, we will assume that a server is running locally and can be connected to.
 
-A client connection is set up using the credb::reate_client call. Note that the return value is managed by a shared pointer and does not need manual clean up.
+A client connection is set up using the credb::create_client call. Note that the return value is managed by a shared pointer and does not need manual clean up.
 
 ```cpp
 #include <credb/Client.h>

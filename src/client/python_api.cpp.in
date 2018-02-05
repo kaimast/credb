@@ -12,6 +12,9 @@ BOOST_PYTHON_FUNCTION_OVERLOADS(count_overloads, count_python, 1, 2)
 
 BOOST_PYTHON_MODULE(credb)
 {
+    py::docstring_options doc_options;
+    doc_options.disable_signatures();
+
     py::to_python_converter<std::vector<json::Document>, VecDocToDoc>();
     py::to_python_converter<std::vector<std::tuple<std::string, json::Document>>, VecDocToDoc>();
     py::to_python_converter<json::Document, DocToDoc>();
@@ -23,37 +26,37 @@ BOOST_PYTHON_MODULE(credb)
     py::def("create_client", credb::create_client,
             create_client_overloads(py::args("client_name", "server_name", "host", "port"), "@DocString(create_client)"));
 
-    py::enum_<IsolationLevel>("IsolationLevel")
+    py::enum_<IsolationLevel>("IsolationLevel", "@DocString(IsolationLevel)")
     .export_values()
     .value("ReadCommitted", IsolationLevel::ReadCommitted)
     .value("RepeatableRead", IsolationLevel::RepeatableRead)
     .value("Serializable", IsolationLevel::Serializable);
 
-    py::class_<Witness>("Witness", py::init<const std::string &>())
+    py::class_<Witness>("Witness", "@DocString(Witness)", py::init<const std::string &>())
     .def("is_valid", &Witness::is_valid, "@DocString(Witness_is_valid)")
     .def("digest", &Witness::digest, "@DocString(Witness_digest)")
     .def("armor", &Witness::armor, "@DocString(Witness_armor)")
     .def("pretty_print_content", &Witness::pretty_print_content, "@DocString(Witness_pretty_print_content)");
-
-    py::class_<Transaction, std::shared_ptr<Transaction>, boost::noncopyable>("Transaction", py::no_init)
-    .def("commit", &Transaction::commit, "@DocString(Transaction_commit)")
+    
+    py::class_<Transaction, std::shared_ptr<Transaction>, boost::noncopyable>("Transaction", "@DocString(Transaction)", py::no_init)
+    .def("commit", &Transaction_commit_python, "@DocString(Transaction_commit)")
     .def("get_collection", &Transaction::get_collection, "@DocString(Transaction_get_collection)");
 
-    py::class_<Client, std::shared_ptr<Client>, boost::noncopyable>("Client", py::no_init)
-    .def("peer", &Client::peer, "Connect server to a new peer")
-    .def("list_peers", &Client::list_peers, "List the peers this datstore is linked to")
-    .def("execute", &execute_python, "Run a script with a list of arguments")
-    .def("init_transaction", &init_transaction_python, init_transaction_overloads(py::args("isolation_level"), "Create a new transaction object"))
-    .def("get_server_cert_base64", &Client::get_server_cert_base64, "Get public key of the server in base64")
-    .def("dump_everything", &Client::dump_everything)
-    .def("load_everything", &Client::load_everything)
-    .def("peer", &Client::peer, "Connect server to a new peer")
-    .def("list_peers", &Client::list_peers, "List the peers this datstore is linked to")
-    .def("get_collection", &Client::get_collection, "@DocString(Client_get_collection)")
+    py::class_<Client, std::shared_ptr<Client>, boost::noncopyable>("Client", "@DocString(Client)", py::no_init)
+    .def("peer", &Client::peer, "@DocString(Client_peer)")
+    .def("close", &Client::close, "@DocString(Client_close)")
+//    .def("name", &Client::name, "@DocString(Client_name)") FIXME can't pass string reference
+    .def("list_peers", &Client::list_peers, "@DocString(Client_list_peers)")
+    .def("execute", &execute_python, "@DocString(Client_execute)")
+    .def("init_transaction", &init_transaction_python, init_transaction_overloads(py::args("isolation_level"), "@DocString(Client_init_transaction)"))
+    .def("get_server_cert_base64", &Client::get_server_cert_base64, "@DocString(Client_get_server_cert_base64)")
+    .def("dump_everything", &Client::dump_everything, "@DocString(Client_dump_everything)")
+    .def("load_everything", &Client::load_everything, "@DocString(Client_load_everything)")
+    .def("peer", &Client::peer, "@DocString(Client_peer)")
+    .def("list_peers", &Client::list_peers, "@DocString(Client_list_peers)")
+    .def("get_collection", &Client::get_collection, "@DocString(Client_get_collection)");
 
-    ;
-
-    py::class_<Collection, std::shared_ptr<Collection>, boost::noncopyable>("Collection", py::no_init)
+    py::class_<Collection, std::shared_ptr<Collection>, boost::noncopyable>("Collection", "@DocString(Collection)", py::no_init)
     .def("diff", &Collection::diff, "@DocString(Collection_diff)")
     .def("count", &count_python, count_overloads(py::args("predicates"), "@DocString(Collection_count)"))
     .def("find", &find_python, find_overloads(py::args("predicates", "projection", "limit"), "@DocString(Collection_find)"))
@@ -65,7 +68,7 @@ BOOST_PYTHON_MODULE(credb)
     .def("put_from_file", &Collection::put_from_file, "@DocString(Collection_put_from_file)")
     .def("put_code_from_file", &Collection::put_code_from_file, "@DocString(Collection_put_code_from_file)")
     .def("clear", &Collection::clear, "@DocString(Collection_clear)")
-    .def("call", &call_python, "@DocStrin(Collection_call)")
+    .def("call", &call_python, "@DocString(Collection_call)")
     .def("diff", &Collection::diff, "@DocString(Collection_diff)")
     .def("count", &count_python, count_overloads(py::args("prefix", "predicates"), "@DocString(Collection_count)"))
     .def("remove", &Collection::remove, "@DocString(Collection_remove)")
@@ -73,4 +76,5 @@ BOOST_PYTHON_MODULE(credb)
     .def("put", &put_python, "@DocString(Collection_put)")
     .def("get", &get_python, "@DocString(Collection_get)")
     .def("get_history", &Collection::get_history, "@DocString(Collection_get_history)");
+
 }

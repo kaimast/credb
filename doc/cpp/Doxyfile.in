@@ -8,6 +8,8 @@ INPUT = "@TOP_SRCDIR@/doc/cpp/" \
 GENERATE_HTML=YES
 HTML_EXTRA_STYLESHEET="@TOP_SRCDIR@/doc/theme/style.css"
 
+OUTPUT_DIRECTORY="cpp-doc"
+
 # Label is only used for our custom scripts
 ALIASES += label{1}=""
 

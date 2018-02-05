@@ -3,12 +3,13 @@
 #include "../Enclave.h"
 #include "../Ledger.h"
 #include "../Peers.h"
-#include "../PendingBitstreamResponse.h"
+#include "../PendingCallResponse.h"
 #include "../PendingBooleanResponse.h"
 #include "../ProgramRunner.h"
 #include "../logging.h"
 
 #include "Collection.h"
+#include "Transaction.h"
 
 using namespace cow;
 
@@ -53,6 +54,24 @@ cow::ValuePtr Database::get_member(const std::string &name)
             return mem.create_string(m_enclave.name());
         });
     }
+    else if(name == "init_transaction")
+    {
+        if(!m_runner)
+        {
+            return nullptr;
+        }
+        else
+        {
+            return make_value<Function>(mem, [&mem, this](const std::vector<ValuePtr> &args) -> ValuePtr {
+                if(!args.empty())
+                {
+                    throw std::runtime_error("Invalid number of arguments");
+                }
+                
+                return cow::make_value<Transaction>(mem, m_op_context, *m_runner, m_ledger, m_peers, m_lock_handle);
+            });
+        }
+    }
     else if(name == "peers")
     {
         return make_value<Function>(mem, [&](const std::vector<ValuePtr> &args) -> ValuePtr {
@@ -88,8 +107,8 @@ cow::ValuePtr Database::get_member(const std::string &name)
                     throw std::runtime_error("Invalid arguments");
                 }
 
-                auto collection = value_cast<StringVal>(args[0])->get();
-                auto peer_name = value_cast<StringVal>(args[1])->get();
+                auto peer_name = value_cast<StringVal>(args[0])->get();
+                auto collection = value_cast<StringVal>(args[1])->get();
                 auto full_path = value_cast<StringVal>(args[2])->get();
 
                 std::vector<std::string> pargs;
@@ -117,17 +136,14 @@ cow::ValuePtr Database::get_member(const std::string &name)
                 if(!peer)
                 {
                     // FIXME implement exception handling...
-                    throw std::runtime_error(
-                    "Failed to find the peer in the database module of python binding");
+                    throw std::runtime_error("Failed to find peer '" + peer_name + "' in the database module of python binding");
                     return m_mem.create_boolean(false);
                 }
 
                 peer->lock();
-                auto op_id = peer->call(collection, m_runner->identifier(), key, path, pargs);
+                auto op_id = peer->call(collection, m_runner->identifier(), key, path, pargs, false);
+                PendingCallResponse pending(op_id, *peer, m_mem);
                 peer->unlock();
-
-                bitstream bs;
-                PendingBitstreamResponse pending(op_id, *peer);
 
                 while(!pending.has_message())
                 {
@@ -138,18 +154,19 @@ cow::ValuePtr Database::get_member(const std::string &name)
                     peer->unlock();
                 }
 
-                pending.move(bs);
-                bool success = false;
-                bs >> success;
-
-                if(success)
+                if(pending.success())
                 {
-                    return cow::read_value(bs, m_mem);
+                    return pending.return_value();
                 }
-                
-                std::string error_str;
-                bs >> error_str;
-                throw std::runtime_error("Call failed in the database module of python binding: [" + error_str + "]");
+                else if(pending.deadlock_detected())
+                {
+                    log_error("Deadlock should not happen.");
+                    return nullptr;
+                }
+                else
+                {
+                    throw std::runtime_error("Call failed in the database module of python binding: [" + pending.error() + "]");
+                }
             });
         }
     }
@@ -169,7 +186,7 @@ cow::ValuePtr Database::get_member(const std::string &name)
     }
     else
     {
-        throw std::runtime_error("Unknown function name");
+        throw std::runtime_error("No such method Database::" + name);
     }
 }
 

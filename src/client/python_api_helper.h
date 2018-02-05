@@ -152,7 +152,23 @@ inline PyObject *extract_value(cow::ValuePtr val)
     }
 }
 
-PyObject *execute_python(credb::Client *client, const std::string &code, const py::object &pyargs)
+inline PyObject *Transaction_commit_python(Transaction *tx, bool generate_witness = true)
+{
+    auto res = tx->commit(generate_witness);
+
+    if(res.success)
+    {
+        py::tuple t = py::make_tuple(true, res.witness);
+        return py::incref(t.ptr());
+    }
+    else
+    {
+        py::tuple t = py::make_tuple(false, res.error);
+        return py::incref(t.ptr());
+    }
+}
+
+inline PyObject *execute_python(credb::Client *client, const std::string &code, const py::object &pyargs)
 {
     std::vector<std::string> args = {};
     for(uint32_t i = 0; i < py::len(pyargs); ++i)
@@ -164,7 +180,7 @@ PyObject *execute_python(credb::Client *client, const std::string &code, const p
     return extract_value(val);
 }
 
-PyObject *call_python(credb::Collection *c, const std::string &key, const py::object &pyargs)
+inline PyObject *call_python(credb::Collection *c, const std::string &key, const py::object &pyargs)
 {
     std::vector<std::string> args = {};
     for(uint32_t i = 0; i < py::len(pyargs); ++i)
@@ -176,9 +192,9 @@ PyObject *call_python(credb::Collection *c, const std::string &key, const py::ob
     return extract_value(val);
 }
 
-json::Document get_python(credb::Collection *c, const std::string &key) { return c->get(key); }
+inline json::Document get_python(credb::Collection *c, const std::string &key) { return c->get(key); }
 
-PyObject *get_with_witness_python(credb::Collection *c, const std::string &key)
+inline PyObject *get_with_witness_python(credb::Collection *c, const std::string &key)
 {
     credb::event_id_t eid;
     Witness witness;

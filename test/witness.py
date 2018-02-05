@@ -34,17 +34,19 @@ def run_test():
     tc.put('foo1', 'another bar1')
     tc.find('')
     tc.find_one('')
-    res = tx.commit(True)
-    print(res)
-    print(res['witness'].is_valid(pkey))
-    print(res['witness'].armor())  # you can save this as witness.asc
-    print(res['witness'].pretty_print_content(2))
+    
+    res, witness = tx.commit(True)
+    assert(res)
+
+    print(witness.is_valid(pkey))
+    print(witness.armor())  # you can save this as witness.asc
+    print(witness.pretty_print_content(2))
 
     tx = conn.init_transaction(credb.IsolationLevel.RepeatableRead)
     tc = tx.get_collection('test')
     tc.remove('foo3')
-    res = tx.commit(True)
-    print(res['witness'].pretty_print_content(2))
+    res, witness = tx.commit(True)
+    print(witness.pretty_print_content(2))
 
     t1 = conn.init_transaction(credb.IsolationLevel.RepeatableRead)
     t2 = conn.init_transaction(credb.IsolationLevel.RepeatableRead)
@@ -52,10 +54,10 @@ def run_test():
     tc2 = t2.get_collection('test')
     tc1.put('foo0', 'next ' + tc1.get('foo0'))
     tc2.put('foo0', 'NEXT ' + tc2.get('foo0'))
-    res1 = t1.commit(True)
-    res2 = t2.commit(True)  # should fail
-    print(res1)
-    print(res2)
+    res1, w1 = t1.commit(True)
+    res2, w2 = t2.commit(True)  # should fail
+    print(w1)
+    print(w2)
     print(c.get('foo0'))
 
 p = multiprocessing.Process(target=run_test)
