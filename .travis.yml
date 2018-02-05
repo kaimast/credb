@@ -36,9 +36,8 @@ jobs:
             - docker run --rm -it -e sgx_mode  credb ../docker/run-doxygen.sh
             - docker save credb | gzip > ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz
         - stage: test
-          env:
-            - sgx_mode=simulation
-            - sgx_mode=fake_enclave
+          env: sgx_mode=simulation
+          env: sgx_mode=fake_enclave
         - script:
             -  gunzip -c ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz | docker load
             - docker run --rm -it -e sgx_mode -e run_test=unit_test -e downstream=0 credb ../docker/run-test.sh
