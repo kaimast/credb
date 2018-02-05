@@ -28,6 +28,7 @@ jobs:
         - stage: build
           env:  sgx_mode=simulation
           script:
+            - gunzip -c ${CACHE_FILE_CREDB_DEP} | docker load
             - docker build -t credb -f docker/credb.Dockerfile --build-arg sgx_mode=$sgx_mode --build-arg buildtype=release .
             - docker run --rm -it -e sgx_mode  credb ../docker/run-clang-tidy.sh
             - docker run --rm -it -e sgx_mode  credb ../docker/run-doxygen.sh
