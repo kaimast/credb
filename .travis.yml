@@ -26,10 +26,14 @@ jobs:
                   docker save credb-dep | gzip > ${CACHE_FILE_CREDB_DEP}.tar.gz
                 fi
         - stage: build
-          env:
-             matrix:
-                - sgx_mode=simulation
-                - sgx_mode=fake_enclave
+          env:  sgx_mode=simulation
+          script:
+            - docker build -t credb -f docker/credb.Dockerfile --build-arg sgx_mode=$sgx_mode --build-arg buildtype=release .
+            - docker run --rm -it -e sgx_mode  credb ../docker/run-clang-tidy.sh
+            - docker run --rm -it -e sgx_mode  credb ../docker/run-doxygen.sh
+            - docker save credb | gzip > ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz
+        - stage: build
+          env:  sgx_mode=fake_enclave
           script:
             - docker build -t credb -f docker/credb.Dockerfile --build-arg sgx_mode=$sgx_mode --build-arg buildtype=release .
             - docker run --rm -it -e sgx_mode  credb ../docker/run-clang-tidy.sh
@@ -37,17 +41,42 @@ jobs:
             - docker save credb | gzip > ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz
         - stage: test
           env: sgx_mode=simulation
+        - script:
+            -  gunzip -c ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz | docker load
+            - docker run --rm -it -e sgx_mode -e run_test=unit_test -e downstream=0 credb ../docker/run-test.sh
+            -  docker run --rm -it -e sgx_mode -e run_test=unit_test -e downstream=1 credb ../docker/run-test.sh
+        - stage: test
           env: sgx_mode=fake_enclave
         - script:
             -  gunzip -c ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz | docker load
             - docker run --rm -it -e sgx_mode -e run_test=unit_test -e downstream=0 credb ../docker/run-test.sh
             -  docker run --rm -it -e sgx_mode -e run_test=unit_test -e downstream=1 credb ../docker/run-test.sh
+        - stage: test
+          env: sgx_mode=simulation
         - script:
             - gunzip -c ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz | docker load
             - docker run --rm -it -e sgx_mode -e run_test=multi_get                 credb ../docker/run-test.sh
             - docker run --rm -it -e sgx_mode -e run_test=multi_put                 credb ../docker/run-test.sh
             - docker run --rm -it -e sgx_mode -e run_test=multi_downstream          credb ../docker/run-test.sh
             - docker run --rm -it -e sgx_mode -e run_test=multi_update              credb ../docker/run-test.sh
+        - stage: test
+          env: sgx_mode=fake_enclave
+        - script:
+            - gunzip -c ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz | docker load
+            - docker run --rm -it -e sgx_mode -e run_test=multi_get                 credb ../docker/run-test.sh
+            - docker run --rm -it -e sgx_mode -e run_test=multi_put                 credb ../docker/run-test.sh
+            - docker run --rm -it -e sgx_mode -e run_test=multi_downstream          credb ../docker/run-test.sh
+            - docker run --rm -it -e sgx_mode -e run_test=multi_update              credb ../docker/run-test.sh
+        - stage: test
+          env: sgx_mode=simulation
+        - script:
+            - gunzip -c ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz | docker load
+            - docker run --rm -it -e sgx_mode -e run_test=witness                   credb ../docker/run-test.sh
+            - docker run --rm -it -e sgx_mode -e run_test=call_program              credb ../docker/run-test.sh
+            - docker run --rm -it -e sgx_mode -e run_test=bank_test                 credb ../docker/run-test.sh
+            - docker run --rm -it -e sgx_mode -e run_test=concurrent_transactions   credb ../docker/run-test.sh
+        - stage: test
+          env: sgx_mode=fake_enclave
         - script:
             - gunzip -c ${CACHE_FILE_CREDB}-${sgx_mode}.tar.gz | docker load
             - docker run --rm -it -e sgx_mode -e run_test=witness                   credb ../docker/run-test.sh
