@@ -1,4 +1,4 @@
-# CreDB: A high-integrity databsae built on top of SGX
+# CreDB: A high-integrity database built on top of SGX
 
 [![Build Status](https://travis-ci.org/kaimast/credb.svg?branch=master)](https://travis-ci.org/kaimast/credb)
 
