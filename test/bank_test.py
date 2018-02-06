@@ -32,7 +32,7 @@ if RUN_SERVER:
 
     for i in range(NUM_BANKS):
         server = Testserver()
-        server.start(9000 + i, server_name="bank"+str(i), listen=10000+i, sleep_time=0)
+        server.start(9000 + i, server_name="bank"+str(i), listen=10000+i, sleep_time=0, quiet=(not args.verbose))
         servers.append(server)
 
     sleep(3.0)

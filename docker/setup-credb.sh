@@ -14,6 +14,7 @@ fi
 export CC=gcc-7
 export CXX=g++-7
 
+rm -rf build # just in case we did copy the build directory
 meson build --prefix=$HOME/local
 cd build
 meson configure -Dsgx_mode=$sgx_mode -Dbuildtype=$buildtype -Dalways_page=true

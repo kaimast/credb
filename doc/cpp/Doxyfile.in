@@ -13,6 +13,10 @@ OUTPUT_DIRECTORY="cpp-doc"
 # Label is only used for our custom scripts
 ALIASES += label{1}=""
 
+# No ugly DOT graphs
+INCLUDE_GRAPH = NO
+INCLUDED_BY_GRAPH = NO
+
 # Link functions from tutorials
 HIDE_SCOPE_NAMES = YES
 AUTOLINK_SUPPORT = YES

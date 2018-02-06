@@ -201,7 +201,6 @@ void BufferManager::shard_t::check_evict()
 {
 #if defined(FAKE_ENCLAVE) && !defined(ALWAYS_PAGE)
     // no paging for benchmarking purposes
-    return;
 #else
     if(m_loaded_size < m_buffer_size)
     {
