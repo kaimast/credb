@@ -114,6 +114,21 @@ bool CollectionImpl::has_object(const std::string &key)
     return resp.success();
 }
 
+bool CollectionImpl::check(const std::string &key, const json::Document &predicate)
+{
+    auto op_id = m_client.get_next_operation_id();
+    auto req = m_client.generate_op_request(op_id, OperationType::CheckObject);
+    req << m_name << key << predicate;
+
+    m_client.send_encrypted(req);
+
+    PendingBooleanResponse resp(op_id, m_client);
+    resp.wait();
+
+    return resp.success();
+}
+
+
 
 json::Document CollectionImpl::get(const std::string &key, event_id_t &event_id)
 {

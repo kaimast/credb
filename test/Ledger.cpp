@@ -127,6 +127,38 @@ TEST(LedgerTest, put_path)
     EXPECT_EQ(block.byte_size(), v->byte_size() + v2->byte_size());
 }*/
 
+TEST(LedgerTest, check)
+{
+    Enclave enclave;
+    enclave.init(TESTENCLAVE);
+    Ledger &ledger = enclave.ledger();
+    
+    json::Integer val(5);
+
+    ledger.put(TESTSRC, COLLECTION, "foo", val);
+
+    json::Document p1("{ \"$lte\": 5}");
+
+    EXPECT_TRUE(ledger.check(TESTSRC, COLLECTION, "foo", "", p1));
+    EXPECT_FALSE(ledger.check(TESTSRC, COLLECTION, "xyz", "", p1));
+}
+
+TEST(LedgerTest, check_subvalue)
+{
+    Enclave enclave;
+    enclave.init(TESTENCLAVE);
+    Ledger &ledger = enclave.ledger();
+    
+    json::Document val("{\"i\": 5}");
+
+    ledger.put(TESTSRC, COLLECTION, "foo", val);
+
+    json::Document p1("{ \"$lte\": 5}");
+
+    EXPECT_TRUE(ledger.check(TESTSRC, COLLECTION, "foo", "i", p1));
+    EXPECT_FALSE(ledger.check(TESTSRC, COLLECTION, "xyz", "i", p1));
+}
+
 TEST(LedgerTest, remove_and_put)
 {
     Enclave enclave;

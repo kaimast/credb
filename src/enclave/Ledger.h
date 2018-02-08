@@ -77,13 +77,29 @@ public:
                    LockHandle *lock_handle_ = nullptr);
 
 
+    /**
+     * Mark an object as deleted
+     */
     event_id_t remove(const OpContext &op_context,
                       const std::string &collection,
                       const std::string &key,
                       LockHandle *lock_handle_ = nullptr);
 
+    /**
+     * Check whether a predicate holds for a specific object
+     */
+    bool check(const OpContext &op_context,
+               const std::string &collection,
+               const std::string &key,
+               const std::string &path,
+               const json::Document &predicate,
+               LockHandle *lock_handle_ = nullptr);
+
+    /**
+     * Count how many times a specific entity has modified an object
+     */
     uint32_t count_writes(const OpContext &op_context,
-                          const std::string &user,
+                          const std::string &principal,
                           const std::string &collection,
                           const std::string &key,
                           LockHandle *lock_handle_ = nullptr);
