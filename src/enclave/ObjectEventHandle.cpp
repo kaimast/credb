@@ -62,6 +62,11 @@ version_number_t ObjectEventHandle::version_number() const
 
 json::Document ObjectEventHandle::value() const
 {
+    if(!valid())
+    {
+        throw std::runtime_error("Cannot get object value: not a valid handle!");
+    }
+
     json::Document view(m_content, FIELD_VALUE);
     return view;
 }

@@ -849,7 +849,9 @@ TEST(LedgerTest, find_with_index4)
 
     std::string key_;
     ObjectEventHandle hdl;
-    it.next(key_, hdl);
+    auto res = it.next(key_, hdl);
+
+    EXPECT_TRUE(res);
 
     auto actual = hdl.value();
 
