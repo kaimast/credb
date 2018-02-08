@@ -8,6 +8,49 @@ namespace credb
 namespace trusted
 {
 
+check_obj_info_t::check_obj_info_t(Transaction &tx, bitstream &req)
+    : read_op_t(tx)
+{
+    req >> m_collection >> m_key >> m_predicates >> m_result;
+    m_sid = transaction().ledger.get_shard(m_collection, m_key);
+}
+
+check_obj_info_t::check_obj_info_t(Transaction &tx, const std::string &collection, const std::string &key, const json::Document &predicates, bool result)
+    : read_op_t(tx), m_collection(collection), m_key(key), m_predicates(predicates.duplicate()), m_result(result),
+      m_sid(transaction().ledger.get_shard(m_collection, m_key))
+{}
+
+void check_obj_info_t::collect_shard_lock_type()
+{
+    transaction().set_read_lock_if_not_present(m_sid);
+}
+
+bool check_obj_info_t::validate_read()
+{
+    {
+        auto res = transaction().ledger.check(transaction().op_context, m_collection, m_key, "", m_predicates);
+        
+        if(res != m_result)
+        {
+            transaction().error = "Key [" + m_key + "] reads outdated value";
+            return false;
+        }
+    }
+
+    if(transaction().generate_witness)
+    {
+        auto &writer = transaction().writer;
+
+        writer.start_map("");
+        writer.write_string("type", "HasObject");
+        writer.write_string("key", m_key);
+        writer.write_boolean("result", m_result);
+        writer.end_map();
+    }
+
+    return true;
+}
+
 has_obj_info_t::has_obj_info_t(Transaction &tx, bitstream &req)
     : read_op_t(tx)
 {
@@ -27,8 +70,6 @@ void has_obj_info_t::collect_shard_lock_type()
 
 bool has_obj_info_t::validate_read()
 {
-    ObjectEventHandle obj;
-
     {
         auto res = transaction().ledger.has_object(m_collection, m_key);
         

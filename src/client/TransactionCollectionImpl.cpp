@@ -27,6 +27,14 @@ event_id_t TransactionCollectionImpl::remove(const std::string &key)
     return INVALID_EVENT;
 }
 
+bool TransactionCollectionImpl::check(const std::string &key, const json::Document &predicates)
+{
+    m_transaction.assert_not_committed();
+    auto res = CollectionImpl::check(key, predicates);
+    m_transaction.queue_op(new check_obj_info_t(name(), key, predicates, res));
+    return res;
+}
+
 bool TransactionCollectionImpl::has_object(const std::string &key)
 {
     m_transaction.assert_not_committed();

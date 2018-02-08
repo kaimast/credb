@@ -87,6 +87,32 @@ protected:
     using operation_info_t::operation_info_t;
 };
 
+struct check_obj_info_t : public read_op_t
+{
+public:
+    check_obj_info_t(Transaction &tx, bitstream &req);
+
+    check_obj_info_t(Transaction &tx, const std::string &collection, const std::string &key, const json::Document &predicates, bool result);
+
+    OperationType type() const override
+    {
+        return OperationType::CheckObject;
+    }
+
+    void collect_shard_lock_type() override;
+
+    bool validate_read() override;
+
+private:
+    std::string m_collection;
+    std::string m_key;
+    json::Document m_predicates;
+    bool m_result;
+    shard_id_t m_sid;
+};
+
+
+
 struct has_obj_info_t : public read_op_t
 {
 public:

@@ -82,6 +82,8 @@ operation_info_t *Transaction::new_operation_info_from_req(bitstream &req)
         return new get_info_t(*this, req);
     case OperationType::HasObject:
         return new has_obj_info_t(*this, req);
+    case OperationType::CheckObject:
+        return new check_obj_info_t(*this, req);
     case OperationType::PutObject:
         return new put_info_t(*this, req);
     case OperationType::AddToObject:

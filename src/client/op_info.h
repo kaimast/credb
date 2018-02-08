@@ -30,6 +30,21 @@ struct has_obj_info_t : public operation_info_t
     void write_to_req(bitstream &req) override { req << collection << key << result; }
 };
 
+struct check_obj_info_t : public operation_info_t
+{
+    const std::string collection;
+    const std::string key;
+    const json::Document predicates;
+    const bool result;
+    
+    check_obj_info_t(const std::string &collection_, const std::string &key_, const json::Document &predicates_, const bool &result_)
+    : operation_info_t(OperationType::HasObject), collection(collection_), key(key_), predicates(predicates_.duplicate()), result(result_)
+    {
+    }
+
+    void write_to_req(bitstream &req) override { req << collection << key << predicates << result; }
+};
+
 struct get_info_t : public operation_info_t
 {
     const std::string collection;

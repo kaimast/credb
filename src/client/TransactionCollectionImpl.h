@@ -11,11 +11,13 @@ class TransactionCollectionImpl : public CollectionImpl
 {
 public:
     TransactionCollectionImpl(TransactionImpl &transaction, ClientImpl &client, const std::string &name)
-    : CollectionImpl(client, name), m_transaction(transaction)
+        : CollectionImpl(client, name), m_transaction(transaction)
     {
     }
 
     bool has_object(const std::string &key) override;
+    bool check(const std::string &key, const json::Document &predicates) override;
+
     event_id_t put(const std::string &key, const json::Document &doc) override;
     event_id_t add(const std::string &key, const json::Document &doc) override;
     json::Document get(const std::string &key, event_id_t &event_id) override;

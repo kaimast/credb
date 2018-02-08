@@ -92,6 +92,25 @@ cow::ValuePtr TransactionCollection::get_member(const std::string &name)
             return res;
         });
     }
+    else if(name == "check")
+    {
+        return make_value<Function>(mem, [&](const std::vector<ValuePtr> &args) -> ValuePtr {
+            if(args.size() != 2 && args[0]->type() != ValueType::String)
+            {
+                throw std::runtime_error("Invalid number of arguments");
+            }
+
+            auto key = unpack_string(args[0]);
+            auto predicates = cow::value_to_document(args[1]);
+
+            auto res = m_ledger.check(m_op_context, m_name, key, "", predicates);
+
+            auto op = new check_obj_info_t(m_transaction, m_name, key, predicates, res);
+            m_transaction.register_operation(op);
+
+            return mem.create_boolean(res);
+        });
+    }
     else if(name == "has_object")
     {
         return make_value<Function>(mem, [&](const std::vector<ValuePtr> &args) -> ValuePtr {
