@@ -10,6 +10,7 @@ enum class OperationType : uint8_t
                           // ops
     GetObjectHistory,
     HasObject,
+    CheckObject,
     PutObject,
     PutObjectWithoutKey,
     AddToObject,

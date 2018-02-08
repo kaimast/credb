@@ -76,7 +76,7 @@ protected:
     virtual void handle_call_request(bitstream &input, const OpContext &op_context, taskid_t task_id, operation_id_t op_id, bool could_deadlock);
     
     void handle_request_has_object(bitstream &input, const OpContext &op_context, bitstream &output);
-
+    void handle_request_check_object(bitstream &input, const OpContext &op_context, bitstream &output);
     void handle_request_get_object(bitstream &input, const OpContext &op_context, bitstream &output, bool generate_witness);
 
     void handle_request_upstream_mode(bitstream &input,

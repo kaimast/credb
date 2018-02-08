@@ -37,6 +37,7 @@ public:
     bool drop_index(const std::string &index_name) override;
 
     virtual bool has_object(const std::string &key) override;
+    virtual bool check(const std::string &key, const json::Document &predicate) override;
 
     virtual json::Document get(const std::string &key, event_id_t &event_id) override;
     virtual json::Document get_with_witness(const std::string &key, event_id_t &event_id, Witness &witness) override;

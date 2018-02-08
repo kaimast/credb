@@ -708,6 +708,11 @@ void RemoteParty::handle_request_upstream_mode(bitstream &input,
         handle_request_has_object(input, op_context, output);
         break;
     }
+    case OperationType::CheckObject:
+    {
+        handle_request_check_object(input, op_context, output);
+        break;
+    }
     case OperationType::GetObject:
     {
         // log_debug("Received get object request, op_id=" + std::to_string(id));
@@ -854,6 +859,26 @@ void RemoteParty::handle_request_upstream_mode(bitstream &input,
         break;
     }
     }
+}
+
+void RemoteParty::handle_request_check_object(bitstream &input, const OpContext &op_context, bitstream &output)
+{
+    std::string collection, key;
+    json::Document predicates;
+
+    input >> collection >> key >> predicates;
+
+    size_t ppos;
+    std::string path;
+
+    if((ppos = key.find(".")) != std::string::npos)
+    {
+        path = key.substr(ppos + 1, std::string::npos);
+        key = key.substr(0, ppos);
+    }
+
+    bool res = m_ledger.check(op_context, collection, key, path, predicates);
+    output << res;
 }
 
 void RemoteParty::handle_request_has_object(bitstream &input, const OpContext &op_context, bitstream &output)

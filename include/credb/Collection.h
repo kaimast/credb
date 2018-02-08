@@ -186,9 +186,24 @@ public:
     virtual json::Document get(const std::string &key, event_id_t &event_id) = 0;
 
     /**
-     * Check whether an object exists
+     * @brief Check whether an object exists
+     * @param key
+     *     The primary key of the object
+     * @return True if the object exists, False otherwise
      */
     virtual bool has_object(const std::string &key) = 0;
+
+    /**
+     * @brief Check whether an object matches a certain predicate
+     *
+     * @param key
+     *   The primary key of the object
+     * @param predicate
+     *   The predicate to check
+     *
+     * @return True iff the object exists and matches the predicate, False otherwise
+     */
+    virtual bool check(const std::string &key, const json::Document &predicate) = 0;
 
     /**
      * @brief Get a value and return a witness for it

@@ -141,7 +141,7 @@ bool Ledger::has_object(const std::string &collection, const std::string &key)
 }
 
 uint32_t Ledger::count_writes(const OpContext &op_context,
-                              const std::string &user,
+                              const std::string &principal,
                               const std::string &collection,
                               const std::string &key,
                               LockHandle *lock_handle_)
@@ -152,7 +152,7 @@ uint32_t Ledger::count_writes(const OpContext &op_context,
 
     while(it.next(hdl))
     {
-        if(hdl.source() == user)
+        if(hdl.source() == principal)
         {
             res += 1;
         }
@@ -175,6 +175,32 @@ bool Ledger::get_previous_event(shard_id_t shard_no,
     auto block = lock_handle.get_block(shard_no, current.previous_block(), lock_type);
     block->get_event(previous, current.previous_index());
     return true;
+}
+
+bool Ledger::check(const OpContext &op_context,
+           const std::string &collection,
+           const std::string &key,
+           const std::string &path,
+           const json::Document &predicate,
+           LockHandle *lock_handle_)
+{
+    auto it = iterate(op_context, collection, key, lock_handle_);
+    ObjectEventHandle hdl;
+
+    if(!it.next(hdl))
+    {
+        // no such object
+        return false;
+    }
+
+    if(path.empty())
+    {
+       return hdl.value().matches_predicates(predicate);
+    }
+    else
+    {
+        return hdl.value(path).matches_predicates(predicate);
+    }
 }
 
 bool Ledger::get_previous_version(shard_id_t shard_no,
