@@ -48,6 +48,8 @@ public:
         size_t estimate_value_count(const KeyType &key, BufferManager &buffer);
         bool insert(const KeyType &key, const ValueType &value, BufferManager &buffer);
 
+        size_t clear(BufferManager &buffer);
+
         /**
          *  Get the number of elements in this node
          *  @note this will return the number excluding successor
@@ -118,7 +120,7 @@ public:
     iterator_t end();
     void insert(const KeyType &key, const ValueType &value);
     void clear();
-    PageHandle<node_t> get_node(const bucketid_t bucket, LockType lock_type);
+    PageHandle<node_t> get_node(const bucketid_t bucket, LockType lock_type, bool create = true);
 
     /**
      * The number of entries stored in the map

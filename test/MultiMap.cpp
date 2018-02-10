@@ -10,6 +10,59 @@ class MultiMapTest : public testing::Test
 {
 };
 
+TEST(MultiMapTest, serialize_node)
+{
+    EncryptedIO encrypted_io;
+    BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
+
+    auto node1 = buffer.new_page<MultiMap::node_t>();
+    node1->insert(1, "foo", buffer);
+    auto no = node1->page_no();
+    node1.clear();
+
+    buffer.clear_cache();
+
+    auto node2 = buffer.get_page<MultiMap::node_t>(no);
+
+    std::unordered_set<std::string> out;
+    std::unordered_set<std::string> expected = { "foo" };
+    
+    node2->find(1, out, SetOperation::Union, buffer);
+
+    EXPECT_EQ(expected, out);
+    EXPECT_EQ(1, node2->size());
+}
+
+TEST(MultiMapTest, serialize_node_successor)
+{
+    EncryptedIO encrypted_io;
+    BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
+
+    auto node1 = buffer.new_page<MultiMap::node_t>();
+    auto no = node1->page_no();
+    auto succ1 = node1->get_successor(LockType::Write, true, buffer);
+    succ1->insert(1, "foo", buffer);
+    succ1->write_unlock();
+
+    node1.clear();
+    succ1.clear();
+
+    buffer.clear_cache();
+
+    auto node2 = buffer.get_page<MultiMap::node_t>(no);
+    auto succ2 = node2->get_successor(LockType::Write, false, buffer);
+
+    std::unordered_set<std::string> out;
+    std::unordered_set<std::string> expected = { "foo" };
+    
+    succ2->find(1, out, SetOperation::Union, buffer);
+    succ2->write_unlock();
+
+    EXPECT_EQ(expected, out);
+    EXPECT_EQ(0, node2->size());
+    EXPECT_EQ(1, succ2->size());
+}
+
 TEST(MultiMapTest, empty_map)
 {
     EncryptedIO encrypted_io;
@@ -23,6 +76,29 @@ TEST(MultiMapTest, iterate_one)
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     MultiMap map(buffer, "test_multi_map");
 
+    map.insert(42, "foobar");
+
+    EXPECT_EQ(1, map.size());
+
+    auto it = map.begin();
+
+    EXPECT_FALSE(it == map.end());
+    EXPECT_EQ(42, it.key());
+    EXPECT_EQ("foobar", it.value());
+
+    ++it;
+    EXPECT_TRUE(it.at_end());
+    EXPECT_TRUE(it == map.end());
+}
+
+TEST(MultiMapTest, clear)
+{
+    EncryptedIO encrypted_io;
+    BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
+    MultiMap map(buffer, "test_multi_map");
+
+    map.insert(42, "foobar");
+    map.clear();
     map.insert(42, "foobar");
 
     EXPECT_EQ(1, map.size());
@@ -112,10 +188,35 @@ TEST(MultiMapTest, lots_of_data)
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     MultiMap map(buffer, "test_multi_map");
 
-    std::unordered_map<uint64_t, std::unordered_set<std::string>> data;
-    std::unordered_set<std::string> v;
     for (int i = 0; i < 10000; ++i)
     {
+        map.insert(i, std::to_string(i));
+    }
+
+    for (int i = 0; i < 10000; ++i)
+    {
+        std::unordered_set<std::string> out;
+        map.find(i, out, SetOperation::Union);
+
+        std::unordered_set<std::string> expected;
+        expected.insert(std::to_string(i));
+
+        ASSERT_EQ(expected, out);
+    }
+}
+
+
+TEST(MultiMapTest, lots_of_data_random)
+{
+    EncryptedIO encrypted_io;
+    BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
+    MultiMap map(buffer, "test_multi_map");
+
+    std::unordered_map<uint64_t, std::unordered_set<std::string>> data;
+    for (int i = 0; i < 10000; ++i)
+    {
+        std::unordered_set<std::string> v;
+
         int n = rand() % 10;
         uint64_t key = rand();
         for (int j = 0; j < n; ++j)
@@ -124,20 +225,16 @@ TEST(MultiMapTest, lots_of_data)
             v.insert(value);
             map.insert(key, value);
         }
-        data.emplace(key, v);
-        v.clear();
+
+        data.emplace(key, std::move(v));
     }
 
     for (auto &[key, values] : data)
     {
-        map.find(key, v, SetOperation::Union);
-        if (v != values)
-        {
-            std::cout << "v != values" << std::endl;
-            map.find(key, v, SetOperation::Union);
-        }
-        ASSERT_EQ(values, v);
-        v.clear();
+        std::unordered_set<std::string> out;
+        map.find(key, out, SetOperation::Union);
+        
+        ASSERT_EQ(values, out);
     }
 }
 

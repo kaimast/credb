@@ -27,7 +27,39 @@ MultiMap::node_t::node_t(BufferManager &buffer, page_no_t page_no, bitstream &bs
 
 bitstream MultiMap::node_t::serialize() const
 {
-    return m_data.duplicate(true);
+    bitstream bstream;
+    bstream.assign(m_data.data(), m_data.size(), true);
+    return bstream;
+}
+
+size_t MultiMap::node_t::clear(BufferManager &buffer)
+{
+    bitstream sview;
+    sview.assign(m_data.data(), m_data.size(), true);
+    header_t header;
+    sview >> header;
+
+    auto count = header.size;
+
+    auto end = m_data.pos();
+    m_data.move_to(sizeof(header));
+    m_data.remove_space(end - m_data.pos());
+
+    header.size = 0;
+    sview.move_to(0);
+    sview << header;
+
+    auto succ = get_successor(LockType::Write, false, buffer);
+
+    if(succ)
+    {
+        //TODO actually remove empty nodes
+        count += succ->clear(buffer);
+        succ->write_unlock();
+    }
+
+    mark_page_dirty();
+    return count;
 }
 
 bool MultiMap::node_t::remove(const KeyType &key, const ValueType &value, BufferManager &buffer)
@@ -63,6 +95,8 @@ bool MultiMap::node_t::remove(const KeyType &key, const ValueType &value, Buffer
             header.size -= 1;
             sview.move_to(0);
             sview << header;
+
+            mark_page_dirty();
             return true;
         }
     }
@@ -145,7 +179,6 @@ void MultiMap::node_t::find_union(const KeyType &key, std::unordered_set<ValueTy
         succ->find_union(key, out, buffer);
         succ->read_unlock();
     }
-
 }
 
 void MultiMap::node_t::find_intersect(const KeyType &key, std::unordered_set<ValueType> &out, BufferManager &buffer)
@@ -262,6 +295,8 @@ bool MultiMap::node_t::insert(const KeyType &key, const ValueType &value, Buffer
         header.size += 1;
         sview.move_to(0);
         sview << header;
+
+        mark_page_dirty();
         return true;
     }
     else
@@ -294,6 +329,7 @@ PageHandle<MultiMap::node_t> MultiMap::node_t::get_successor(LockType lock_type,
         sview.move_to(0);
         sview << header;
 
+        mark_page_dirty();
         return res;
     }
     else
@@ -497,11 +533,20 @@ void MultiMap::insert(const KeyType &key, const ValueType &value)
 
 void MultiMap::clear()
 {
-    m_size = 0;
-    // TODO
+    for(bucketid_t i = 0; i < NUM_BUCKETS; ++i)
+    {
+        auto n = get_node(i, LockType::Write, false);
+
+        if(n)
+        {
+            auto diff = n->clear(m_buffer);
+            m_size -= diff;
+            n->write_unlock();
+        }
+    }
 }
 
-PageHandle<MultiMap::node_t> MultiMap::get_node(const bucketid_t bucket, LockType lock_type)
+PageHandle<MultiMap::node_t> MultiMap::get_node(const bucketid_t bucket, LockType lock_type, bool create)
 {
     std::lock_guard<credb::Mutex> lock(m_node_mutex);
     
@@ -509,6 +554,11 @@ PageHandle<MultiMap::node_t> MultiMap::get_node(const bucketid_t bucket, LockTyp
     PageHandle<node_t> node;
     if(page_no == INVALID_PAGE_NO)
     {
+        if(!create)
+        {
+            return PageHandle<MultiMap::node_t>();
+        }
+
         node = m_buffer.new_page<node_t>();
         page_no = node->page_no();
     }
