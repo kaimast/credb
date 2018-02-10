@@ -16,7 +16,7 @@ BufferManager::shard_t::~shard_t()
             flush_page(*meta);
             meta->unlock();
         }
-        delete meta->page;
+        delete meta->page();
         delete meta;
     }
 }
@@ -62,10 +62,10 @@ void BufferManager::shard_t::mark_page_dirty(page_no_t page_no)
     m_lock.read_unlock();
 
     meta.lock();
-    meta.dirty = true;
-    int32_t old_size = meta.size;
-    meta.size = meta.page->byte_size();
-    m_loaded_size += -old_size + static_cast<int32_t>(meta.size);
+    meta.mark_dirty();
+    int32_t old_size = meta.size();
+    meta.set_size(meta.page()->byte_size());
+    m_loaded_size += -old_size + static_cast<int32_t>(meta.size());
     meta.unlock();
 }
 
@@ -118,10 +118,10 @@ void BufferManager::shard_t::discard_cache(internal_page_meta_t *meta)
 {
     meta->lock();
     assert(!meta->cnt_pin);
-    m_loaded_size -= meta->size;
+    m_loaded_size -= meta->size();
     meta->unlock();
 
-    delete meta->page;
+    delete meta->page();
     delete meta;
 }
 
@@ -159,11 +159,11 @@ void BufferManager::shard_t::discard_all_cache()
 
 void BufferManager::shard_t::flush_page(internal_page_meta_t &meta)
 {
-    if(meta.dirty)
+    if(meta.dirty())
     {
-        bitstream bstream = meta.page->serialize();
-        m_buffer.write_to_disk(meta.page_no, bstream);
-        meta.dirty = false;
+        bitstream bstream = meta.page()->serialize();
+        m_buffer.write_to_disk(meta.page_no(), bstream);
+        meta.unmark_dirty();
     }
 }
 
@@ -190,10 +190,10 @@ BufferManager::metas_map_t::iterator BufferManager::shard_t::unload_page(page_no
     meta->lock();
     assert(!meta->cnt_pin);
     flush_page(*meta);
-    m_loaded_size -= meta->size;
+    m_loaded_size -= meta->size();
     meta->unlock();
 
-    delete meta->page;
+    delete meta->page();
     delete meta;
     return next;
 }
@@ -216,7 +216,6 @@ void BufferManager::shard_t::check_evict()
 
     while(m_loaded_size > expected)
     {
-        m_lock.read_to_write_lock();
         m_evict_mutex.lock();
 
         while(m_evict_list.empty())
@@ -230,12 +229,11 @@ void BufferManager::shard_t::check_evict()
         meta = *it;
         assert(meta->evict_list_iter == it);
         ++evict_cnt;
-        evict_size += meta->size;
+        evict_size += meta->size();
         m_evict_list.erase(it);
-        unload_page(meta->page_no);
+        unload_page(meta->page_no());
 
         m_evict_mutex.unlock();
-        m_lock.write_to_read_lock();
     }
 #endif
 }

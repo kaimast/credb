@@ -24,15 +24,28 @@ class BufferManager
 
     struct internal_page_meta_t : public credb::Mutex
     {
-        page_no_t page_no;
-        Page *page;
-        size_t size;
+    private:
+        page_no_t m_page_no;
+        Page *m_page;
+        bool m_dirty;
+        size_t m_size;
+
+    public:
+        page_no_t page_no() { return m_page_no; }
+        Page* page() { return m_page; }
+
+        bool dirty() const { return m_dirty; } 
+        void mark_dirty() { m_dirty = true; }
+        void unmark_dirty() { m_dirty = false; }
+        
+        size_t size() const { return sizeof(*this) + m_size; }
+        void set_size(size_t new_size) { m_size = new_size; }
+
         size_t cnt_pin;
-        bool dirty;
         std::list<internal_page_meta_t *>::iterator evict_list_iter;
 
-        internal_page_meta_t(page_no_t _page_no, Page *_page)
-        : page_no(_page_no), page(_page), size(page->byte_size()), cnt_pin(0), dirty(false)
+        internal_page_meta_t(page_no_t _page_no, Page *page_)
+        : m_page_no(_page_no), m_page(page_), m_dirty(false), m_size(page()->byte_size()), cnt_pin(0) 
         {
         }
     };
@@ -90,11 +103,13 @@ class BufferManager
         {
             m_lock.write_lock();
 
+            check_evict();
+
             auto page = new T(m_buffer, page_no, std::forward<Args>(args)...);
             auto meta = new internal_page_meta_t(page_no, page);
-            m_loaded_size += meta->size;
+            m_loaded_size += meta->size();
             meta->evict_list_iter = m_evict_list.end();
-            meta->dirty = true;
+            meta->mark_dirty();
             m_metas[page_no] = meta;
 
             m_lock.write_to_read_lock();
@@ -106,8 +121,6 @@ class BufferManager
         // Before calling: RLock shard_t
         template <class T> PageHandle<T> get_page_internal(page_no_t page_no, bool load)
         {
-            check_evict();
-
             auto it = m_metas.find(page_no);
             internal_page_meta_t *meta = nullptr;
             T *page = nullptr;
@@ -115,8 +128,7 @@ class BufferManager
             if(it != m_metas.end())
             {
                 meta = it->second;
-                page = static_cast<T *>(meta->page);
-                assert(page != nullptr);
+                page = static_cast<T*>(meta->page());
             }
             else
             {
@@ -127,6 +139,9 @@ class BufferManager
                 }
 
                 m_lock.read_to_write_lock();
+
+                check_evict();
+
                 bitstream bstream = m_buffer.read_from_disk(page_no);
                 page = new T(m_buffer, page_no, bstream);
                 meta = new internal_page_meta_t(page_no, page);
@@ -139,12 +154,11 @@ class BufferManager
                     delete meta;
                     delete page;
                     meta = it->second;
-                    page = static_cast<T *>(meta->page);
-                    assert(page != nullptr);
+                    page = static_cast<T*>(meta->page());
                 }
                 else
                 {
-                    m_loaded_size += meta->size;
+                    m_loaded_size += meta->size();
                     m_metas[page_no] = meta;
                 }
                 m_lock.write_to_read_lock();
@@ -174,7 +188,7 @@ class BufferManager
         /**
          * Evict pages, if needed
          *
-         * Before calling: RLock shard_t
+         * Before calling: WLock shard_t
          */
         void check_evict();
 
