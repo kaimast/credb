@@ -10,7 +10,79 @@ class MultiMapTest : public testing::Test
 {
 };
 
-TEST(MultiMapTest, multi_map)
+TEST(MultiMapTest, empty_map)
+{
+    EncryptedIO encrypted_io;
+    BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
+    MultiMap map(buffer, "test_multi_map");
+}
+
+TEST(MultiMapTest, iterate_one)
+{
+    EncryptedIO encrypted_io;
+    BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
+    MultiMap map(buffer, "test_multi_map");
+
+    map.insert(42, "foobar");
+
+    EXPECT_EQ(1, map.size());
+
+    auto it = map.begin();
+
+    EXPECT_FALSE(it == map.end());
+    EXPECT_EQ(42, it.key());
+    EXPECT_EQ("foobar", it.value());
+
+    ++it;
+    EXPECT_TRUE(it.at_end());
+    EXPECT_TRUE(it == map.end());
+}
+
+TEST(MultiMapTest, iterate_many)
+{
+    EncryptedIO encrypted_io;
+    BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
+    MultiMap map(buffer, "test_multi_map");
+
+    for(uint32_t i = 0; i < 1000; ++i)
+    {
+        map.insert(42, std::to_string(i));
+    }
+
+    EXPECT_EQ(1000, map.size());
+
+    auto it = map.begin();
+
+    for(uint32_t i = 0; i < 1000; ++i)
+    {
+        EXPECT_EQ(42, it.key());
+        EXPECT_EQ(std::to_string(i), it.value());
+
+        ++it;
+    }
+
+    EXPECT_TRUE(it == map.end());
+}
+
+TEST(MultiMapTest, remove)
+{
+    EncryptedIO encrypted_io;
+    BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
+    MultiMap map(buffer, "test_multi_map");
+
+    map.insert(42, "foobar");
+    bool res = map.remove(42, "foobar");
+
+    EXPECT_TRUE(res);
+    EXPECT_EQ(0, map.size());
+
+    auto it = map.begin();
+
+    EXPECT_TRUE(it == map.end());
+    EXPECT_TRUE(it.at_end());
+}
+
+TEST(MultiMapTest, find)
 {
     EncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
@@ -18,7 +90,9 @@ TEST(MultiMapTest, multi_map)
 
     const uint64_t key = rand();
     for(int i = 0; i < 10; ++i)
+    {
         map.insert(key, std::to_string(i));
+    }
 
     std::unordered_set<std::string> result;
 

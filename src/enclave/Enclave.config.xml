@@ -2,7 +2,7 @@
   <ProdID>0</ProdID>
   <ISVSVN>0</ISVSVN>
   <StackMaxSize>0x1000000</StackMaxSize>
-   <HeapMaxSize>0x9000000</HeapMaxSize> <!--TODO: reduce to 0x6000000 after fixing MultiMap -->
+  <HeapMaxSize>0x9000000</HeapMaxSize>
   <TCSNum>30</TCSNum>
   <TCSPolicy>1</TCSPolicy>
   <DisableDebug>0</DisableDebug>
