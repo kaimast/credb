@@ -20,7 +20,7 @@ namespace trusted
 
 class BufferManager
 {
-    static constexpr size_t NUM_SHARDS = 128;
+    static constexpr size_t NUM_SHARDS = 32;
 
     struct internal_page_meta_t : public credb::Mutex
     {
@@ -171,9 +171,12 @@ class BufferManager
         // Before calling: WLock shard_t
         void discard_cache(internal_page_meta_t *meta);
 
-        // Before calling: RLock shard_t
+        /**
+         * Evict pages, if needed
+         *
+         * Before calling: RLock shard_t
+         */
         void check_evict();
-
 
         RWLockable m_lock;
         BufferManager &m_buffer;
@@ -183,6 +186,8 @@ class BufferManager
         std::atomic<size_t> m_loaded_size;
 
         Mutex m_evict_mutex;
+        std::condition_variable_any m_evict_condition;
+
         std::list<internal_page_meta_t *> m_evict_list;
     };
 

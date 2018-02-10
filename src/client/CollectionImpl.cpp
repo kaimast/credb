@@ -128,8 +128,6 @@ bool CollectionImpl::check(const std::string &key, const json::Document &predica
     return resp.success();
 }
 
-
-
 json::Document CollectionImpl::get(const std::string &key, event_id_t &event_id)
 {
     auto op_id = m_client.get_next_operation_id();

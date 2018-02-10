@@ -47,6 +47,7 @@ void BufferManager::shard_t::unpin_page(page_no_t page_no)
         assert(meta.evict_list_iter == m_evict_list.end());
         std::lock_guard evict_lock(m_evict_mutex);
         m_evict_list.emplace_front(&meta);
+        m_evict_condition.notify_all();
         meta.evict_list_iter = m_evict_list.begin();
     }
     meta.unlock();
@@ -212,15 +213,17 @@ void BufferManager::shard_t::check_evict()
     size_t evict_cnt = 0, evict_size = 0;
     std::list<internal_page_meta_t *>::iterator it;
     internal_page_meta_t *meta;
+
     while(m_loaded_size > expected)
     {
         m_lock.read_to_write_lock();
         m_evict_mutex.lock();
-        if(m_evict_list.empty())
+
+        while(m_evict_list.empty())
         {
-            m_evict_mutex.unlock();
             m_lock.write_to_read_lock();
-            break;
+            m_evict_condition.wait(m_evict_mutex);
+            m_lock.read_to_write_lock();
         }
 
         it = std::prev(m_evict_list.end());
