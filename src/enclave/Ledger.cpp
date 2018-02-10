@@ -1242,7 +1242,9 @@ ObjectListIterator Ledger::find(const OpContext &op_context,
         std::vector<std::string> merged_keys(candidates.begin(), candidates.end());
         log_debug("merged keys size " + std::to_string(merged_keys.size()) + " from " +
                   std::to_string(indexes.size()) + " indexes");
+        
         std::unique_ptr<VectorObjectKeyProvider> key_provider(new VectorObjectKeyProvider(std::move(merged_keys)));
+
         return ObjectListIterator(op_context, collection, predicates, *this, lock_handle, std::move(key_provider));
     }
     else

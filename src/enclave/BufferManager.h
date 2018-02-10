@@ -149,7 +149,6 @@ class BufferManager
                 }
                 m_lock.write_to_read_lock();
             }
-
             meta->lock();
             pin_page(*meta);
             meta->unlock();
@@ -191,16 +190,25 @@ public:
     BufferManager(EncryptedIO *encrypted_io, const std::string &file_prefix, size_t buffer_size);
     ~BufferManager();
 
-    // Before calling: no lock requirement
+    /**
+     * Mark page as "dirty", i.e. it's content has changed
+     * Before calling: no lock requirement
+     */
     void mark_page_dirty(page_no_t page_no);
 
-    // Before calling: no lock requirement
+    /**
+     * Write page to disk
+     * Before calling: no lock requirement
+     */
     void flush_page(page_no_t page_no);
 
     // Before calling: no lock requirement
     void flush_all_pages();
 
-    // Before calling: no lock requirement
+    /**
+     * Unload all pages
+     * Before calling: no lock requirement
+     */
     void clear_cache();
 
     // Before calling: no lock requirement
