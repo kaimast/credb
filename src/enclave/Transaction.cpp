@@ -2,6 +2,7 @@
 #include "Transaction.h"
 #include "Ledger.h"
 #include "Witness.h"
+#include "util/keys.h"
 #include "OpContext.h"
 
 namespace credb
@@ -79,10 +80,13 @@ void Transaction::set_read_lock_if_not_present(shard_id_t sid)
 
 bool Transaction::check_repeatable_read(ObjectEventHandle &obj,
                            const std::string &collection,
-                           const std::string &key,
+                           const std::string &full_path,
                            shard_id_t sid,
                            const event_id_t &eid)
 {
+    auto [key, path] = parse_path(full_path);
+    (void)path; //if eid hasn't changed value hasn't change either so no need to check path
+
     const LockType lock_type = shards_lock_type[sid];
     event_id_t latest_eid;
     bool res = ledger.get_latest_version(obj, op_context, collection, key, "", latest_eid,

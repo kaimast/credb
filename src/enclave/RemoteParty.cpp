@@ -403,17 +403,10 @@ void RemoteParty::handle_execute_request(bitstream &input, const OpContext &op_c
 
 void RemoteParty::handle_call_request(bitstream &input, const OpContext &op_context, taskid_t task_id, operation_id_t op_id, bool could_deadlock)
 {
-    std::string collection, key;
-    input >> collection >> key;
+    std::string collection, full_path;
+    input >> collection >> full_path;
 
-    std::string path;
-    size_t ppos;
-
-    if((ppos = key.find('.')) != std::string::npos)
-    {
-        path = key.substr(ppos + 1, std::string::npos);
-        key = key.substr(0, ppos);
-    }
+    auto [key, path] = parse_path(full_path);
 
     std::vector<std::string> args;
     bool is_transaction;
@@ -624,14 +617,10 @@ void RemoteParty::handle_request_upstream_mode(bitstream &input,
 
         json::Document doc(value, val_len, json::DocumentMode::Copy);
 
-        std::string path, key;
-        size_t ppos;
+        auto [key, path] = parse_path(full_path);
 
-        if((ppos = full_path.find(".")) != std::string::npos)
+        if(!path.empty())
         {
-            path = full_path.substr(ppos + 1, std::string::npos);
-            key = full_path.substr(0, ppos);
-
             if(!m_ledger.has_object(collection, key))
             {
                 log_debug("Cannot update object. Does not exist.");
@@ -641,16 +630,13 @@ void RemoteParty::handle_request_upstream_mode(bitstream &input,
         }
         else
         {
-            key = full_path;
-            path = "";
-        }
-
-        if(!m_ledger.is_valid_key(key))
-        {
-            // invalid key;
-            log_debug("Cannot put object '" + key + "'. Invalid keyword.");
-            output << INVALID_EVENT;
-            break;
+            if(!m_ledger.is_valid_key(key))
+            {
+                // invalid key;
+                log_debug("Cannot put object '" + key + "'. Invalid keyword.");
+                output << INVALID_EVENT;
+                break;
+            }
         }
 
         event_id_t event_id;

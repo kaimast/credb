@@ -65,7 +65,7 @@ public:
 
     bool check_repeatable_read(ObjectEventHandle &obj,
                            const std::string &collection,
-                           const std::string &key,
+                           const std::string &full_path,
                            shard_id_t sid,
                            const event_id_t &eid);
 

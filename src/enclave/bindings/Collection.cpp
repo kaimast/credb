@@ -5,6 +5,8 @@
 #include "../ProgramRunner.h"
 #include "../logging.h"
 
+#include "util/keys.h"
+
 #include "ObjectIterator.h"
 #include <cowlang/cow.h>
 #include <cowlang/unpack.h>
@@ -55,18 +57,7 @@ cow::ValuePtr Collection::get_member(const std::string &name)
             }
 
             auto &full_path = value_cast<StringVal>(args[0])->get();
-            std::string key, path;
-            size_t ppos;
-
-            if((ppos = full_path.find(".")) != std::string::npos)
-            {
-                path = full_path.substr(ppos + 1, std::string::npos);
-                key = full_path.substr(0, ppos);
-            }
-            else
-            {
-                key = full_path;
-            }
+            auto [key, path] = parse_path(full_path);
 
             auto it = m_ledger.iterate(m_op_context, m_name, key, &m_lock_handle);
 
@@ -140,27 +131,9 @@ cow::ValuePtr Collection::get_member(const std::string &name)
 
             auto full_path = value_cast<StringVal>(args[0])->get();
             bool res = true;
+            auto [key, path] = parse_path(full_path);
 
             // TODO this is duplicated code from client
-            std::string path, key;
-            size_t ppos;
-
-            if((ppos = full_path.find(".")) != std::string::npos)
-            {
-                path = full_path.substr(ppos + 1, std::string::npos);
-                key = full_path.substr(0, ppos);
-
-                if(!m_ledger.has_object(m_name, key))
-                {
-                    log_debug("Cannot update object. Does not exist.");
-                }
-            }
-            else
-            {
-                key = full_path;
-                path = "";
-            }
-
             if(!m_ledger.is_valid_key(key))
             {
                 // invalid key;

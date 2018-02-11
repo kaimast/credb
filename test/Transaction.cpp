@@ -69,7 +69,22 @@ TEST_F(TransactionTest, update_value)
     EXPECT_EQ(json::String("orange"), conn->get_collection("default")->get("food"));
 }
 
+TEST_F(TransactionTest, get_field)
+{
+    auto conn = create_client("test", "testserver", "localhost");
+    auto c = conn->get_collection("default");
+    auto t = conn->init_transaction(IsolationLevel::Serializable);
+    auto tc = t->get_collection("default");
 
+    c->put("foobar", json::Document("{\"x\": 5}"));
+
+    auto read_val = tc->get("foobar.x");
+
+    EXPECT_EQ(json::Integer(5), read_val);
+
+    auto res = t->commit(true);
+    EXPECT_TRUE(res.success);
+}
 
 TEST_F(TransactionTest, has_object)
 {
