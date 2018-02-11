@@ -13,7 +13,10 @@ namespace credb
 class IdentityDatabase
 {
 public:
-    Identity &get(const std::string &name);
+    /**
+     * Retrieve an identity by name
+     */
+    Identity& get(const std::string &name);
 
 private:
     // TODO page unneeded data to disk/database

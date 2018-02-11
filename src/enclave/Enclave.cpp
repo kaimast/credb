@@ -34,10 +34,7 @@ Enclave::Enclave()
 {
 }
 
-Enclave::~Enclave()
-{
-    delete m_identity;
-}
+Enclave::~Enclave() = default;
 
 credb_status_t Enclave::init(const std::string &name)
 {

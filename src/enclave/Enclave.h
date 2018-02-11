@@ -102,6 +102,11 @@ private:
     BufferManager m_buffer_manager;
     Ledger m_ledger;
     IdentityDatabase m_identity_database;
+
+    /**
+     * Pointer to the identity of the CreDB instance
+     * Memory will be managed by the identity database
+     */
     Identity *m_identity;
 
 #ifndef TEST
