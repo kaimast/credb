@@ -79,7 +79,10 @@ EnclaveHandle::EnclaveHandle(const std::string &name)
     LOG(INFO) << "My public key is: \n" << to_string(public_key());
 }
 
-EnclaveHandle::~EnclaveHandle() = default;
+EnclaveHandle::~EnclaveHandle()
+{
+    delete credb::trusted::g_enclave;
+}
 
 void EnclaveHandle::handle_peer_message(const remote_party_id identifier, const uint8_t *data, uint32_t length)
 {

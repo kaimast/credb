@@ -34,6 +34,11 @@ Enclave::Enclave()
 {
 }
 
+Enclave::~Enclave()
+{
+    delete m_identity;
+}
+
 credb_status_t Enclave::init(const std::string &name)
 {
     if(m_identity != nullptr)

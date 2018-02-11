@@ -35,6 +35,8 @@ public:
     Enclave(const Enclave &other) = delete;
     Enclave &operator=(const Enclave &other) = delete;
 
+    ~Enclave();
+
     // This should only be called by credb_enclave_init;
     credb_status_t init(const std::string &name);
 

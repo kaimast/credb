@@ -28,11 +28,14 @@ Collection::Collection(Collection &&other) noexcept
 Collection::~Collection()
 {
     delete m_primary_index;
+    m_primary_index = nullptr;
 
     for(auto it : m_secondary_indexes)
     {
         delete it.second;
     }
+
+    m_secondary_indexes.clear();
 }
 
 bool Collection::drop_index(const std::string &name)

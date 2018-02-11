@@ -44,6 +44,31 @@ Transaction::Transaction(bitstream &request, Ledger &ledger_, const OpContext &o
     }
 }
 
+Transaction::~Transaction()
+{
+    clear();
+}
+
+void Transaction::clear()
+{
+    lock_handle.clear();
+
+    if(!lock_handle.has_parent())
+    {
+        for(auto &kv : shards_lock_type)
+        {
+            ledger.organize_ledger(kv.first);
+        }
+    }
+
+    for(auto op: m_ops)
+    {
+        delete op;
+    }
+
+    m_ops.clear();
+}
+
 void Transaction::set_read_lock_if_not_present(shard_id_t sid)
 {
     if(!shards_lock_type.count(sid))
@@ -201,23 +226,6 @@ Witness Transaction::commit()
     return phase_two();
 }
 
-Transaction::~Transaction()
-{
-    clear();
-}
-
-void Transaction::clear()
-{
-    lock_handle.clear();
-
-    if(!lock_handle.has_parent())
-    {
-        for(auto &kv : shards_lock_type)
-        {
-            ledger.organize_ledger(kv.first);
-        }
-    }
-}
 
 }
 }

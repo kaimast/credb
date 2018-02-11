@@ -46,6 +46,8 @@ public:
     Transaction(IsolationLevel isolation, Ledger &ledger_, const OpContext &op_context_, LockHandle *lock_handle_);
     Transaction(bitstream &request, Ledger &ledger_, const OpContext &op_context_);
 
+    ~Transaction();
+
     /**
      * @brief Performs main transaction logic (verification of reads + application of writes)
      *
@@ -66,8 +68,6 @@ public:
                            const std::string &key,
                            shard_id_t sid,
                            const event_id_t &eid);
-
-    ~Transaction();
 
     void register_operation(operation_info_t *op);
     
