@@ -12,10 +12,12 @@ LockHandle::LockHandle(Ledger &ledger, LockHandle *parent) : m_ledger(ledger), m
 LockHandle::LockHandle(LockHandle &&other) noexcept
 : m_ledger(other.m_ledger), m_parent(other.m_parent), m_locks(std::move(other.m_locks))
 {
-    other.m_parent = nullptr;
 }
 
-LockHandle::~LockHandle() { clear(); }
+LockHandle::~LockHandle()
+{
+    clear();
+}
 
 void LockHandle::clear()
 {

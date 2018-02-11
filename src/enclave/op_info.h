@@ -53,6 +53,8 @@ protected:
         return m_transaction;
     }
 
+    shard_id_t get_shard(const std::string &collection, const std::string &full_path) const;
+
 private:
     Transaction &m_transaction;
 };

@@ -2,22 +2,31 @@
 
 #include "Transaction.h"
 #include "Ledger.h"
+#include "util/keys.h"
 
 namespace credb
 {
 namespace trusted
 {
 
+shard_id_t operation_info_t::get_shard(const std::string &collection, const std::string &full_path) const
+{
+    auto [key, path] = parse_path(full_path);
+    (void)path; //path is irrelevant for shard id
+
+    return m_transaction.ledger.get_shard(collection, key);
+}
+
 check_obj_info_t::check_obj_info_t(Transaction &tx, bitstream &req)
     : read_op_t(tx)
 {
     req >> m_collection >> m_key >> m_predicates >> m_result;
-    m_sid = transaction().ledger.get_shard(m_collection, m_key);
+    m_sid = get_shard(m_collection, m_key);
 }
 
 check_obj_info_t::check_obj_info_t(Transaction &tx, const std::string &collection, const std::string &key, const json::Document &predicates, bool result)
     : read_op_t(tx), m_collection(collection), m_key(key), m_predicates(predicates.duplicate()), m_result(result),
-      m_sid(transaction().ledger.get_shard(m_collection, m_key))
+      m_sid(get_shard(m_collection, m_key))
 {}
 
 void check_obj_info_t::collect_shard_lock_type()
@@ -55,12 +64,12 @@ has_obj_info_t::has_obj_info_t(Transaction &tx, bitstream &req)
     : read_op_t(tx)
 {
     req >> m_collection >> m_key >> m_result;
-    m_sid = transaction().ledger.get_shard(m_collection, m_key);
+    m_sid = get_shard(m_collection, m_key);
 }
 
 has_obj_info_t::has_obj_info_t(Transaction &tx, const std::string &collection, const std::string &key, bool result)
     : read_op_t(tx), m_collection(collection), m_key(key), m_result(result),
-      m_sid(transaction().ledger.get_shard(m_collection, m_key))
+      m_sid(get_shard(m_collection, m_key))
 {}
 
 void has_obj_info_t::collect_shard_lock_type()
@@ -98,12 +107,12 @@ get_info_t::get_info_t(Transaction &tx, bitstream &req)
         : read_op_t(tx)
 {
     req >> m_collection >> m_key >> m_eid;
-    m_sid = transaction().ledger.get_shard(m_collection, m_key);
+    m_sid = get_shard(m_collection, m_key);
 }
 
 get_info_t::get_info_t(Transaction &tx, const std::string &collection, const std::string &key, const event_id_t eid)
         : read_op_t(tx), m_collection(collection), m_key(key), m_eid(eid),
-           m_sid(transaction().ledger.get_shard(collection, key))
+           m_sid(get_shard(collection, key))
 {}
 
 void get_info_t::collect_shard_lock_type()
@@ -155,13 +164,13 @@ put_info_t::put_info_t(Transaction &tx, bitstream &req)
     : write_op_t(tx)
 {
     req >> m_collection >> m_key >> m_doc;
-    m_sid = transaction().ledger.get_shard(m_collection, m_key);
+    m_sid = get_shard(m_collection, m_key);
 }
 
 put_info_t::put_info_t(Transaction &tx, const std::string &collection, const std::string &key, const json::Document &doc)
     : write_op_t(tx), m_collection(collection), m_key(key), m_doc(doc.duplicate())
 {
-    m_sid = transaction().ledger.get_shard(m_collection, m_key);
+    m_sid = get_shard(m_collection, m_key);
 }
 
 void put_info_t::collect_shard_lock_type()
@@ -195,7 +204,7 @@ add_info_t::add_info_t(Transaction &tx, bitstream &req)
     : write_op_t(tx)
 {
     req >> m_collection >> m_key >> m_doc;
-    m_sid = transaction().ledger.get_shard(m_collection, m_key);
+    m_sid = get_shard(m_collection, m_key);
 }
 
 add_info_t::add_info_t(Transaction &tx, const std::string &collection, const std::string &key, const json::Document &doc)

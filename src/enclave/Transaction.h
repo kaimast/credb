@@ -58,7 +58,7 @@ public:
 
     bool phase_one();
     Witness phase_two();
-    
+
     void get_output(bitstream &output);
 
     void set_read_lock_if_not_present(shard_id_t sid);
@@ -69,10 +69,19 @@ public:
                            shard_id_t sid,
                            const event_id_t &eid);
 
+    /**
+     * Add a new operation that is associated with this transaction
+     *
+     * @param op
+     *      The operation structure. Memory will be managed by the transaction object from here on
+     */
     void register_operation(operation_info_t *op);
     
     json::Writer writer;
 
+    /**
+     * Discard transaction and release all locks
+     */
     void clear();
 
 private:

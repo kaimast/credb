@@ -13,22 +13,48 @@ namespace trusted
 class Shard;
 class Ledger;
 
-// This class is used to keep track of locks used for a specific operation
-// Once the class is destroyed it will release all the locks
-// Don't use Shard::get_block whenever you can avoid it and use LockHandle::get_block instead
+/**
+ * This class is used to keep track of locks used for a specific operation
+ * Once the class is destroyed it will release all the locks
+ * Don't use Shard::get_block whenever you can avoid it and use LockHandle::get_block instead
+ */
 class LockHandle
 {
 public:
+    /**
+     * Construct a new lock handle
+     *
+     * @param ledger
+     *    The associated ledger object
+     *
+     * @param parent [optional]
+     *    The parent lock handle.
+     *    If given, all locks will be acquired through the parent
+     */
     explicit LockHandle(Ledger &ledger, LockHandle *parent = nullptr);
 
     LockHandle(const LockHandle &other) = delete;
 
+    /**
+     * Move constructor
+     */
     LockHandle(LockHandle &&other) noexcept;
 
+    /**
+     * Destructor
+     *
+     * @note this will release all held locks (same semantics as clear())
+     */
     ~LockHandle();
 
+    /**
+     *  Release all locks held by this handle
+     */
     void clear();
 
+    /**
+     * Get and acquire lock to a block
+     */ 
     PageHandle<Block> get_block(shard_id_t shard_no, block_id_t block, LockType lock_type);
 
     PageHandle<Block> get_pending_block(shard_id_t shard_no, LockType lock_type);
@@ -76,7 +102,7 @@ private:
     };
 
     Ledger &m_ledger;
-    LockHandle *m_parent;
+    LockHandle *const m_parent;
 
     std::unordered_map<shard_id_t, LockInfo> m_locks;
 };

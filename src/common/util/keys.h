@@ -3,7 +3,12 @@
 #include <stdint.h>
 
 #include "ecp.h"
+
+#ifdef IS_ENCLAVE
 #include <sgx_tcrypto.h>
+#else
+#include "credb/ucrypto/ucrypto.h"
+#endif
 
 #ifndef SAMPLE_FEBITSIZE
 #define SAMPLE_FEBITSIZE 256
@@ -23,6 +28,12 @@ const char str_VK[] = "VK";
 
 inline size_t EC_DERIVATION_BUFFER_SIZE(size_t label_length) { return label_length + 4; }
 
+/**
+ * @brief Parses the full path of an object
+ *
+ * A path might either be just a key
+ * or a key + a field identifier.
+ */
 inline std::pair<std::string, std::string> parse_path(const std::string &full_path)
 {
     std::string key, path;

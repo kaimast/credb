@@ -1,3 +1,5 @@
+#pragma once
+
 #include "credb/Witness.h"
 #include "logging.h"
 #include "Enclave.h"
