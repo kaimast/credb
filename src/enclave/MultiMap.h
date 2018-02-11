@@ -42,13 +42,30 @@ public:
         size_t byte_size() const override;
 
         bool remove(const KeyType &key, const ValueType &value, BufferManager &buffer);
-        void find_union(const KeyType &key, std::unordered_set<ValueType> &out, BufferManager &buffer);
-        void find_intersect(const KeyType &key, std::unordered_set<ValueType> &out, BufferManager &buffer);
-        void find(const KeyType &key, std::unordered_set<ValueType> &out, SetOperation op, BufferManager &buffer);
-        size_t estimate_value_count(const KeyType &key, BufferManager &buffer);
-        bool insert(const KeyType &key, const ValueType &value, BufferManager &buffer);
+        
+        /**
+         * Add all elements to out that have key key.
+         */
+        void find_union(const KeyType &key, std::unordered_set<ValueType> &out);
 
-        size_t clear(BufferManager &buffer);
+        /**
+         * Approximately how often does a key appear in this node? 
+         */
+        size_t estimate_value_count(const KeyType &key);
+
+        /**
+         * Insert a new entry into the node
+         *
+         * @return True if successfully insert, False if not enough space
+         */
+        bool insert(const KeyType &key, const ValueType &value);
+
+        /**
+         * Remove all entries in this node
+         *
+         * @return the number of entries removed
+         */
+        size_t clear();
 
         /**
          *  Get the number of elements in this node
@@ -71,9 +88,12 @@ public:
 
         PageHandle<node_t> get_successor(LockType lock_type, bool create, BufferManager &buffer);
 
-    private:
-        bool has_entry(const KeyType &key, const ValueType &value, BufferManager &buffer);
+        /**
+         * Does this node hold a specified entry?
+         */
+        bool has_entry(const KeyType &key, const ValueType &value);
         
+    private:
         struct header_t
         {
             page_no_t successor;
@@ -114,13 +134,14 @@ public:
     ~MultiMap();
 
     void find(const KeyType &key, std::unordered_set<ValueType> &out, SetOperation op);
+
     size_t estimate_value_count(const KeyType &key);
     bool remove(const KeyType &key, const ValueType &value);
     iterator_t begin();
     iterator_t end();
     void insert(const KeyType &key, const ValueType &value);
     void clear();
-    PageHandle<node_t> get_node(const bucketid_t bucket, LockType lock_type, bool create = true);
+    PageHandle<node_t> get_node(const bucketid_t bucket, LockType lock_type, bool create);
 
     /**
      * The number of entries stored in the map
@@ -131,6 +152,9 @@ public:
     void load_metadata(bitstream &input); // for debug purpose
 
 private:
+    void find_intersect(const KeyType &key, std::unordered_set<ValueType> &out);
+    void find_union(const KeyType &key, std::unordered_set<ValueType> &out);
+
     friend class iterator_t;
 
     bucketid_t to_bucket(const KeyType key) const;

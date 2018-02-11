@@ -32,7 +32,7 @@ bitstream MultiMap::node_t::serialize() const
     return bstream;
 }
 
-size_t MultiMap::node_t::clear(BufferManager &buffer)
+size_t MultiMap::node_t::clear()
 {
     bitstream sview;
     sview.assign(m_data.data(), m_data.size(), true);
@@ -48,15 +48,6 @@ size_t MultiMap::node_t::clear(BufferManager &buffer)
     header.size = 0;
     sview.move_to(0);
     sview << header;
-
-    auto succ = get_successor(LockType::Write, false, buffer);
-
-    if(succ)
-    {
-        //TODO actually remove empty nodes
-        count += succ->clear(buffer);
-        succ->write_unlock();
-    }
 
     mark_page_dirty();
     return count;
@@ -152,7 +143,7 @@ std::pair<MultiMap::KeyType, MultiMap::ValueType> MultiMap::node_t::get(size_t p
     throw std::runtime_error("Out of bounds!");
 }
 
-void MultiMap::node_t::find_union(const KeyType &key, std::unordered_set<ValueType> &out, BufferManager &buffer)
+void MultiMap::node_t::find_union(const KeyType &key, std::unordered_set<ValueType> &out)
 {
     bitstream view;
     view.assign(m_data.data(), m_data.size(), true);
@@ -171,32 +162,9 @@ void MultiMap::node_t::find_union(const KeyType &key, std::unordered_set<ValueTy
             out.insert(v);
         }
     }
-
-    auto succ = get_successor(LockType::Read, false, buffer);
-
-    if(succ)
-    {
-        succ->find_union(key, out, buffer);
-        succ->read_unlock();
-    }
 }
 
-void MultiMap::node_t::find_intersect(const KeyType &key, std::unordered_set<ValueType> &out, BufferManager &buffer)
-{
-    for(auto it = out.begin(); it != out.end();)
-    {
-        if(has_entry(key, *it, buffer))
-        {
-            ++it;
-        }
-        else
-        {
-            it = out.erase(it);
-        }
-    }
-}
-
-bool MultiMap::node_t::has_entry(const KeyType &key, const ValueType &value, BufferManager &buffer)
+bool MultiMap::node_t::has_entry(const KeyType &key, const ValueType &value)
 {
     bitstream view;
     view.assign(m_data.data(), m_data.size(), true);
@@ -215,37 +183,11 @@ bool MultiMap::node_t::has_entry(const KeyType &key, const ValueType &value, Buf
             return true;
         }
     }
-
-    auto succ = get_successor(LockType::Read, false, buffer);
-
-    if(succ)
-    {
-        auto res = succ->has_entry(key, value, buffer);
-        succ->read_unlock();
-        return res;
-    }
-    else
-    {
-        return false;
-    }
+    
+    return false;
 }
 
-void MultiMap::node_t::find(const KeyType &key, std::unordered_set<ValueType> &out, SetOperation op, BufferManager &buffer)
-{
-    switch(op)
-    {
-    case SetOperation::Intersect:
-        find_intersect(key, out, buffer);
-        break;
-    case SetOperation::Union:
-        find_union(key, out, buffer);
-        break;
-    default:
-        abort();
-    }
-}
-
-size_t MultiMap::node_t::estimate_value_count(const KeyType &key, BufferManager &buffer)
+size_t MultiMap::node_t::estimate_value_count(const KeyType &key)
 {
     // this is not an estimation, it's the correct number
     size_t count = 0;
@@ -268,44 +210,31 @@ size_t MultiMap::node_t::estimate_value_count(const KeyType &key, BufferManager 
         }
     }
 
-    auto succ = get_successor(LockType::Read, false, buffer);
-
-    if(succ)
-    {
-        count += succ->estimate_value_count(key, buffer);
-        succ->read_unlock();
-    }
-
     return count;
 }
 
-bool MultiMap::node_t::insert(const KeyType &key, const ValueType &value, BufferManager &buffer)
+bool MultiMap::node_t::insert(const KeyType &key, const ValueType &value)
 {
     //TODO check if entry already exists? 
     
-    if(byte_size() < MultiMap::MAX_NODE_SIZE)
+    if(byte_size() >= MultiMap::MAX_NODE_SIZE)
     {
-        m_data << key << value;
-
-        bitstream sview;
-        sview.assign(m_data.data(), m_data.size(), true);
-
-        header_t header;
-        sview >> header;
-        header.size += 1;
-        sview.move_to(0);
-        sview << header;
-
-        mark_page_dirty();
-        return true;
+        return false;
     }
-    else
-    {
-        auto succ = get_successor(LockType::Write, true, buffer);
-        auto res = succ->insert(key, value, buffer);
-        succ->write_unlock();
-        return res;
-    }
+    
+    m_data << key << value;
+
+    bitstream sview;
+    sview.assign(m_data.data(), m_data.size(), true);
+
+    header_t header;
+    sview >> header;
+    header.size += 1;
+    sview.move_to(0);
+    sview << header;
+
+    mark_page_dirty();
+    return true;
 }
 
 PageHandle<MultiMap::node_t> MultiMap::node_t::get_successor(LockType lock_type, bool create, BufferManager &buffer)
@@ -450,9 +379,15 @@ void MultiMap::iterator_t::next_bucket()
         }
         m_current_nodes.clear();
 
-        auto current = m_map.get_node(m_bucket, LockType::Read);
-        const bool empty = current->empty();
-        m_current_nodes.emplace_back(std::move(current));
+        auto current = m_map.get_node(m_bucket, LockType::Read, false);
+        bool empty = true;
+        
+        if(current)
+        {
+            empty = current->empty();
+            m_current_nodes.emplace_back(std::move(current));
+        }
+
         m_pos = 0;
 
         if(!empty)
@@ -488,29 +423,98 @@ MultiMap::~MultiMap() { clear(); }
 
 void MultiMap::find(const KeyType &key, std::unordered_set<ValueType> &out, SetOperation op)
 {
+    switch(op)
+    {
+    case SetOperation::Intersect:
+        find_intersect(key, out);
+        break;
+    case SetOperation::Union:
+        find_union(key, out);
+        break;
+    default:
+        abort();
+    }
+}
+
+void MultiMap::find_intersect(const KeyType &key, std::unordered_set<ValueType> &out)
+{
+    for(auto it = out.begin(); it != out.end();)
+    {
+        //FIXME find a faster way to do this?
+
+        bool found = false;
+        auto b = to_bucket(key);
+        auto node = get_node(b, LockType::Read, false);
+
+        while(node && !found)
+        {
+            if(node->has_entry(key, *it))
+            {
+                found = true;
+            }
+
+            auto succ = node->get_successor(LockType::Read, false, m_buffer);
+            node->read_unlock();
+            node = std::move(succ);
+        }
+        
+        if(!found)
+        {
+            it = out.erase(it);
+        }
+    }
+}
+
+void MultiMap::find_union(const KeyType &key, std::unordered_set<ValueType> &out)
+{
     auto b = to_bucket(key);
-    auto node = get_node(b, LockType::Read);
-    node->find(key, out, op, m_buffer);
-    node->read_unlock();
+    auto node = get_node(b, LockType::Read, false);
+
+    while(node)
+    {
+        node->find_union(key, out);
+
+        auto succ = node->get_successor(LockType::Read, false, m_buffer);
+        node->read_unlock();
+        node = std::move(succ);
+    }
 }
 
 size_t MultiMap::estimate_value_count(const KeyType &key)
 {
+    size_t count = 0;
+
     auto b = to_bucket(key);
-    auto node = get_node(b, LockType::Read);
-    auto res = node->estimate_value_count(key, m_buffer);
-    node->read_unlock();
-    return res;
+    auto node = get_node(b, LockType::Read, false);
+
+    while(node)
+    {
+        count += node->estimate_value_count(key);
+        auto succ = node->get_successor(LockType::Read, false, m_buffer);
+
+        node->read_unlock();
+        node = std::move(succ);
+    }
+
+    return count;
 }
 
 bool MultiMap::remove(const KeyType &key, const ValueType &value)
 {
     auto b = to_bucket(key);
-    auto node = get_node(b, LockType::Write);
-    bool res = node->remove(key, value, m_buffer);
-    m_size -= 1;
-    node->write_unlock();
-    return res;
+    auto node = get_node(b, LockType::Write, false);
+
+    if(node)
+    {
+        bool res = node->remove(key, value, m_buffer);
+        m_size -= res ? 1 : 0;
+        node->write_unlock();
+        return res;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 MultiMap::iterator_t MultiMap::begin() { return { *this, 0 }; }
@@ -520,14 +524,23 @@ MultiMap::iterator_t MultiMap::end() { return { *this, NUM_BUCKETS }; }
 void MultiMap::insert(const KeyType &key, const ValueType &value)
 {
     auto b = to_bucket(key);
-    auto node = get_node(b, LockType::Write);
+    auto node = get_node(b, LockType::Write, true);
 
-    bool created = node->insert(key, value, m_buffer);
-    if(created)
+    bool created = false;
+
+    while(!created)
     {
-        m_size += 1;
+        created = node->insert(key, value);
+
+        if(!created)
+        {
+            auto succ = node->get_successor(LockType::Write, true, m_buffer);
+            node->write_unlock();
+            node = std::move(succ);
+        }
     }
 
+    m_size += 1;
     node->write_unlock();
 }
 
@@ -537,11 +550,14 @@ void MultiMap::clear()
     {
         auto n = get_node(i, LockType::Write, false);
 
-        if(n)
+        while(n)
         {
-            auto diff = n->clear(m_buffer);
+            auto diff = n->clear();
             m_size -= diff;
+
+            auto succ = n->get_successor(LockType::Write, false, m_buffer);
             n->write_unlock();
+            n = std::move(succ);
         }
     }
 }

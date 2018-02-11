@@ -16,7 +16,7 @@ TEST(MultiMapTest, serialize_node)
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
 
     auto node1 = buffer.new_page<MultiMap::node_t>();
-    node1->insert(1, "foo", buffer);
+    node1->insert(1, "foo");
     auto no = node1->page_no();
     node1.clear();
 
@@ -27,7 +27,7 @@ TEST(MultiMapTest, serialize_node)
     std::unordered_set<std::string> out;
     std::unordered_set<std::string> expected = { "foo" };
     
-    node2->find(1, out, SetOperation::Union, buffer);
+    node2->find_union(1, out);
 
     EXPECT_EQ(expected, out);
     EXPECT_EQ(1, node2->size());
@@ -41,7 +41,7 @@ TEST(MultiMapTest, serialize_node_successor)
     auto node1 = buffer.new_page<MultiMap::node_t>();
     auto no = node1->page_no();
     auto succ1 = node1->get_successor(LockType::Write, true, buffer);
-    succ1->insert(1, "foo", buffer);
+    succ1->insert(1, "foo");
     succ1->write_unlock();
 
     node1.clear();
@@ -55,7 +55,7 @@ TEST(MultiMapTest, serialize_node_successor)
     std::unordered_set<std::string> out;
     std::unordered_set<std::string> expected = { "foo" };
     
-    succ2->find(1, out, SetOperation::Union, buffer);
+    succ2->find_union(1, out);
     succ2->write_unlock();
 
     EXPECT_EQ(expected, out);
