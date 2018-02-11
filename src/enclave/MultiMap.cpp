@@ -451,14 +451,22 @@ void MultiMap::find_intersect(const KeyType &key, std::unordered_set<ValueType> 
             if(node->has_entry(key, *it))
             {
                 found = true;
+                node->read_unlock();
+                node.clear();
             }
-
-            auto succ = node->get_successor(LockType::Read, false, m_buffer);
-            node->read_unlock();
-            node = std::move(succ);
+            else
+            {
+                auto succ = node->get_successor(LockType::Read, false, m_buffer);
+                node->read_unlock();
+                node = std::move(succ);
+            }
         }
         
-        if(!found)
+        if(found)
+        {
+            ++it;
+        }
+        else
         {
             it = out.erase(it);
         }

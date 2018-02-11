@@ -158,7 +158,7 @@ TEST(MultiMapTest, remove)
     EXPECT_TRUE(it.at_end());
 }
 
-TEST(MultiMapTest, find)
+TEST(MultiMapTest, find_union)
 {
     EncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
@@ -174,6 +174,30 @@ TEST(MultiMapTest, find)
 
     map.find(key, result, SetOperation::Union);
     auto expected = std::unordered_set<std::string>{"0","1","2","3","4","5","6","7","8","9"};
+    EXPECT_EQ(result, expected);
+    result.clear();
+
+    map.find(key+1, result, SetOperation::Union);
+    EXPECT_EQ(result, std::unordered_set<std::string>{});
+    result.clear();
+}
+
+TEST(MultiMapTest, find_intersect)
+{
+    EncryptedIO encrypted_io;
+    BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
+    MultiMap map(buffer, "test_multi_map");
+
+    const uint64_t key = rand();
+    for(int i = 0; i < 10; ++i)
+    {
+        map.insert(key, std::to_string(i));
+    }
+
+    std::unordered_set<std::string> result = {"3", "16", "6", "42"};
+
+    map.find(key, result, SetOperation::Intersect);
+    auto expected = std::unordered_set<std::string>{"3","6"};
     EXPECT_EQ(result, expected);
     result.clear();
 
