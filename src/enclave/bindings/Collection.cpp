@@ -59,36 +59,15 @@ cow::ValuePtr Collection::get_member(const std::string &name)
             auto &full_path = value_cast<StringVal>(args[0])->get();
             auto [key, path] = parse_path(full_path);
 
-            auto it = m_ledger.iterate(m_op_context, m_name, key, &m_lock_handle);
+            auto it = m_ledger.iterate(m_op_context, m_name, key, path, &m_lock_handle);
 
-            ValuePtr res = nullptr;
-
-            ObjectEventHandle hdl;
-            if(!it.next(hdl))
+            auto [eid, value] = it.next();
+            if(!eid)
             {
                 return nullptr;
             }
 
-            if(!path.empty())
-            {
-                try
-                {
-                    json::Document view = hdl.value();
-                    json::Document view2(view, path);
-                    res = mem.create_from_document(view2);
-                }
-                catch(std::runtime_error)
-                {
-                }
-            }
-            else
-            {
-                json::Document view = hdl.value();
-                res = mem.create_from_document(view);
-            }
-
-            it.clear();
-            return res;
+            return mem.create_from_document(value);
         });
     }
     else if(name == "has_object")

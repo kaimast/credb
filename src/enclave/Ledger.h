@@ -112,6 +112,7 @@ public:
     ObjectIterator iterate(const OpContext &op_context,
                            const std::string &collection,
                            const std::string &key,
+                           const std::string &path = "",
                            LockHandle *lock_handle = nullptr);
 
     uint32_t count_objects(const OpContext &op_context,

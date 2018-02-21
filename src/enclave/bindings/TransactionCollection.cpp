@@ -7,6 +7,7 @@
 #include "../op_info.h"
 #include "../Transaction.h"
 
+#include "util/keys.h"
 #include "ObjectIterator.h"
 #include <cowlang/cow.h>
 #include <cowlang/unpack.h>
@@ -43,48 +44,18 @@ cow::ValuePtr TransactionCollection::get_member(const std::string &name)
             }
 
             auto &full_path = value_cast<StringVal>(args[0])->get();
-            std::string key, path;
-            size_t ppos;
+            auto [key, path] = parse_path(full_path);
+            
+            auto it = m_ledger.iterate(m_op_context, m_name, key, path, &m_lock_handle);
 
-            if((ppos = full_path.find(".")) != std::string::npos)
-            {
-                path = full_path.substr(ppos + 1, std::string::npos);
-                key = full_path.substr(0, ppos);
-            }
-            else
-            {
-                key = full_path;
-            }
-
-            auto it = m_ledger.iterate(m_op_context, m_name, key, &m_lock_handle);
-
-            ValuePtr res = nullptr;
-
-            ObjectEventHandle hdl;
-            auto eid = it.next(hdl);
-
+            auto [eid, value] = it.next();
+            
             if(!eid)
             {
                 return nullptr;
             }
 
-            if(!path.empty())
-            {
-                try
-                {
-                    json::Document view = hdl.value();
-                    json::Document view2(view, path);
-                    res = mem.create_from_document(view2);
-                }
-                catch(std::runtime_error)
-                {
-                }
-            }
-            else
-            {
-                json::Document view = hdl.value();
-                res = mem.create_from_document(view);
-            }
+            auto res = mem.create_from_document(value);
 
             auto op = new get_info_t(m_transaction, m_name, full_path, eid);
             m_transaction.register_operation(op);

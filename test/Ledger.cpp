@@ -40,10 +40,9 @@ TEST(LedgerTest, append_new_array)
     ledger.put(TESTSRC, COLLECTION, key, add2, "xyz.+");
 
     auto it = ledger.iterate(TESTSRC, COLLECTION, key);
-    
-    json::Document value("");
-    it.next_value(value);
+    auto [eid, value] = it.next();
 
+    EXPECT_TRUE(eid);
     EXPECT_EQ(value.str(), "{\"xyz\":[1,2]}");
 }
 
@@ -60,9 +59,9 @@ TEST(LedgerTest, put_int)
     json::Document expected("1337");
 
     auto it = ledger.iterate(TESTSRC, COLLECTION, key);
+    auto [eid, value] = it.next();
 
-    json::Document value("");
-    it.next_value(value);
+    EXPECT_TRUE(eid);
     EXPECT_EQ(value, expected);
 }
 
@@ -84,9 +83,9 @@ TEST(LedgerTest, create_nested_path)
     ledger.put(TESTSRC, COLLECTION, key, add2, "a.b.c");
 
     auto it = ledger.iterate(TESTSRC, COLLECTION, key);
+    auto [eid, value] = it.next();
 
-    json::Document value("");
-    it.next_value(value);
+    EXPECT_TRUE(eid);
     EXPECT_EQ(value.str(), "{\"a\":{\"b\":{\"c\":[1,2]}}}");
 }
 
@@ -105,27 +104,11 @@ TEST(LedgerTest, put_path)
     ledger.put(TESTSRC, COLLECTION, key, value2, "b");
 
     auto it = ledger.iterate(TESTSRC, COLLECTION, key);
+    auto [eid, value] = it.next();
 
-    json::Document value("");
-    it.next_value(value);
-
+    EXPECT_TRUE(eid);
     EXPECT_EQ(value.str(), "{\"a\":42,\"b\":{\"what\":\"ever\"}}");
 }
-
-/*TEST(LedgerTest, block_size)
-{
-    Block block(INITIAL_BLOCK);
-
-
-
-    auto v = new ObjectVersion("foo", nullptr, 1024, {}, "", INITIAL_VERSION_NO, 0, 0);
-    block.insert(v);
-
-    auto v2 = new ObjectVersion("foo2", nullptr, 1024, {}, "", INITIAL_VERSION_NO, 0, 0);
-    block.insert(v2);
-
-    EXPECT_EQ(block.byte_size(), v->byte_size() + v2->byte_size());
-}*/
 
 TEST(LedgerTest, check)
 {
@@ -166,11 +149,11 @@ TEST(LedgerTest, remove_and_put)
     Ledger &ledger = enclave.ledger();
 
     const size_t length = 1024;
-    uint8_t value[length];
+    uint8_t data[length];
 
     const std::string key = "foo";
 
-    json::Binary binary(value, length);
+    json::Binary binary(data, length);
 
     auto dup = binary.duplicate();
     ledger.put(TESTSRC, COLLECTION, key, dup);
@@ -180,11 +163,10 @@ TEST(LedgerTest, remove_and_put)
     EXPECT_TRUE(res);
 
     auto it = ledger.iterate(TESTSRC, COLLECTION, key);
+    auto [eid, value] = it.next();
 
-    ObjectEventHandle _;
-    EXPECT_TRUE(it.next(_));
-    it.clear();
-
+    EXPECT_TRUE(eid);
+    EXPECT_EQ(value, binary); 
     EXPECT_EQ(ledger.num_objects(), 1);
 }
 
@@ -212,9 +194,7 @@ TEST(LedgerTest, clear_and_put)
     auto it = ledger.iterate(TESTSRC, COLLECTION, key);
 
     ObjectEventHandle _;
-    EXPECT_TRUE(it.next(_));
-    it.clear();
-
+    EXPECT_TRUE(it.next_handle(_));
     EXPECT_EQ(ledger.num_objects(), 1);
 }
 
@@ -240,7 +220,7 @@ TEST(LedgerTest, remove)
     auto it = ledger.iterate(TESTSRC, COLLECTION, key);
 
     ObjectEventHandle _;
-    EXPECT_FALSE(it.next(_));
+    EXPECT_FALSE(it.next_handle(_));
     it.clear();
 
     EXPECT_EQ(ledger.num_objects(), 0);
@@ -262,11 +242,10 @@ TEST(LedgerTest, get_is_set)
 
     ledger.put(TESTSRC, COLLECTION, key, doc);
     auto it = ledger.iterate(TESTSRC, COLLECTION, key);
-
-    json::Document value("");
-    EXPECT_TRUE(it.next_value(value));
+    auto [eid, value] = it.next();
+    
+    EXPECT_TRUE(eid);
     EXPECT_EQ(value, binary);
-
     EXPECT_EQ(ledger.num_objects(), 1);
 }
 
@@ -280,7 +259,7 @@ TEST(LedgerTest, iterate_none)
     auto it = ledger.iterate(TESTSRC, COLLECTION, key);
 
     ObjectEventHandle _;
-    EXPECT_FALSE(it.next(_));
+    EXPECT_FALSE(it.next_handle(_));
 }
 
 TEST(LedgerTest, iterate_one)
@@ -300,13 +279,13 @@ TEST(LedgerTest, iterate_one)
     ledger.put(TESTSRC, COLLECTION, key, doc);
 
     auto it = ledger.iterate(TESTSRC, COLLECTION, key);
+    auto [eid, value] = it.next();
 
-    json::Document value("");
-    EXPECT_TRUE(it.next_value(value));
+    EXPECT_TRUE(eid);
     EXPECT_EQ(value, binary);
 
     ObjectEventHandle _;
-    EXPECT_FALSE(it.next(_));
+    EXPECT_FALSE(it.next_handle(_));
 }
 
 TEST(LedgerTest, has_object)
@@ -347,7 +326,7 @@ TEST(LedgerTest, iterate_two)
     auto it = ledger.iterate(TESTSRC, COLLECTION, key);
 
     ObjectEventHandle _;
-    EXPECT_TRUE(it.next(_));
+    EXPECT_TRUE(it.next_handle(_));
 }
 
 TEST(LedgerTest, get_is_set_few)
@@ -373,7 +352,7 @@ TEST(LedgerTest, get_is_set_few)
         auto it = ledger.iterate(TESTSRC, COLLECTION, "foo"+std::to_string(i));
 
         ObjectEventHandle hdl;
-        EXPECT_TRUE(it.next(hdl));
+        EXPECT_TRUE(it.next_handle(hdl));
     }
 
     EXPECT_EQ(ledger.num_objects(), NUM_OBJECTS);
@@ -402,7 +381,7 @@ TEST(LedgerTest, get_is_set_many)
         auto it = ledger.iterate(TESTSRC, COLLECTION, std::to_string(i));
 
         ObjectEventHandle hdl;
-        EXPECT_TRUE(it.next(hdl));
+        EXPECT_TRUE(it.next_handle(hdl));
     }
 
     EXPECT_EQ(ledger.num_objects(), NUM_OBJECTS);
@@ -432,7 +411,7 @@ TEST(LedgerTest, can_iterate_many)
         auto it = ledger.iterate(TESTSRC, COLLECTION, objs[i]);
 
         ObjectEventHandle _;
-        EXPECT_TRUE(it.next(_));
+        EXPECT_TRUE(it.next_handle(_));
     }
 
     EXPECT_EQ(ledger.num_objects(), NUM_OBJECTS);
@@ -704,15 +683,14 @@ TEST(LedgerTest, add_after_remove)
     ledger.add(TESTSRC, COLLECTION, key, to_add, "");
 
     auto it = ledger.iterate(TESTSRC, COLLECTION,  key);
-
-    json::Document value("");
-    it.next_value(value);
+    auto [eid, value] = it.next();
+    (void)eid;
 
     json::Document expected("2");
     EXPECT_EQ(value, expected);
 
     ObjectEventHandle _;
-    EXPECT_FALSE(it.next(_));
+    EXPECT_FALSE(it.next_handle(_));
 }
 
 TEST(LedgerTest, find_with_index_after_update)
@@ -874,9 +852,10 @@ TEST(LedgerTest, block_reference_counting)
     {
         auto it = ledger.iterate(TESTSRC, COLLECTION,  key);
 
-        json::Document actual("");
-        it.next_value(actual);
-        EXPECT_EQ(actual, doc);
+        auto [eid, actual] = it.next();
+        
+        EXPECT_TRUE(eid);
+        EXPECT_EQ(doc, actual);
     }
 
     // Iterate should be remove its reference automatically...

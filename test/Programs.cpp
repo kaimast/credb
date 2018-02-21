@@ -69,13 +69,13 @@ TEST(ProgramsTest, read_write_python)
     ledger.put(TESTSRC, COLLECTION, "code", binary);
 
     auto it = ledger.iterate(TESTSRC, COLLECTION,  "code");
+    auto [eid, value] = it.next();
 
-    json::Document doc("");
-    it.next_value(doc);
+    (void)eid;
 
     std::vector<std::string> args = {};
 
-    auto bs = doc.as_bitstream();
+    auto bs = value.as_bitstream();
     auto runner = std::make_shared<ProgramRunner>(enclave, std::move(bs), COLLECTION, "x", args);
 
     task_manager.register_task(runner);
@@ -120,14 +120,12 @@ TEST(ProgramsTest, self_put)
         EXPECT_TRUE(cow::unpack_bool(runner->get_result()));
     }
 
-    auto it = ledger.iterate(TESTSRC, COLLECTION, "x");
-    json::Document val("");
-    
-    auto get_res = it.next_value(val, "foo");
-    EXPECT_TRUE(get_res);
+    auto it = ledger.iterate(TESTSRC, COLLECTION, "x", "foo");
+    auto [eid, value]= it.next();
+    EXPECT_TRUE(eid);
 
     json::String expected("bar");
-    EXPECT_EQ(expected, val);
+    EXPECT_EQ(expected, value);
 }
 
 TEST(ProgramsTest, security_policy3)
@@ -207,6 +205,54 @@ TEST(ProgramsTest, collection_policy)
     EXPECT_FALSE(res2);
 }
 
+TEST(ProgramsTest, get_path_policy)
+{
+    const std::string code = "from op_info import target\n"
+                       "if target == 'foo':\n"
+                       "    return True\n"
+                       "else:\n"
+                       "    return False";
+
+    bitstream data = cow::compile_code(code);
+    json::Binary binary(data);
+
+    json::Writer writer;
+    writer.start_map("");
+    writer.write_string("foo", "bar");
+    writer.write_string("bar", "foo");
+    writer.write_binary("policy", data);
+    writer.end_map();
+
+    json::String val2("xyz");
+
+    Enclave enclave;
+    enclave.init(TESTENCLAVE);
+    Ledger &ledger = enclave.ledger();
+
+    auto doc = writer.make_document();
+    ledger.put(TESTSRC, COLLECTION, "foo", doc);
+
+    auto it1 = ledger.iterate(TESTSRC, COLLECTION,  "foo");
+    auto [eid1, value1] = it1.next();
+    
+    (void)value1;
+    EXPECT_FALSE(eid1);
+
+    auto it2 = ledger.iterate(TESTSRC, COLLECTION,  "foo", "bar");
+    auto [eid2, value2] = it2.next();
+ 
+    (void)value2;
+    EXPECT_FALSE(eid2);
+
+    auto it3 = ledger.iterate(TESTSRC, COLLECTION,  "foo", "foo");
+    auto [eid3, value3] = it3.next();
+ 
+    EXPECT_TRUE(eid3);
+
+    json::String expected("bar");
+    EXPECT_EQ(value3, expected);
+}
+
 TEST(ProgramsTest, security_policy)
 {
     const std::string code = "from op_info import type\n"
@@ -237,14 +283,11 @@ TEST(ProgramsTest, security_policy)
 
     EXPECT_FALSE(res);
 
-    auto it = ledger.iterate(TESTSRC, COLLECTION,  "foo");
-
-    json::Document value("");
-    auto eid = it.next_value(value, "value");
+    auto it = ledger.iterate(TESTSRC, COLLECTION,  "foo", "value");
+    auto [eid, value] = it.next();
     
-    EXPECT_TRUE(eid);
-
     json::String expected("bar");
+    EXPECT_TRUE(eid);
     EXPECT_EQ(value, expected);
 }
 
@@ -370,13 +413,11 @@ TEST(ProgramsTest, limit_writes_security_policy)
     }
 
     {
-    auto it = ledger.iterate(TESTSRC, COLLECTION,  "foo");
-
-    json::Document value("");
-    auto res = it.next_value(value, "value");
+        auto it = ledger.iterate(TESTSRC, COLLECTION,  "foo", "value");
+        auto [eid, value] = it.next();
     
-    EXPECT_TRUE(res);
-    EXPECT_EQ(value, json::Integer(43));
+        EXPECT_TRUE(eid);
+        EXPECT_EQ(value, json::Integer(43));
     }
 
     EXPECT_EQ(ledger.count_writes(TESTSRC, "client://jane", COLLECTION, "foo"), 1);
@@ -588,9 +629,9 @@ TEST(ProgramsTest, run_program_with_put)
     auto it = ledger.iterate(TESTSRC, COLLECTION, "foo");
 
     json::Integer expected(1337);
-    json::Document actual("");
-    it.next_value(actual);
 
+    auto [eid, actual] = it.next();
+    EXPECT_TRUE(eid);
     EXPECT_EQ(actual, expected);
 }
 
@@ -648,9 +689,10 @@ TEST(ProgramsTest, confidential_chat)
     }
 
     {
-        auto it = ledger.iterate(dave, COLLECTION, "chat");
-        json::Document val1("");
-        it.next_value(val1, "messages");
+        auto it = ledger.iterate(dave, COLLECTION, "chat", "messages");
+        auto [eid1, val1] = it.next();
+        
+        EXPECT_TRUE(eid1);
         EXPECT_EQ(val1, json::Document("[1,2,3,4,5]"));
     }
 
@@ -667,12 +709,10 @@ TEST(ProgramsTest, confidential_chat)
     }
 
     {
-    auto it2 = ledger.iterate(jane, COLLECTION, "chat");
-
-    json::Document value("");
-    it2.next_value(value, "messages");
-
-    EXPECT_EQ(value, json::Document("[1,2,3,4,5,42,43,44]"));
+        auto it2 = ledger.iterate(jane, COLLECTION, "chat", "messages");
+        auto [eid, value] = it2.next();
+        EXPECT_TRUE(eid);
+        EXPECT_EQ(value, json::Document("[1,2,3,4,5,42,43,44]"));
     }
 
     EXPECT_EQ(ledger.count_writes(dave, "client://jane", COLLECTION, "chat"), 6);

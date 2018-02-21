@@ -12,13 +12,14 @@ ObjectIterator::~ObjectIterator() { clear(); }
 ObjectIterator::ObjectIterator(const OpContext &context,
                                const std::string &collection,
                                const std::string &key,
+                               const std::string &path,
                                Ledger &ledger,
                                LockHandle *parent_lock_handle)
-: m_context(context), m_collection(collection), m_key(key), m_ledger(ledger)
+: m_context(context), m_collection(collection), m_key(key), m_path(path), m_ledger(ledger)
 {
     m_lock_handle = new LockHandle(ledger, parent_lock_handle);
 
-    ledger.get_latest_version(m_start, m_context, m_collection, m_key, "", m_current_eid,
+    ledger.get_latest_version(m_start, m_context, m_collection, m_key, m_path, m_current_eid,
                               *m_lock_handle, LockType::Read);
 }
 
@@ -49,15 +50,44 @@ bool ObjectIterator::check_event(ObjectEventHandle &event)
 
     if(!policy.empty())
     {
-        // FIXME path?
-        policy_ok = m_ledger.check_object_policy(policy, m_context, m_collection, m_key, "",
+        policy_ok = m_ledger.check_object_policy(policy, m_context, m_collection, m_key, m_path,
                                                    OperationType::GetObject, *m_lock_handle);
     }
 
     return policy_ok;
 }
 
-event_id_t ObjectIterator::next(ObjectEventHandle &ret)
+std::pair<event_id_t, json::Document> ObjectIterator::next()
+{
+    ObjectEventHandle hdl;
+
+    auto eid = next_handle(hdl);
+
+    if(!hdl.valid())
+    {
+        return {eid, json::Document()};
+    }
+
+    if(m_path.empty())
+    {
+        return {eid, hdl.value().duplicate()};
+    }
+    else
+    {
+        auto val = hdl.value(m_path).duplicate();
+
+        if(val.valid())
+        {
+            return {eid, std::move(val)};
+        }
+        else
+        {
+            return {INVALID_EVENT, json::Document()};
+        }
+    }
+}
+
+event_id_t ObjectIterator::next_handle(ObjectEventHandle &ret)
 {
     auto shard_no = m_ledger.get_shard(m_collection, m_key);
     ObjectEventHandle next_event;

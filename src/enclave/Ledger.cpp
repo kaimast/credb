@@ -146,11 +146,11 @@ uint32_t Ledger::count_writes(const OpContext &op_context,
                               const std::string &key,
                               LockHandle *lock_handle_)
 {
-    auto it = iterate(op_context, collection, key, lock_handle_);
+    auto it = iterate(op_context, collection, key, "", lock_handle_);
     uint32_t res = 0;
     ObjectEventHandle hdl;
 
-    while(it.next(hdl))
+    while(it.next_handle(hdl))
     {
         if(hdl.source() == principal)
         {
@@ -184,22 +184,17 @@ bool Ledger::check(const OpContext &op_context,
            const json::Document &predicate,
            LockHandle *lock_handle_)
 {
-    auto it = iterate(op_context, collection, key, lock_handle_);
-    ObjectEventHandle hdl;
+    auto it = iterate(op_context, collection, key, path, lock_handle_);
+    auto [eid, value] = it.next();
 
-    if(!it.next(hdl))
+    if(!eid)
     {
         // no such object
         return false;
     }
-
-    if(path.empty())
-    {
-       return hdl.value().matches_predicates(predicate);
-    }
     else
     {
-        return hdl.value(path).matches_predicates(predicate);
+        return value.matches_predicates(predicate);
     }
 }
 
@@ -362,7 +357,7 @@ bool Ledger::diff(const OpContext &op_context,
     {
         ObjectEventHandle h;
 
-        if(!it.next(h))
+        if(!it.next_handle(h))
         {
             return false;
         }
@@ -476,16 +471,15 @@ bool Ledger::check_collection_policy(const OpContext &op_context,
 
     LockHandle lock_handle(*this);
 
-    auto it = iterate(empty_context, collection, "policy", &lock_handle);
-
-    ObjectEventHandle hdl;
+    auto it = iterate(empty_context, collection, "policy", "", &lock_handle);
+    auto [eid,value] = it.next();
     
-    if(!it.next(hdl))
+    if(!eid)
     {
         return true;
     }
 
-    bitstream bs = hdl.value().as_bitstream();
+    bitstream bs = value.as_bitstream();
 
     cow::Interpreter pyint(bs, true);
     auto object_hook = cow::make_value<bindings::Object>(pyint.memory_manager(), empty_context,
@@ -1259,9 +1253,9 @@ ObjectListIterator Ledger::find(const OpContext &op_context,
 }
 
 ObjectIterator
-Ledger::iterate(const OpContext &op_context, const std::string &collection, const std::string &key, LockHandle *lock_handle)
+Ledger::iterate(const OpContext &op_context, const std::string &collection, const std::string &key, const std::string &path, LockHandle *lock_handle)
 {
-    return ObjectIterator(op_context, collection, key, *this, lock_handle);
+    return ObjectIterator(op_context, collection, key, path, *this, lock_handle);
 }
 
 void Ledger::load_upstream_index_root(const std::vector<std::string> &collection_names)

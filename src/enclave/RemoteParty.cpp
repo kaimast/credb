@@ -675,7 +675,7 @@ void RemoteParty::handle_request_upstream_mode(bitstream &input,
 
         ObjectEventHandle elem;
 
-        while(it.next(elem))
+        while(it.next_handle(elem))
         {
             auto val = elem.value();
             output << val.data();
@@ -901,10 +901,8 @@ void RemoteParty::handle_request_get_object(bitstream &input, const OpContext &o
         key = key.substr(0, ppos);
     }
 
-    auto it = m_ledger.iterate(op_context, collection, key);
-
-    json::Document value("");
-    auto eid = it.next_value(value, path);
+    auto it = m_ledger.iterate(op_context, collection, key, path);
+    auto [eid, value] = it.next();
 
     bitstream bstream;
     bitstream &out = generate_witness ? bstream : output;

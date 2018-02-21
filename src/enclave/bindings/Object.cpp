@@ -51,34 +51,16 @@ ValuePtr Object::get_member(const std::string &name)
             }
 
             auto path = value_cast<StringVal>(args[0])->get();
-            auto it = m_ledger.iterate(m_op_context, m_collection, m_key, &m_lock_handle);
+            auto it = m_ledger.iterate(m_op_context, m_collection, m_key, path, &m_lock_handle);
 
-            ValuePtr res = nullptr;
+            auto [eid, value] = it.next();
 
-            ObjectEventHandle hdl;
-            if(!it.next(hdl))
+            if(!eid)
             {
                 throw std::runtime_error("self does not exist!");
             }
 
-            if(!path.empty())
-            {
-                try
-                {
-                    json::Document view = hdl.value();
-                    json::Document view2(view, path);
-                    res = mem.create_from_document(view2);
-                }
-                catch(std::runtime_error)
-                {
-                }
-            }
-            else
-            {
-                res = mem.create_from_document(hdl.value());
-            }
-
-            return res;
+            return mem.create_from_document(value);
         });
     }
     else if(name == "contains")
@@ -89,22 +71,23 @@ ValuePtr Object::get_member(const std::string &name)
                 throw std::runtime_error("Invalid arguments");
             }
 
-            auto it = m_ledger.iterate(m_op_context, m_collection, m_key, &m_lock_handle);
+            auto path = value_cast<StringVal>(args[0])->get();
+            auto val  = value_cast<StringVal>(args[1])->get(); //TODO allow generic values not only strings
 
-            json::Document doc("");
-            bool res = static_cast<bool>(it.next_value(doc, value_cast<StringVal>(args[0])->get()));
+            auto it = m_ledger.iterate(m_op_context, m_collection, m_key, path, &m_lock_handle);
 
-            if(res)
+            auto [eid, field] = it.next();
+            bool res = false;
+
+            if(eid)
             {
-                res = false;
-                try
+                try 
                 {
-                    json::Document view(doc, value_cast<StringVal>(args[1])->get(), true);
+                    json::Document view(field, val, true);
                     res = true;
                 }
-                catch(std::runtime_error &e)
+                catch(std::exception &e)
                 {
-                    // no-op
                 }
             }
 
