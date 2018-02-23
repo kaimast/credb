@@ -325,6 +325,7 @@ void RemoteParty::handle_request_downstream_mode(bitstream &input,
         output << res;
         break;
     }
+    case OperationType::GetStatistics: // TODO not sure if we should return downstream stats?
     case OperationType::NOP:
     case OperationType::DiffVersions:
     case OperationType::AddToObject:
@@ -455,6 +456,21 @@ void RemoteParty::handle_request_upstream_mode(bitstream &input,
         // log_debug("Received NOP request, op_id=" + std::to_string(id));
         output << true;
         break;
+    }
+    case OperationType::GetStatistics:
+    {
+        json::Writer writer;
+        auto &eio = m_enclave.encrypted_io();
+
+        writer.start_map();
+        writer.write_integer("num_files", eio.num_files());
+        writer.write_integer("total_file_size", eio.total_file_size());
+        writer.write_integer("num_collections", m_ledger.num_collections());
+        writer.end_map();
+
+        output << writer.make_document();
+        break;
+
     }
     case OperationType::DumpEverything:
     {

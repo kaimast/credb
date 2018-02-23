@@ -43,6 +43,7 @@ BOOST_PYTHON_MODULE(credb)
     .def("get_collection", &Transaction::get_collection, "@DocString(Transaction_get_collection)");
 
     py::class_<Client, std::shared_ptr<Client>, boost::noncopyable>("Client", "@DocString(Client)", py::no_init)
+    .def("get_statistics", &Client::get_statistics, "@DocString(Client_get_statistics)")
     .def("peer", &Client::peer, "@DocString(Client_peer)")
     .def("close", &Client::close, "@DocString(Client_close)")
 //    .def("name", &Client::name, "@DocString(Client_name)") FIXME can't pass string reference

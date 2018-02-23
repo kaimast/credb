@@ -27,6 +27,7 @@
 
 #include "DocParser.h"
 
+#include "PendingDocumentResponse.h"
 #include "PendingCallResponse.h"
 #include "PendingBooleanResponse.h"
 #include "PendingListResponse.h"
@@ -307,6 +308,19 @@ void ClientImpl::set_trigger(const std::string &collection, std::function<void()
     lock();
     m_triggers.emplace(collection, func);
     unlock();
+}
+
+json::Document ClientImpl::get_statistics()
+{
+    auto op_id = get_next_operation_id();
+    auto req = generate_op_request(op_id, OperationType::GetStatistics);
+
+    send_encrypted(req);
+
+    PendingDocumentResponse resp(op_id, *this);
+    resp.wait();
+
+    return resp.document();
 }
 
 void ClientImpl::unset_trigger(const std::string &collection)

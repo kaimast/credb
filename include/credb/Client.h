@@ -47,6 +47,12 @@ public:
     std::shared_ptr<Collection> operator[](const std::string &name) { return get_collection(name); }
 
     /**
+     * @label{Client_get_statistics}
+     * @brief Get information about the servers state
+     */
+    virtual json::Document get_statistics() = 0;
+
+    /**
      * @label{Client_execute}
      * @brief Ship code to the server and execute it
      */

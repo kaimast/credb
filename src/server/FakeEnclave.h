@@ -11,6 +11,8 @@
 
 bool write_to_disk(const char *filename, const uint8_t *data, uint32_t length);
 int32_t get_file_size(const char *filename);
+size_t get_num_files();
+size_t get_total_file_size();
 bool read_from_disk(const char *filename, uint8_t *data, uint32_t length);
 void send_to_remote_party(remote_party_id identifier, const uint8_t *data, uint32_t length);
 
@@ -29,6 +31,8 @@ void remove_from_disk(const char *filename);
 int write_to_disk(bool *res, const char *filename, const uint8_t *data, uint32_t length);
 int get_file_size(int32_t *out, const char *filename);
 int read_from_disk(bool *result, const char *filename, uint8_t *data, uint32_t length);
+int get_num_files(size_t *out);
+int get_total_file_size(size_t *out);
 
 // for debug purposes
 bool dump_everything(const char *filename, const uint8_t *disk_key, size_t length);

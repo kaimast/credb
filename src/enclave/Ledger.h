@@ -137,6 +137,11 @@ public:
         return m_object_count;
     }
 
+    uint32_t num_collections()
+    {
+        return m_collections.size();
+    }
+
     /**
      * Prepare a function call
      */

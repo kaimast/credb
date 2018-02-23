@@ -6,7 +6,7 @@
 #include "PendingCallResponse.h"
 #include "PendingBitstreamResponse.h"
 #include "PendingBooleanResponse.h"
-#include "PendingDocumentResponse.h"
+#include "PendingGetResponse.h"
 #include "PendingEventIdResponse.h"
 #include "PendingFindResponse.h"
 #include "PendingListResponse.h"
@@ -136,7 +136,7 @@ json::Document CollectionImpl::get(const std::string &key, event_id_t &event_id)
 
     m_client.send_encrypted(req);
 
-    PendingDocumentResponse resp(op_id, m_client);
+    PendingGetResponse resp(op_id, m_client);
     resp.wait();
 
     if(!resp.success())

@@ -43,6 +43,10 @@ enclave {
         int32_t get_file_size([in, string] const char *filename);
         void remove_from_disk([in, string] const char *filename);
         bool read_from_disk([in, string] const char *filename, [out, size=length] uint8_t *data, uint32_t length);
+        
+        size_t get_num_files();
+        size_t get_total_file_size();
+
         bool dump_everything([in, string] const char *filename, [in, size=length] const uint8_t* disk_key, size_t length);
         bool load_everything([in, string] const char *filename, [out, size=length] uint8_t* disk_key, size_t length);
 

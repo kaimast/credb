@@ -377,6 +377,16 @@ bool write_to_disk(const char *filename, const uint8_t *data, uint32_t length)
     return g_disk.write(filename, data, length);
 }
 
+size_t get_total_file_size()
+{
+   return g_disk.get_total_size();
+}
+
+size_t get_num_files()
+{
+    return g_disk.num_files();
+}
+
 int32_t get_file_size(const char *filename) { return g_disk.get_size(filename); }
 
 bool read_from_disk(const char *filename, uint8_t *data, uint32_t length)

@@ -32,6 +32,8 @@ enum class OperationType : uint8_t
     SetTrigger,
     UnsetTrigger,
 
+    GetStatistics,
+
     // debug purpose
     NOP,
     DumpEverything,

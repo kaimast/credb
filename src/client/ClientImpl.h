@@ -76,6 +76,8 @@ public:
 
     void set_trigger(const std::string &collection, std::function<void()> func);
 
+    json::Document get_statistics() override;
+
     void unset_trigger(const std::string &collection);
 
 protected:

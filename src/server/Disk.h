@@ -22,6 +22,8 @@ public:
 
     int32_t get_size(const std::string &filename);
 
+    size_t get_total_size() { return m_byte_size; }
+
     void remove(const std::string &filename);
 
     bool read(const std::string &filename, uint8_t *data, uint32_t buffer_size);
@@ -38,7 +40,7 @@ public:
         m_files.clear();
     }
 
-    uint32_t num_files() const { return m_files.size(); }
+    size_t num_files() const { return m_files.size(); }
 
 private:
     struct file_t

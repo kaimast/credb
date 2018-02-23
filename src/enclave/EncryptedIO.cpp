@@ -93,6 +93,24 @@ bool EncryptedIO::write_to_disk(const std::string &filename, const bitstream &da
     return result;
 }
 
+size_t EncryptedIO::num_files()
+{
+    size_t result = 0;
+
+    ::get_num_files(&result);
+
+    return result;
+}
+
+size_t EncryptedIO::total_file_size()
+{
+    size_t result = 0;
+
+    ::get_total_file_size(&result);
+
+    return result;
+}
+
 bool EncryptedIO::decrypt_disk(uint8_t *buffer, int32_t size, bitstream &bstream)
 {
 #if defined(ENCRYPT_FILES) && !defined(FAKE_ENCLAVE)
