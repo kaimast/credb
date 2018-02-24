@@ -23,6 +23,7 @@
 #include "Peers.h"
 #include "PendingBooleanResponse.h"
 #include "Shard.h"
+#include "HashMap.h"
 #include "StringIndex.h"
 #include "credb/Client.h"
 #include "logging.h"
@@ -755,7 +756,7 @@ event_id_t Ledger::put_next_version(const OpContext &op_context,
 
     bitstream index_changes;
     index_changes << collection;
-    col.primary_index().insert(key, event_id, &index_changes);
+    col.primary_index().insert(key, event_id); //, &index_changes);
 #ifndef TEST
     col.notify_triggers(m_enclave.remote_parties());
 #endif
@@ -849,8 +850,8 @@ void Ledger::put_object_index_from_upstream(size_t input_id, bitstream *input_ch
         // update string index
         std::string collection;
         *changes >> collection;
-        auto &col = get_collection(collection, true);
-        col.primary_index().apply_changes(*changes);
+        //auto &col = get_collection(collection, true);
+        // FIXME col.primary_index().apply_changes(*changes);
 
         // invalidate data block cache
         if(block_page_no != INVALID_PAGE_NO)
@@ -880,68 +881,45 @@ bool Ledger::drop_index(const std::string &collection, const std::string &name)
 bool Ledger::clear(const OpContext &op_context, const std::string &collection)
 {
     auto &col = get_collection(collection);
-
-    std::string pos;
-    bool done = false;
-
-    while(!done)
+    auto it = col.primary_index().begin();
+ 
+    while(!it.at_end())
     {
-        auto it = col.primary_index().begin_at(pos);
+        auto key = it.key();
+        auto previous_id = it.value();
 
         LockHandle lock_handle(*this);
+        
+        auto shard = get_shard(collection, key);
+        auto pending = lock_handle.get_pending_block(shard, LockType::Write);
 
-        // Check a batch and then clean up
-        // TODO come up with a generic way to manage long-running tasks
-        constexpr size_t BATCH_SIZE = 100;
-        size_t c = 0;
-
-        for(; !it.at_end() && c < BATCH_SIZE; ++it)
+        ObjectEventHandle previous_event;
+        // FIXME: get_event loads a block and doesn't evict it for you, then out of memory
+        if(!get_event(previous_event, previous_id, lock_handle, LockType::Write))
         {
-            const std::string key = it.key();
-
-            auto shard = get_shard(collection, key);
-            auto pending = lock_handle.get_pending_block(shard, LockType::Write);
-
-            event_id_t previous_id = it.value();
-            ObjectEventHandle previous_event;
-            // FIXME: get_event loads a block and doesn't evict it for you, then out of memory
-            if(!get_event(previous_event, previous_id, lock_handle, LockType::Write))
-            {
-                throw std::runtime_error("Broken object reference");
-            }
-
-            if(previous_event.get_type() != ObjectEventType::Deletion)
-            {
-                auto index = put_tombstone(op_context, collection, key, previous_id, lock_handle);
-                bitstream changes;
-                changes << collection;
-                it.set_value({ shard, pending->identifier(), index }, &changes);
-                m_object_count -= 1;
-
-                // tell downstream
-                send_index_updates_to_downstream(changes, shard, pending->identifier());
-            }
-
-            c += 1;
+            throw std::runtime_error("Broken object reference");
         }
 
-        if(it.at_end())
+        if(previous_event.get_type() != ObjectEventType::Deletion)
         {
-            done = true;
-        }
-        else
-        {
-            pos = it.key();
+            auto index = put_tombstone(op_context, collection, key, previous_id, lock_handle);
+            bitstream changes;
+            changes << collection;
+            //it.set_value({ shard, pending->identifier(), index }, &changes);
+            it.set_value({ shard, pending->identifier(), index });
+           
+            m_object_count -= 1;
+
+            // tell downstream
+            send_index_updates_to_downstream(changes, shard, pending->identifier());
         }
 
-        it.clear();
-        lock_handle.clear(); // don't check evict, since we are going to call organize_ledger for
-                             // all shards
+        ++it;
+    }
 
-        for(uint16_t i = 0; i < NUM_SHARDS; ++i)
-        {
-            organize_ledger(i);
-        }
+    for(uint16_t i = 0; i < NUM_SHARDS; ++i)
+    {
+        organize_ledger(i);
     }
 
     return true;
@@ -1245,8 +1223,7 @@ ObjectListIterator Ledger::find(const OpContext &op_context,
     {
         // Do linear scan :(
         log_debug("linear scan");
-        std::unique_ptr<StringIndex::LinearScanKeyProvider> key_provider(
-        new StringIndex::LinearScanKeyProvider(col.primary_index()));
+        std::unique_ptr<ObjectKeyProvider> key_provider(new HashMap::LinearScanKeyProvider(col.primary_index()));
 
         return ObjectListIterator(op_context, collection, predicates, *this, lock_handle, std::move(key_provider));
     }
@@ -1263,7 +1240,8 @@ void Ledger::load_upstream_index_root(const std::vector<std::string> &collection
     for(auto &name : collection_names)
     {
         log_debug("Reload StringIndex root of collection [" + name + "]");
-        get_collection(name, true).primary_index().reload_root_node();
+        (void)name;
+        //FIXME get_collection(name, true).primary_index().reload_root_node();
     }
 }
 

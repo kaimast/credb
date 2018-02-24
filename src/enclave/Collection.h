@@ -15,6 +15,7 @@ namespace trusted
 class Ledger;
 class Enclave;
 class Index;
+class HashMap;
 class RemoteParties;
 class StringIndex;
 class BufferManager;
@@ -44,14 +45,15 @@ public:
 
     void unset_trigger(remote_party_id identifier);
 
-    StringIndex &primary_index() { return *m_primary_index; }
+    HashMap &primary_index() { return *m_primary_index; }
 
     std::unordered_map<std::string, Index *> secondary_indexes() { return m_secondary_indexes; }
 
 private:
     BufferManager &m_buffer_manager;
     const std::string m_name;
-    StringIndex *m_primary_index;
+//    StringIndex *m_primary_index;
+    HashMap *m_primary_index;
     std::unordered_map<std::string, Index *> m_secondary_indexes;
     std::unordered_set<remote_party_id> m_triggers;
     std::mutex m_mutex;

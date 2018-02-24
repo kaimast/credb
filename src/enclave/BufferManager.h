@@ -163,6 +163,7 @@ class BufferManager
                 }
                 m_lock.write_to_read_lock();
             }
+
             meta->lock();
             pin_page(*meta);
             meta->unlock();

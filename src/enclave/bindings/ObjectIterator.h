@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Object.h"
+#include "../ObjectListIterator.h"
 #include <cowlang/cow.h>
 
 namespace credb

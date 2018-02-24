@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "Collection.h"
-#include "Object.h"
+#include "ObjectListIterator.h"
 #include "OpContext.h"
 #include "credb/Witness.h"
 #include "util/OperationType.h"

@@ -316,14 +316,15 @@ void MultiMap::iterator_t::operator++()
     if(m_pos >= current->size())
     {
         auto succ = current->get_successor(LockType::Read, false, m_map.m_buffer);
-
+        m_pos = 0;
+        
         if(succ)
         {
             m_current_nodes.emplace_back(std::move(succ));
-            m_pos = 0;
         }
         else
         {
+            m_bucket++;
             next_bucket();
         }
     }
@@ -369,8 +370,6 @@ bool MultiMap::iterator_t::operator==(const iterator_t &other) const
 
 void MultiMap::iterator_t::next_bucket()
 {
-    m_bucket++;
-
     while(m_bucket < NUM_BUCKETS)
     {
         for(auto &node: m_current_nodes)
@@ -387,8 +386,6 @@ void MultiMap::iterator_t::next_bucket()
             empty = current->empty();
             m_current_nodes.emplace_back(std::move(current));
         }
-
-        m_pos = 0;
 
         if(!empty)
         {

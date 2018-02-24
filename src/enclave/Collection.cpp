@@ -2,6 +2,7 @@
 #include "BufferManager.h"
 #include "Enclave.h"
 #include "Index.h"
+#include "HashMap.h"
 #include "Ledger.h"
 #include "RemoteParties.h"
 #include "StringIndex.h"
@@ -15,7 +16,7 @@ namespace trusted
 Collection::Collection(BufferManager &buffer_manager, const std::string &name)
 : m_buffer_manager(buffer_manager), m_name(name)
 {
-    m_primary_index = new StringIndex(m_buffer_manager, m_name + "_primary");
+    m_primary_index = new HashMap(m_buffer_manager, m_name + "_primary");
 }
 
 Collection::Collection(Collection &&other) noexcept
@@ -65,8 +66,7 @@ bool Collection::create_index(const std::string &name, const std::vector<std::st
     Index *index = new HashIndex(m_buffer_manager, name, paths);
     m_secondary_indexes.insert({ name, index });
 
-    std::unique_ptr<StringIndex::LinearScanKeyProvider> key_provider(
-    new StringIndex::LinearScanKeyProvider(*m_primary_index));
+    std::unique_ptr<ObjectKeyProvider> key_provider(new HashMap::LinearScanKeyProvider(*m_primary_index));
 
     OpContext context(enclave.identity());
 
@@ -127,7 +127,7 @@ void Collection::notify_triggers(RemoteParties &parties)
 
 void Collection::load_metadata(bitstream &input)
 {
-    m_primary_index->load_metadata(input);
+    //m_primary_index->load_metadata(input);
 
     size_t num_s_indexes;
     input >> num_s_indexes;
@@ -153,7 +153,7 @@ void Collection::load_metadata(bitstream &input)
 
 void Collection::dump_metadata(bitstream &output)
 {
-    m_primary_index->dump_metadata(output);
+    //m_primary_index->dump_metadata(output);
 
     output << m_secondary_indexes.size();
 
@@ -166,7 +166,7 @@ void Collection::dump_metadata(bitstream &output)
 
 void Collection::unload_everything()
 {
-    m_primary_index->unload_everything();
+    //m_primary_index->unload_everything();
 
     for(auto it_ : m_secondary_indexes)
     {

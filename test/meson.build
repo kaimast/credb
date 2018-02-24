@@ -15,7 +15,8 @@ test_cpp_files = files(
 test_extra_cpp_files = files(
     '../src/enclave/RWLockable.cpp',
     '../src/enclave/Ledger.cpp',
-    '../src/enclave/Object.cpp',
+    '../src/enclave/ObjectKeyProvider.cpp',
+    '../src/enclave/ObjectListIterator.cpp',
     '../src/enclave/ObjectIterator.cpp',
     '../src/enclave/ObjectEventHandle.cpp',
     '../src/enclave/Block.cpp',
@@ -37,6 +38,7 @@ test_extra_cpp_files = files(
     '../src/common/util/IdentityDatabase.cpp',
     '../src/enclave/Index.cpp',
     '../src/enclave/MultiMap.cpp',
+    '../src/enclave/HashMap.cpp',
     '../src/common/util/MurmurHash2.cpp',
     '../src/enclave/ProgramRunner.cpp',
     '../src/enclave/TaskManager.cpp',

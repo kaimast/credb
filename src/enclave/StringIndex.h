@@ -5,7 +5,8 @@
 
 #include "BufferManager.h"
 #include "RWLockable.h"
-#include "Object.h"
+#include "ObjectListIterator.h"
+#include "ObjectKeyProvider.h"
 #include "credb/defines.h"
 
 #ifdef TEST

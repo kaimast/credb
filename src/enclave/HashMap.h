@@ -1,443 +1,165 @@
-#if 0
 #pragma once
 
-#include <cstring>
-#include <functional>
-#include <stdint.h>
-#include <vector>
-
+#include <cstdint>
 #include <bitstream.h>
+#include <tuple>
+#include <unordered_set>
 
-#include "Lockable.h"
-#include "hash.h"
-#include "logging.h"
-
-#include "StaticPageable.h"
-
-#ifndef TEST
-#include "Enclave.h"
-#endif
-
-#include "StaticPageableNode.h"
-
-template<typename T> inline
-size_t get_heap_size_of(const T &t)
-{
-    return 0;
-}
-
-template<> inline
-size_t get_heap_size_of<std::string>(const std::string &str)
-{
-    return str.size();
-}
+#include "BufferManager.h"
+#include "RWLockable.h"
+#include "credb/event_id.h"
+#include "util/defines.h"
+#include "ObjectListIterator.h"
 
 namespace credb
 {
 namespace trusted
 {
 
-/// A pageable hashmap datastructure
-template<size_t NUM_BUCKETS, size_t NUM_NODES, size_t MAX_BYTE_SIZE, typename KeyType, typename ValueType>
 class HashMap
 {
 public:
-typedef uint32_t bucketid_t;
+    static constexpr size_t NUM_BUCKETS = 8192;
+    static constexpr size_t MAX_NODE_SIZE = 1024;
 
-private:
-    static constexpr size_t buckets_per_node()
-    {
-        return NUM_BUCKETS / NUM_NODES;
-    }
+    using KeyType = std::string;
+    using ValueType = event_id_t;
+    using bucketid_t = uint32_t;
 
-    class node_t : public StaticPageableNode
+    class node_t : public RWLockable, public Page
     {
     public:
-        struct bucket_entry_t
-        {
-            KeyType key;
-            ValueType value;
+        // about the byte size of a bucket:
+        //   (1) sizeof(*this)
+        //   (2) get_unordered_container_value_byte_size = hash bucket count * sizeof
+        //   std::pair<KeyType, std::unordered_set<ValueType>> (3) get_heap_size_of(KeyType) =
+        //   get_heap_size_of(uint64_t) = 0
+        //    *  now consider the heap size of std::unordered_set
+        //    *  sizeof std::unordered_set has been counted in (2)
+        //   (4) get_unordered_container_value_byte_size = hash bucket count * sizeof ValueType
+        //   (5) get_heap_size_of(ValueType) = get_heap_size_of(std::string) = std::string.size()
+        node_t(BufferManager &buffer, page_no_t page_no);
+        node_t(BufferManager &buffer, page_no_t page_no, bitstream &bstream);
 
-            size_t byte_size() const
-            {
-                return sizeof(*this) + get_heap_size_of(key) + get_heap_size_of(value);
-            }
+        bitstream serialize() const override;
+        size_t byte_size() const override;
+
+        bool get(const KeyType& key, ValueType &value_out);
+
+        /**
+         * Insert or update an entry
+         *
+         * @return True if successfully insert, False if not enough space
+         */
+        bool insert(const KeyType &key, const ValueType &value);
+
+        /**
+         *  Get the number of elements in this node
+         *  @note this will return the number excluding successor
+         */
+        size_t size() const;
+
+        /**
+         * Get entry at pos
+         *
+         * @param pos
+         *      The position to query. Must be smaller than size()
+         */
+        std::pair<KeyType, ValueType> get(size_t pos) const;
+
+        PageHandle<node_t> get_successor(LockType lock_type, bool create, BufferManager &buffer);
+
+        /**
+         * Does this node hold a specified entry?
+         */
+        bool has_entry(const KeyType &key, const ValueType &value);
+        
+    private:
+        struct header_t
+        {
+            page_no_t successor;
+            size_t size;
         };
 
-        typedef std::vector<bucket_entry_t> bucket_t;
-
-        node_t()
-            : StaticPageableNode(), m_buckets(), m_byte_size(0)
-        {}
-
-        node_t(const node_t &other) = delete;
-
-        virtual ~node_t() {}
-
-        bool empty() const
-        {
-            return m_byte_size == 0;
-        }
-
-        void parse(bitstream &input) override
-        {
-            for(uint32_t i = 0; i < buckets_per_node(); ++i)
-            {
-                uint32_t bsize;
-                input >> bsize;
-
-                auto &bucket = m_buckets[i];
-                bucket.resize(bsize);
-
-                for(uint32_t j = 0; j < bsize; ++j)
-                {
-                    bucket_entry_t e;
-                    input >> e.key;
-                    input >> e.value;
-                    bucket[j] = e;
-                    m_byte_size += e.byte_size();
-                }
-            }
-        }
-
-        void serialize(bitstream &output) override
-        {
-            for(uint32_t i = 0; i < buckets_per_node(); ++i)
-            {
-                auto &bucket = m_buckets[i];
-                output << static_cast<uint32_t>(bucket.size());
-
-                for(auto &it: bucket)
-                    output << it.key << it.value;
-            }
-        }
-
-        const bucket_t& get_bucket(const bucketid_t b) const
-        {
-            return m_buckets[b % buckets_per_node()];
-        }
-
-        bucket_t& get_bucket(const bucketid_t b)
-        {
-            return m_buckets[b % buckets_per_node()];
-        }
-
-        bool contains(const KeyType &key, const bucketid_t b)
-        {
-            bool res = false;
-
-            auto &bucket = get_bucket(b);
-            for(auto &e : bucket)
-            {
-                if(e.key == key)
-                {
-                    res = true;
-                    break;
-                }
-            }
-
-            return res;
-        }
-
-        bool insert(const bucketid_t b, const KeyType &key, const ValueType &value)
-        {
-            bucket_t &bucket = get_bucket(b);
-
-            for(auto &e : bucket)
-            {
-                if(e.key == key)
-                {
-                    m_byte_size -= e.byte_size();
-                    e.value = value;
-                    m_byte_size += e.byte_size();
-                    return false;
-                }
-            }
-
-            bucket_entry_t e = {key, value};
-            m_byte_size += e.byte_size();
-            bucket.push_back(e);
-            return true;
-        }
-
-        void unload() override
-        {
-            for(auto &bucket: m_buckets)
-               bucket.clear();
-
-            m_byte_size = 0;
-            m_is_loaded = false;
-        }
-
-        size_t byte_size() const
-        {
-            return m_byte_size;
-        }
-
-        uint64_t last_used;
-
-    private:
-        bucket_t m_buckets[buckets_per_node()];
-
-        friend class HashMap;
-       size_t m_byte_size;
+        bitstream m_data;
     };
 
-public:
     class iterator_t
     {
     public:
-        iterator_t()
-            : m_map(nullptr), m_current_node(nullptr), m_bucket(NUM_BUCKETS)
-        {}
-
-        iterator_t(HashMap &map, bucketid_t bpos = 0)
-            : m_map(&map), m_current_node(nullptr), m_bucket(bpos), m_bit()
-        {
-            next_bucket();
-        }
-
-        iterator_t(HashMap &map, const KeyType &key, node_t *node, bucketid_t bpos)
-            : m_map(&map), m_current_node(node), m_bucket(bpos), m_bit()
-        {
-            move_to(key);
-        }
-
+        iterator_t(HashMap &map, bucketid_t bpos);
         iterator_t(const iterator_t &other) = delete;
+        ~iterator_t();
 
-        ~iterator_t()
-        {
-            clear();
-        }
+        iterator_t duplicate();
 
-        bool at_end() const
-        {
-            return m_bucket >= NUM_BUCKETS;
-        }
+        void clear();
+        bool at_end() const;
+        void operator++();
+        KeyType   key() const;
+        ValueType value() const;
+        bool operator!=(const iterator_t &other) const;
+        bool operator==(const iterator_t &other) const;
 
-        void move(iterator_t &other)
-        {
-            m_current_node = other.m_current_node;
-            m_bit = other.m_bit;
-            m_bucket = other.m_bucket;
-            m_map = other.m_map;
-
-            other.m_current_node = nullptr;
-            other.m_bucket = NUM_BUCKETS;
-        }
-
-        /// Drops all locks and invalidates iterator
-        void clear()
-        {
-            if(!m_current_node)
-                return;
-
-            m_current_node->read_unlock();
-            m_map->page_manager.check_evict();
-            m_current_node = nullptr;
-            m_bucket = NUM_BUCKETS;
-       }
-
-        // FIXME SGX misses support for move semantics
-        //iterator_t(const iterator_t &other) = delete;
-        void operator++()
-        {
-            if(m_bucket == NUM_BUCKETS)
-                throw std::runtime_error("Alreayd at end");
-
-            m_bit++;
-
-            if(m_bit == m_current_node->get_bucket(m_bucket).end())
-            {
-                m_bucket++;
-                next_bucket();
-            }
-        }
-
-        const typename HashMap::node_t::bucket_entry_t& operator*() const
-        {
-            return *m_bit;
-        }
-
-        const typename HashMap::node_t::bucket_entry_t* operator->() const
-        {
-            return &(*m_bit);
-        }
-
-        void set(const ValueType &val)
-        {
-            m_bit->value = val;
-        }
-
-        bool operator!=(const iterator_t &other) const
-        {
-            return !(*this == other);
-        }
-
-        bool operator==(const iterator_t &other) const
-        {
-            if(m_bucket == NUM_BUCKETS && other.m_bucket == NUM_BUCKETS)
-                return true;
-
-            if(m_bucket == NUM_BUCKETS || other.m_bucket == NUM_BUCKETS)
-                return false;
-
-            assert(m_current_node != nullptr && other.m_current_node != nullptr);
-            return (other.m_bucket == m_bucket) && (other.m_bit == m_bit);
-        }
+        void set_value(const ValueType &new_value);
 
     private:
+        iterator_t(HashMap &map, bucketid_t bpos, std::vector<PageHandle<node_t>> &current_nodes, uint32_t pos);
+
         friend class HashMap;
 
-        void move_to(const KeyType &key)
-        {
-            if(m_current_node == nullptr)
-                throw std::runtime_error("Cannot move without a current node");
+        void next_bucket();
 
-            auto &bucket = m_current_node->get_bucket(m_bucket);
-            m_bit = bucket.begin();
-
-            while(m_bit->key != key)
-                m_bit++;
-
-            if(m_bit == bucket.end())
-                throw std::runtime_error("Could not find key!");
-        }
-
-        void next_bucket()
-        {
-            while(!at_end())
-            {
-                if(m_current_node)
-                {
-                    m_current_node->read_unlock();
-                }
-
-                m_current_node = nullptr;
-                m_current_node = m_map->get_node(m_bucket, LockType::Read);
-
-                if(m_current_node)
-                {
-                    auto &bucket = m_current_node->get_bucket(m_bucket);
-                    m_bit = bucket.begin();
-
-                    if(m_bit != bucket.end())
-                        break;
-                }
-
-                m_bucket++;
-            }
-
-            if(m_bucket == NUM_BUCKETS && m_current_node != nullptr)
-            {
-                m_current_node->read_unlock();
-                m_current_node = nullptr;
-            }
-        }
-
-        HashMap *m_map;
-        typename HashMap::node_t *m_current_node;
+        HashMap &m_map;
         bucketid_t m_bucket;
-        typename HashMap::node_t::bucket_t::iterator m_bit;
+
+        std::vector<PageHandle<node_t>> m_current_nodes;
+        uint32_t m_pos;
     };
 
-    HashMap(const std::string& name) : page_manager(name), m_size(0)
+    class LinearScanKeyProvider : public ObjectKeyProvider
     {
-    }
+    public:
+        LinearScanKeyProvider(HashMap &index);
+        LinearScanKeyProvider(const ObjectListIterator &other) = delete;
+        LinearScanKeyProvider(ObjectListIterator &&other) = delete;
 
-    void find(iterator_t &it, const KeyType &key)
-    {
-        auto b = to_bucket(key);
-        auto node = get_node(b, LockType::Read);
+        bool get_next_key(std::string &identifier) override;
+        size_t count_rest() override;
 
-        if(!node->contains(key, b))
-        {
-            node->read_unlock();
-            return;
-        }
+    private:
+        HashMap &m_index;
+        HashMap::iterator_t m_iterator;
+    };
 
-        iterator_t it_(*this, key, node, b);
-        it.move(it_);
-    }
+    HashMap(BufferManager &buffer, const std::string &name);
+    ~HashMap();
 
-    void begin(iterator_t &it)
-    {
-        iterator_t it_(*this, 0);
-        it.move(it_);
-    }
+    iterator_t begin();
+    iterator_t end();
+    void insert(const KeyType &key, const ValueType &value);
+    
+    bool get(const KeyType& key, ValueType &value_out);
 
-    bool erase(iterator_t &it)
-    {
-        it.m_current_node->read_to_write_lock();
-        auto &bucket = it.m_current_node->get_bucket(it.m_bucket);
+    PageHandle<node_t> get_node(const bucketid_t bucket, LockType lock_type, bool create);
 
-        auto offset = it->byte_size();
-        it.m_current_node->m_byte_size -= offset;
-        it.m_bit = bucket.erase(it.m_bit);
-
-        it.m_current_node->write_to_read_lock();
-
-        if(it.m_bit == bucket.end())
-            it.next_bucket();
-
-        page_manager.decrease_byte_size(offset);
-
-        m_size_lock.lock();
-        m_size -= 1;
-        m_size_lock.unlock();
-        return true;
-    }
-
-    void insert(const KeyType &key, const ValueType &value)
-    {
-        auto b = to_bucket(key);
-        auto node = get_node(b, LockType::Write);
-
-        size_t previous_size = node->byte_size();
-
-        bool created = node->insert(b, key, value);
-        if(created)
-        {
-            m_size_lock.lock();
-            m_size += 1;
-            m_size_lock.unlock();
-        }
-
-        size_t new_size = node->byte_size();
-        node->write_unlock();
-
-        if(new_size > previous_size)
-            page_manager.increase_byte_size(new_size - previous_size);
-        else if(previous_size > new_size)
-            page_manager.decrease_byte_size(previous_size - new_size);
-    }
-
-    size_t size() const
-    {
-        return m_size;
-    }
+    /**
+     * The number of entries stored in the map
+     */
+    size_t size() const;
 
 private:
     friend class iterator_t;
 
-    StaticPageable<size_t, node_t, MAX_BYTE_SIZE, NUM_NODES> page_manager;
+    bucketid_t to_bucket(const KeyType key) const;
 
-    bucketid_t to_bucket(const KeyType key) const
-    {
-        return static_cast<bucketid_t>(hash<KeyType>(key) % NUM_BUCKETS);
-    }
-
-    /// Gets a node and acquires a read_lock for you
-    node_t* get_node(const bucketid_t &b, LockType lock_type)
-    {
-        const size_t pos = floor(static_cast<float>(b) / buckets_per_node());
-        return &page_manager.get_block(pos, lock_type);
-    }
-
-    size_t m_size;
-    Lockable m_size_lock;
+    BufferManager &m_buffer;
+    const std::string m_name;
+    credb::Mutex m_node_mutex;
+    std::atomic<size_t> m_size;
+    page_no_t m_buckets[NUM_BUCKETS];
 };
 
-}
-}
-#endif
+
+} // namespace trusted
+} // namespace credb

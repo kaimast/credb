@@ -226,6 +226,28 @@ TEST(LedgerTest, remove)
     EXPECT_EQ(ledger.num_objects(), 0);
 }
 
+TEST(LedgerTest, update_value)
+{
+    Enclave enclave;
+    enclave.init(TESTENCLAVE);
+    Ledger &ledger = enclave.ledger();
+
+    json::String val1("foo");
+    json::String val2("bar");
+
+    const std::string key = "testkey";
+
+    ledger.put(TESTSRC, COLLECTION, key, val1);
+    ledger.put(TESTSRC, COLLECTION, key, val2);
+
+    auto it = ledger.iterate(TESTSRC, COLLECTION, key);
+    auto [eid, value] = it.next();
+    
+    EXPECT_TRUE(eid);
+    EXPECT_EQ(value, json::String("bar"));
+    EXPECT_EQ(ledger.num_objects(), 1);
+}
+
 TEST(LedgerTest, get_is_set)
 {
     Enclave enclave;
@@ -459,7 +481,7 @@ TEST(LedgerTest, check_names)
 
 TEST(LedgerTest, multi_find)
 {
-    constexpr uint32_t NUM_PASSES = 1; // FIXME: too slow, reduce from 10 to 1
+    constexpr uint32_t NUM_PASSES = 5; 
     constexpr uint32_t NUM_OBJECTS = 10000;
 
     Enclave enclave;
@@ -498,6 +520,7 @@ TEST(LedgerTest, multi_find)
 
         EXPECT_EQ(ledger.count_objects(TESTSRC, COLLECTION), NUM_OBJECTS);
         ledger.clear(TESTSRC, COLLECTION);
+        EXPECT_EQ(ledger.count_objects(TESTSRC, COLLECTION), 0);
     }
 
     json::Document doc("{\"a\":42, \"b\":23}");

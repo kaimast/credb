@@ -15,7 +15,8 @@ public:
     PageHandle<T> &operator=(const PageHandle<T> &other) = delete;
     PageHandle() : m_page(nullptr) {}
 
-    explicit PageHandle(T &page) : m_page(&page) {}
+    explicit PageHandle(T &page)
+        : m_page(&page) {}
 
     PageHandle(PageHandle<T> &&other) : m_page(other.m_page) { other.m_page = nullptr; }
 
