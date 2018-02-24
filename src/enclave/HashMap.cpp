@@ -59,7 +59,7 @@ size_t HashMap::LinearScanKeyProvider::count_rest()
 HashMap::node_t::node_t(BufferManager &buffer, page_no_t page_no)
 : Page(buffer, page_no)
 {
-    header_t header = {INVALID_PAGE_NO, 0};
+    header_t header = {0, INVALID_PAGE_NO, 0, 0};
     m_data << header;
 }
 
@@ -78,6 +78,31 @@ bitstream HashMap::node_t::serialize() const
     bitstream bstream;
     bstream.assign(m_data.data(), m_data.size(), true);
     return bstream;
+}
+
+void HashMap::node_t::increment_version_no()
+{
+    bitstream sview;
+    sview.assign(m_data.data(), m_data.size(), true);
+    header_t header;
+    sview >> header;
+
+    header.version += 1;
+    header.successor_version += 1;
+
+    sview.move_to(0);
+    sview << header;
+
+    mark_page_dirty();
+}
+
+HashMap::version_no_t HashMap::node_t::version_no() const
+{
+    bitstream sview;
+    sview.assign(m_data.data(), m_data.size(), true);
+    header_t header;
+    sview >> header;
+    return header.version;
 }
 
 size_t HashMap::node_t::size() const
@@ -145,6 +170,8 @@ bool HashMap::node_t::insert(const KeyType &key, const ValueType &value)
 
     view.move_by(sizeof(header_t));
 
+    bool updated = false;
+
     while(!view.at_end())
     {
         KeyType k;
@@ -155,7 +182,7 @@ bool HashMap::node_t::insert(const KeyType &key, const ValueType &value)
             view << value;
 
             mark_page_dirty();
-            return true;
+            updated = true;
         }
         else
         {
@@ -164,25 +191,34 @@ bool HashMap::node_t::insert(const KeyType &key, const ValueType &value)
         }
     }
  
-    if(byte_size() >= HashMap::MAX_NODE_SIZE)
+    if(updated || byte_size() < HashMap::MAX_NODE_SIZE)
     {
-        return false;
-    }
-    else
-    {
-        m_data << key << value;
+        if(!updated)
+        {
+            m_data << key << value;
+        }
 
         bitstream sview;
         sview.assign(m_data.data(), m_data.size(), true);
 
         header_t header;
         sview >> header;
-        header.size += 1;
+
+        if(!updated)
+        {
+            header.size += 1;
+        }
+        header.version += 1;
+
         sview.move_to(0);
         sview << header;
 
         mark_page_dirty();
         return true;
+    }
+    else
+    {
+        return false;
     }
 }
 
@@ -217,6 +253,8 @@ PageHandle<HashMap::node_t> HashMap::node_t::get_successor(LockType lock_type, b
     header_t header;
     sview >> header;
 
+    PageHandle<HashMap::node_t> res;
+
     if(header.successor == INVALID_PAGE_NO)
     {
         if(!create)
@@ -224,7 +262,7 @@ PageHandle<HashMap::node_t> HashMap::node_t::get_successor(LockType lock_type, b
             return PageHandle<HashMap::node_t>();
         }
 
-        auto res = buffer.new_page<node_t>();
+        res = buffer.new_page<node_t>();
         header.successor = res->page_no();
         res->lock(lock_type);
 
@@ -232,14 +270,28 @@ PageHandle<HashMap::node_t> HashMap::node_t::get_successor(LockType lock_type, b
         sview << header;
 
         mark_page_dirty();
-        return res;
     }
     else
     {
-        auto res = buffer.get_page<node_t>(header.successor);
+        res = buffer.get_page<node_t>(header.successor);
         res->lock(lock_type);
-        return res;
+
+        if(res->version_no() != header.successor_version)
+        {
+            auto msg = "Staleness detected! HashMap node: " + std::to_string(res->page_no()) +
+                       "  Expected version: " + std::to_string(header.successor_version) +
+                       " Read: " + std::to_string(res->version_no());
+            log_error(msg);
+            throw StalenessDetectedException(msg);
+        }
     }
+
+    if(lock_type == LockType::Write)
+    {
+        this->increment_version_no();
+    }
+
+    return res;
 } 
 
 size_t HashMap::node_t::byte_size() const
@@ -288,11 +340,26 @@ void HashMap::iterator_t::clear()
 
 void HashMap::iterator_t::set_value(const ValueType &new_value)
 {
-    auto &current = *m_current_nodes.rbegin();
+    auto rit = m_current_nodes.rbegin();
+    auto &current = *rit;
  
     current->read_to_write_lock();
     current->insert(key(), new_value);
     current->write_to_read_lock();
+
+    ++rit;
+
+    // move up and increment version nos
+    for(; rit != m_current_nodes.rend(); ++rit)
+    {
+        auto &current = *rit;
+        current->read_to_write_lock();
+        current->increment_version_no();
+        current->write_to_read_lock();
+    }
+
+    auto &bucket = m_map.m_buckets[m_bucket];
+    bucket.version += 1;
 }
 
 void HashMap::iterator_t::operator++()
@@ -403,7 +470,7 @@ void HashMap::iterator_t::next_bucket()
 HashMap::HashMap(BufferManager &buffer, const std::string &name)
     : m_buffer(buffer), m_name(name), m_size(0)
 {
-    std::fill_n(m_buckets, NUM_BUCKETS, INVALID_PAGE_NO);
+    std::fill_n(m_buckets, NUM_BUCKETS, bucket_t{INVALID_PAGE_NO, 0});
 }
 
 HashMap::~HashMap() = default;
@@ -456,13 +523,14 @@ bool HashMap::get(const KeyType& key, ValueType &value_out)
     return false;
 }
 
-PageHandle<HashMap::node_t> HashMap::get_node(const bucketid_t bucket, LockType lock_type, bool create)
+PageHandle<HashMap::node_t> HashMap::get_node(const bucketid_t bid, LockType lock_type, bool create)
 {
     std::lock_guard<credb::Mutex> lock(m_node_mutex);
     
-    auto &page_no = m_buckets[bucket];
+    auto &bucket = m_buckets[bid];
     PageHandle<node_t> node;
-    if(page_no == INVALID_PAGE_NO)
+
+    if(bucket.page_no == INVALID_PAGE_NO)
     {
         if(!create)
         {
@@ -470,14 +538,29 @@ PageHandle<HashMap::node_t> HashMap::get_node(const bucketid_t bucket, LockType 
         }
 
         node = m_buffer.new_page<node_t>();
-        page_no = node->page_no();
+        bucket.page_no = node->page_no();
     }
     else
     {
-        node = m_buffer.get_page<node_t>(page_no);
+        node = m_buffer.get_page<node_t>(bucket.page_no);
+
+        if(node->version_no() != bucket.version)
+        {
+            auto msg = "Staleness detected! StringIndex node: " + std::to_string(bucket.page_no) +
+                       "  Expected version: " + std::to_string(bucket.version) +
+                       " Read: " + std::to_string(node->version_no());
+            log_error(msg);
+            throw StalenessDetectedException(msg);
+        }
+    }
+
+    if(lock_type == LockType::Write)
+    {
+        bucket.version += 1;
     }
 
     node->lock(lock_type);
+
     return node;
 }
 

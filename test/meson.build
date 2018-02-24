@@ -8,6 +8,7 @@ test_cpp_files = files(
     'Transaction.cpp',
     'BufferManager.cpp',
     'StringIndex.cpp',
+    'HashMap.cpp',
     'MultiMap.cpp',
     'Disk.cpp',
 )

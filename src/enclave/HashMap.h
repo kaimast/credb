@@ -23,8 +23,9 @@ public:
     static constexpr size_t MAX_NODE_SIZE = 1024;
 
     using KeyType = std::string;
-    using ValueType = event_id_t;
+    using ValueType = event_id_t; //NOTE value type must be constant size to allow updates
     using bucketid_t = uint32_t;
+    using version_no_t = uint16_t;
 
     class node_t : public RWLockable, public Page
     {
@@ -53,6 +54,14 @@ public:
          */
         bool insert(const KeyType &key, const ValueType &value);
 
+        version_no_t version_no() const;
+
+        /**
+         * Increment the version no and successor version in the header
+         * Only needed for iterator
+         */
+        void increment_version_no();
+
         /**
          *  Get the number of elements in this node
          *  @note this will return the number excluding successor
@@ -77,7 +86,9 @@ public:
     private:
         struct header_t
         {
+            version_no_t version;
             page_no_t successor;
+            version_no_t successor_version;
             size_t size;
         };
 
@@ -140,7 +151,7 @@ public:
     
     bool get(const KeyType& key, ValueType &value_out);
 
-    PageHandle<node_t> get_node(const bucketid_t bucket, LockType lock_type, bool create);
+    PageHandle<node_t> get_node(const bucketid_t bid, LockType lock_type, bool create);
 
     /**
      * The number of entries stored in the map
@@ -156,7 +167,14 @@ private:
     const std::string m_name;
     credb::Mutex m_node_mutex;
     std::atomic<size_t> m_size;
-    page_no_t m_buckets[NUM_BUCKETS];
+
+    struct bucket_t
+    {
+        page_no_t page_no;
+        version_number_t version;
+    };
+    
+    bucket_t m_buckets[NUM_BUCKETS];
 };
 
 

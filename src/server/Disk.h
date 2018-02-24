@@ -62,6 +62,9 @@ private:
 #ifdef TEST
     FRIEND_TEST(StringIndexTest, string_index_staleness_attack_children);
     FRIEND_TEST(StringIndexTest, string_index_staleness_attack_object);
+
+    FRIEND_TEST(HashMapTest, staleness_attack_children);
+    FRIEND_TEST(HashMapTest, staleness_attack_object);
 #endif
 
     void flush(bool batch);
