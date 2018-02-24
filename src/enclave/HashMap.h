@@ -128,7 +128,6 @@ public:
         size_t count_rest() override;
 
     private:
-        HashMap &m_index;
         HashMap::iterator_t m_iterator;
     };
 

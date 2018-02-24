@@ -25,7 +25,7 @@ inline PageHandle<HashMap::node_t> duplicate(PageHandle<HashMap::node_t> &hdl)
 
 
 HashMap::LinearScanKeyProvider::LinearScanKeyProvider(HashMap &index)
-    : m_index(index), m_iterator(index, 0)
+    : m_iterator(index, 0)
 {
 }
 
