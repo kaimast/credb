@@ -18,9 +18,7 @@ ObjectIterator::ObjectIterator(const OpContext &context,
 : m_context(context), m_collection(collection), m_key(key), m_path(path), m_ledger(ledger)
 {
     m_lock_handle = new LockHandle(ledger, parent_lock_handle);
-
-    ledger.get_latest_version(m_start, m_context, m_collection, m_key, m_path, m_current_eid,
-                              *m_lock_handle, LockType::Read);
+    m_start = ledger.get_latest_version(m_context, m_collection, m_key, m_path, m_current_eid, *m_lock_handle, LockType::Read);
 }
 
 ObjectIterator::ObjectIterator(ObjectIterator &&other) noexcept
@@ -127,7 +125,7 @@ event_id_t ObjectIterator::next_handle(ObjectEventHandle &ret)
             auto pblk = next_event.previous_block();
 
             auto block = m_lock_handle->get_block(shard_no, pblk, LockType::Read);
-            block->get_event(next_event, index);
+            next_event = block->get_event(index);
 
             if(pblk != m_current_eid.block)
             {

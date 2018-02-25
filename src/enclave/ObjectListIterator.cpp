@@ -39,8 +39,10 @@ event_id_t ObjectListIterator::next(std::string &key, ObjectEventHandle &res)
 
         m_current_block = INVALID_BLOCK;
         m_current_shard = m_ledger.get_shard(m_collection, key);
+        
+        res = m_ledger.get_latest_version(m_context, m_collection, key, "", eid, m_lock_handle, LockType::Read);
 
-        if(!m_ledger.get_latest_version(res, m_context, m_collection, key, "", eid, m_lock_handle, LockType::Read))
+        if(!res.valid())
         {
             continue;
         }

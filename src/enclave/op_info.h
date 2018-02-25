@@ -8,6 +8,7 @@
 #include <json/Document.h>
 #include "credb/event_id.h"
 #include "util/OperationType.h"
+#include "Ledger.h"
 
 namespace credb
 {
@@ -25,19 +26,25 @@ public:
     virtual OperationType type() const = 0;
     virtual void collect_shard_lock_type() = 0;
 
+    virtual void extract_reads(std::unordered_set<event_id_t> &read_set) = 0;
+
+    virtual void extract_writes(std::array<uint16_t, NUM_SHARDS> &write_set) = 0;
+
     /**
      * validate that all the reads of this operations are up to date
+     * and/or that the policy allows the access/modification
      *
      * @note the semantics of this depend on the isolation level
      */ 
-    virtual bool validate_read() = 0;
+    virtual bool validate() = 0;
 
     /**
      * Apply operation to the ledger
      *
      * For all read-only operation this should be no-op
      */
-    virtual bool do_write() = 0;
+    virtual bool do_write(std::unordered_set<event_id_t> &read_set,
+                          std::unordered_set<event_id_t> &write_set) = 0;
 
     operation_info_t(operation_info_t &other) = delete;
     operation_info_t() = default;
@@ -65,11 +72,11 @@ private:
 struct write_op_t : public operation_info_t
 {
 public:
-    bool validate_read() override
+    void extract_reads(std::unordered_set<event_id_t> &read_set) override
     {
-       return true;
+        (void)read_set;
     }
-
+ 
 protected:
     using operation_info_t::operation_info_t;
 };
@@ -80,9 +87,17 @@ protected:
 struct read_op_t : public operation_info_t
 {
 public:
-    bool do_write() override
+    bool do_write(std::unordered_set<event_id_t> &read_set,
+                  std::unordered_set<event_id_t> &write_set) override
     {
-       return true;
+        (void)read_set;
+        (void)write_set;
+        return true;
+    }
+
+    void extract_writes(std::array<uint16_t, NUM_SHARDS> &write_set)
+    {
+        (void) write_set;
     }
 
 protected:
@@ -101,9 +116,11 @@ public:
         return OperationType::CheckObject;
     }
 
+    void extract_reads(std::unordered_set<event_id_t> &read_set) override;
+
     void collect_shard_lock_type() override;
 
-    bool validate_read() override;
+    bool validate() override;
 
 private:
     std::string m_collection;
@@ -112,8 +129,6 @@ private:
     bool m_result;
     shard_id_t m_sid;
 };
-
-
 
 struct has_obj_info_t : public read_op_t
 {
@@ -128,9 +143,11 @@ public:
         return OperationType::HasObject;
     }
 
+    void extract_reads(std::unordered_set<event_id_t> &read_set) override;
+
     void collect_shard_lock_type() override;
 
-    bool validate_read() override;
+    bool validate() override;
 
 private:
     std::string m_collection;
@@ -151,9 +168,11 @@ public:
         return OperationType::GetObject;
     }
 
+    void extract_reads(std::unordered_set<event_id_t> &read_set) override;
+
     void collect_shard_lock_type() override;
 
-    bool validate_read() override;
+    bool validate() override;
 
 private:
     std::string m_collection;
@@ -174,9 +193,15 @@ public:
         return OperationType::PutObject;
     }
 
+    bool validate() override;
+
+    void extract_writes(std::array<uint16_t, NUM_SHARDS> &write_set) override;
+
+
     void collect_shard_lock_type() override;
 
-    bool do_write() override;
+    bool do_write(std::unordered_set<event_id_t> &read_set,
+                  std::unordered_set<event_id_t> &write_set) override;
 
 private:
     std::string m_collection;
@@ -197,9 +222,14 @@ public:
         return OperationType::AddToObject;
     }
 
+    bool validate() override;
+
+    void extract_writes(std::array<uint16_t, NUM_SHARDS> &write_set) override;
+    
     void collect_shard_lock_type() override;
 
-    bool do_write() override;
+    bool do_write(std::unordered_set<event_id_t> &read_set,
+                  std::unordered_set<event_id_t> &write_set) override;
 
 private:
     std::string m_collection;
@@ -211,37 +241,32 @@ private:
 struct remove_info_t : public write_op_t
 {
 public:
-    remove_info_t(Transaction &tx, bitstream &req)
-        : write_op_t(tx)
-    {
-        read_from_req(req);
-    }
+    remove_info_t(Transaction &tx, bitstream &req);
 
     OperationType type() const override
     {
         return OperationType::RemoveObject;
     }
 
+    bool validate() override;
+
+    void extract_writes(std::array<uint16_t, NUM_SHARDS> &write_set) override;
+ 
     void collect_shard_lock_type() override;
 
-    bool do_write() override;
+    bool do_write(std::unordered_set<event_id_t> &read_set,
+                  std::unordered_set<event_id_t> &write_set) override;
 
 private:
-    void read_from_req(bitstream &req);
-
-    std::string collection;
-    std::string key;
-    shard_id_t sid;
+    std::string m_collection;
+    std::string m_key;
+    shard_id_t m_sid;
 };
 
 struct find_info_t : public read_op_t
 {
 public:
-    find_info_t(Transaction &tx, bitstream &req)
-        : read_op_t(tx)
-    {
-        read_from_req(req);
-    }
+    find_info_t(Transaction &tx, bitstream &req);
 
     OperationType type() const override
     {
@@ -250,11 +275,11 @@ public:
 
     void collect_shard_lock_type() override;
 
-    bool validate_read() override;
-   
-private:
-    void read_from_req(bitstream &req);
+    bool validate() override;
+ 
+    void extract_reads(std::unordered_set<event_id_t> &read_set) override;
 
+private:
     void write_witness(const std::string &key,
                        const event_id_t &eid,
                        const json::Document &value);

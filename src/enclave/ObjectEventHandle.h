@@ -18,7 +18,9 @@ public:
         FIELD_PREVIOUS_BLOCK = 2,
         FIELD_PREVIOUS_INDEX = 3,
         FIELD_VALUE = 4,
-        FIELD_VERSION_NO = 5
+        FIELD_VERSION_NO = 5,
+        FIELD_READ_SET = 6,
+        FIELD_WRITE_SET = 7
     };
 
     ObjectEventHandle();
@@ -26,7 +28,12 @@ public:
     ObjectEventHandle(ObjectEventHandle &&other) noexcept;
     ObjectEventHandle& operator=(ObjectEventHandle &&other) noexcept;
 
-    bool valid() const;
+    /**
+     * Create a new object event handle from a json document
+     * That document shall contain a view to the part of the datablock that contains the event
+     */
+    explicit ObjectEventHandle(json::Document &&doc);
+
     void clear();
     std::string source() const;
     bool has_predecessor() const;
@@ -38,13 +45,18 @@ public:
     json::Document value() const;
     json::Document value(const std::string &path) const;
     bool get_policy(json::Document &out) const;
-    void assign(json::Document &&doc);
 
     ObjectEventHandle duplicate() const
     {
-        ObjectEventHandle hdl;
-        hdl.assign(m_content.duplicate());
-        return hdl;
+        return ObjectEventHandle(m_content.duplicate());
+    }
+
+    /**
+     * Does this handle hold a reference to a valid event? 
+     */
+    bool valid() const
+    {
+        return m_content.valid();
     }
 
 private:

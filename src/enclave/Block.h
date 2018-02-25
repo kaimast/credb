@@ -33,7 +33,7 @@ public:
     bool is_pending() const;
     uint32_t index_size() const;
     event_index_t insert(json::Document &event);
-    void get_event(ObjectEventHandle &out, event_index_t idx) const;
+    ObjectEventHandle get_event(event_index_t idx) const;
     uint32_t num_events() const;
     block_id_t identifier() const;
     void seal();

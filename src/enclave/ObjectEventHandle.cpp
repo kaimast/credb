@@ -8,7 +8,12 @@ namespace trusted
 ObjectEventHandle::ObjectEventHandle() = default;
 
 ObjectEventHandle::ObjectEventHandle(ObjectEventHandle &&other) noexcept
-: m_content(std::move(other.m_content))
+    : m_content(std::move(other.m_content))
+{
+}
+
+ObjectEventHandle::ObjectEventHandle(json::Document &&doc)
+    : m_content(std::move(doc))
 {
 }
 
@@ -17,8 +22,6 @@ ObjectEventHandle& ObjectEventHandle::operator=(ObjectEventHandle &&other) noexc
     m_content = std::move(other.m_content);
     return *this;
 }
-
-bool ObjectEventHandle::valid() const { return !m_content.empty(); }
 
 void ObjectEventHandle::clear() { m_content.clear(); }
 
@@ -94,8 +97,6 @@ bool ObjectEventHandle::get_policy(json::Document &out) const
     out = std::move(view);
     return true;
 }
-
-void ObjectEventHandle::assign(json::Document &&doc) { m_content = std::move(doc); }
 
 } // namespace trusted
 } // namespace credb

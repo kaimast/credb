@@ -128,10 +128,12 @@ public:
     bool unset_trigger(const std::string &collection, remote_party_id identifier);
     void remove_triggers_for(remote_party_id identifier);
 
+    void get_next_event_ids(std::unordered_set<event_id_t> &out, shard_id_t shard, uint16_t num, LockHandle *lock_handle_);
+
     /**
      * Returns the total number of objects in the system
      */
-    uint32_t num_objects()
+    size_t num_objects()
     {
         // TODO locking
         return m_object_count;
@@ -166,8 +168,7 @@ public:
 
     static bool is_valid_key(const std::string &str);
 
-    bool get_latest_version(ObjectEventHandle &event,
-                            const OpContext &op_context,
+    ObjectEventHandle get_latest_version(const OpContext &op_context,
                             const std::string &collection,
                             const std::string &key,
                             const std::string &path,
@@ -176,12 +177,9 @@ public:
                             LockType lock_type,
                             OperationType access_type = OperationType::GetObject);
 
-    shard_id_t get_shard(const std::string &collection, const std::string &key)
-    {
-        return static_cast<shard_id_t>(hash(collection + "/" + key)) % NUM_SHARDS;
-    }
+    shard_id_t get_shard(const std::string &collection, const std::string &key);
 
-    const std::unordered_map<std::string, Collection> &collections() const { return m_collections; }
+    const std::unordered_map<std::string, Collection> &collections() const;
 
     void clear_cached_blocks();
     void load_upstream_index_root(const std::vector<std::string> &collection_names);
@@ -210,7 +208,25 @@ public:
                                  const std::string &collection,
                                  const std::string &key,
                                  const std::string &path,
-                                 OperationType type);
+                                 OperationType type,
+                                 LockHandle *lock_handle_);
+
+    bool prepare_write(const OpContext &op_context,
+                             const std::string &collection,
+                             const std::string &key,
+                             const std::string &path,
+                             OperationType op_type,
+                             LockHandle *lock_handle_);
+
+    event_id_t apply_write(const OpContext &op_context,
+                       const std::string &collection,
+                       const std::string &key,
+                       json::Document &to_write,
+                       const std::string &path,
+                       LockHandle *lock_handle_,
+                       OperationType op_type,
+                       std::unordered_set<event_id_t> &read_set,
+                       std::unordered_set<event_id_t> &write_set);
 
 private:
     Enclave &m_enclave;
@@ -220,31 +236,27 @@ private:
     friend class LockHandle;
     friend class ObjectListIterator;
 
-    bool get_event(ObjectEventHandle &out, const event_id_t &eid, LockHandle &lock_handle, LockType lock_type);
-    bool get_previous_event(shard_id_t shard_no,
-                            ObjectEventHandle &previous,
+    ObjectEventHandle get_event(const event_id_t &eid, LockHandle &lock_handle, LockType lock_type);
+
+    ObjectEventHandle get_previous_event(shard_id_t shard_no,
                             const ObjectEventHandle &current,
                             LockHandle &lock_handle,
                             LockType lock_type);
 
     /// This function takes in a an event and finds a version of the object that is <= event
     /// It might need to lock a new Block which will be stored in previous_version_block
-    bool get_previous_version(shard_id_t shard_no,
-                              ObjectEventHandle &out,
+    ObjectEventHandle get_previous_version(shard_id_t shard_no,
                               const ObjectEventHandle &current_event,
                               LockHandle &lock_handle,
                               LockType lock_type);
 
-    bool get_latest_event(ObjectEventHandle &hdl,
-                          const std::string &collection,
+    ObjectEventHandle get_latest_event(const std::string &collection,
                           const std::string &key,
                           event_id_t &event_id,
                           LockHandle &lock_handle,
                           LockType lock_type);
 
-    event_index_t put_tombstone(const OpContext &op_context,
-                                const std::string &collection,
-                                const std::string &key,
+    event_id_t put_tombstone(const OpContext &op_context,
                                 const event_id_t &previous_id,
                                 LockHandle &lock_handle);
 
@@ -255,36 +267,13 @@ private:
                                 version_number_t version_number,
                                 event_id_t previous_id,
                                 const ObjectEventHandle &previous_version,
-                                LockHandle &lock_handle);
+                                LockHandle &lock_handle,
+                                std::unordered_set<event_id_t> &read_set,
+                                std::unordered_set<event_id_t> &write_set);
 
-    Collection *try_get_collection(const std::string &name)
-    {
-        auto it = m_collections.find(name);
+    Collection *try_get_collection(const std::string &name);
 
-        if(it == m_collections.end())
-        {
-            return nullptr;
-        }
-
-        return &it->second;
-    }
-
-    Collection &get_collection(const std::string &name, bool create = false)
-    {
-        // FIXME locking
-        auto it = m_collections.find(name);
-
-        if(it == m_collections.end())
-        {
-            if(!create)
-                throw std::runtime_error("No such collection: " + name);
-
-            m_collections.emplace(name, Collection(m_buffer_manager, name));
-            it = m_collections.find(name);
-        }
-
-        return it->second;
-    }
+    Collection &get_collection(const std::string &name, bool create = false);
 
     void organize_ledger(uint16_t shard_no);
 
@@ -294,8 +283,8 @@ private:
 
     std::unordered_map<std::string, Collection> m_collections;
 
-    uint32_t m_object_count;
-    uint64_t m_version_count;
+    size_t m_object_count;
+    size_t m_version_count;
 
     credb::Mutex m_put_object_index_mutex;
     size_t m_put_object_index_last_id;
@@ -311,19 +300,7 @@ private:
     std::priority_queue<put_object_index_item_t, std::vector<put_object_index_item_t>, put_object_index_item_t_compare_t> m_put_object_index_queue;
 };
 
-inline bool Ledger::is_valid_key(const std::string &str)
-{
-    if(str.empty())
-        return false;
-
-    for(auto c : str)
-    {
-        if(!isalnum(c) && c != '_')
-            return false;
-    }
-
-    return true;
-}
-
 } // namespace trusted
 } // namespace credb
+
+#include "Ledger.inl"

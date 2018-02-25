@@ -67,12 +67,12 @@ uint32_t Block::index_size() const
     return n_files * sizeof(uint32_t);
 }
 
-void Block::get_event(ObjectEventHandle &out, event_index_t idx) const
+ObjectEventHandle Block::get_event(event_index_t idx) const
 {
     auto index = reinterpret_cast<const uint32_t *>(m_data.data());
     if(idx >= index[0])
     {
-        throw std::runtime_error("out of bounds");
+        throw std::runtime_error("Block::get_event_failed: out of bounds");
     }
 
     auto offset = index[idx + 1];
@@ -80,7 +80,7 @@ void Block::get_event(ObjectEventHandle &out, event_index_t idx) const
 
     if(offset == 0)
     {
-        throw std::runtime_error("no such file!");
+        throw std::runtime_error("Block::get_event failed: no such entry");
     }
 
     auto next = index[idx + 2];
@@ -97,7 +97,7 @@ void Block::get_event(ObjectEventHandle &out, event_index_t idx) const
     auto size = next - offset;
 
     json::Document view(m_data.data() + offset, size, json::DocumentMode::ReadOnly);
-    out.assign(std::move(view));
+    return ObjectEventHandle(std::move(view));
 }
 
 uint32_t Block::num_events() const { return m_file_pos; }

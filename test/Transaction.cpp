@@ -65,8 +65,7 @@ TEST_F(TransactionTest, update_value)
     res = t->commit(true);
     EXPECT_TRUE(res.success);
 
-
-    EXPECT_EQ(json::String("orange"), conn->get_collection("default")->get("food"));
+    EXPECT_EQ(json::String("orange"), c->get("food"));
 }
 
 TEST_F(TransactionTest, get_field)
@@ -439,9 +438,13 @@ void phantom_read(IsolationLevel isolation)
         
     ASSERT_FALSE(res3.success);
     if (isolation < IsolationLevel::Serializable)
+    {
         ASSERT_EQ(res3.error, "Key [" + key1 + "] reads outdated value");
+    }
     else
+    {
         ASSERT_EQ(res3.error, "Phantom read: too few results");
+    }
 }
 
 TEST_F(TransactionTest, ReadCommitted_disallow_dirty_read)

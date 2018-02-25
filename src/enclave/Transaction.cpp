@@ -89,14 +89,15 @@ bool Transaction::check_repeatable_read(ObjectEventHandle &obj,
 
     const LockType lock_type = shards_lock_type[sid];
     event_id_t latest_eid;
-    bool res = ledger.get_latest_version(obj, op_context, collection, key, "", latest_eid,
-                                             lock_handle, lock_type);
 
-    if(!res || latest_eid != eid)
+    obj = ledger.get_latest_version(op_context, collection, key, "", latest_eid, lock_handle, lock_type);
+
+    if(!obj.valid() || latest_eid != eid)
     {
         error = "Key [" + key + "] reads outdated value";
         return false;
     }
+
     return true;
 }
 
@@ -167,7 +168,7 @@ bool Transaction::phase_one()
     // validate reads
     for(auto op : m_ops)
     {
-        if(!op->validate_read())
+        if(!op->validate())
         {
             return false;
         }
@@ -178,10 +179,29 @@ bool Transaction::phase_one()
 
 Witness Transaction::phase_two()
 {
-    // then do writes
+    std::unordered_set<event_id_t> read_set, write_set;
+    std::array<uint16_t, NUM_SHARDS> write_shards;
+    write_shards.fill(0);
+
     for(auto op : m_ops)
     {
-        if(!op->do_write())
+        op->extract_reads(read_set);
+        op->extract_writes(write_shards);
+    }
+
+    for(shard_id_t shard = 0; shard < write_shards.size(); ++shard)
+    {
+        auto num = write_shards[shard];
+
+        if(num > 0)
+        {
+            ledger.get_next_event_ids(write_set, shard, num, &lock_handle);
+        }
+    }
+
+    for(auto op : m_ops)
+    {
+        if(!op->do_write(read_set, write_set))
         {
             assert(!error.empty());
             throw std::runtime_error(error);
@@ -190,7 +210,6 @@ Witness Transaction::phase_two()
 
     Witness witness;
     
-    // close witness root
     if(generate_witness)
     {
         writer.end_array(); // operations
@@ -199,7 +218,6 @@ Witness Transaction::phase_two()
 
     if(error.empty())
     {
-        // create witness
         if(generate_witness)
         {
             json::Document doc = writer.make_document();
