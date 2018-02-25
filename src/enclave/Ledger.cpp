@@ -894,7 +894,7 @@ bool Ledger::clear(const OpContext &op_context, const std::string &collection)
         auto pending = lock_handle.get_pending_block(shard, LockType::Write);
 
         ObjectEventHandle previous_event;
-        // FIXME: get_event loads a block and doesn't evict it for you, then out of memory
+        
         if(!get_event(previous_event, previous_id, lock_handle, LockType::Write))
         {
             throw std::runtime_error("Broken object reference");

@@ -308,10 +308,14 @@ TEST_F(TransactionTest, atomicity_isolation)
 
     std::vector<std::thread> threads_transfer;
     for (int i = 0; i < 4; ++i)
+    {
         threads_transfer.emplace_back(func_transfer);
+    }
 
     for (auto &t : threads_transfer)
+    {
         t.join();
+    }
 
     auto b1 = json::Document(c->get(name1), "balance").as_integer();
     auto b2 = json::Document(c->get(name2), "balance").as_integer();

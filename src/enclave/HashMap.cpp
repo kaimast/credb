@@ -246,7 +246,7 @@ bool HashMap::node_t::get(const KeyType& key, ValueType &value_out)
     return false;
 }
 
-PageHandle<HashMap::node_t> HashMap::node_t::get_successor(LockType lock_type, bool create, BufferManager &buffer)
+PageHandle<HashMap::node_t> HashMap::node_t::get_successor(bool create, BufferManager &buffer)
 {
     bitstream sview;
     sview.assign(m_data.data(), m_data.size(), true);
@@ -264,7 +264,6 @@ PageHandle<HashMap::node_t> HashMap::node_t::get_successor(LockType lock_type, b
 
         res = buffer.new_page<node_t>();
         header.successor = res->page_no();
-        res->lock(lock_type);
 
         sview.move_to(0);
         sview << header;
@@ -274,7 +273,6 @@ PageHandle<HashMap::node_t> HashMap::node_t::get_successor(LockType lock_type, b
     else
     {
         res = buffer.get_page<node_t>(header.successor);
-        res->lock(lock_type);
 
         if(res->version_no() != header.successor_version)
         {
@@ -286,7 +284,7 @@ PageHandle<HashMap::node_t> HashMap::node_t::get_successor(LockType lock_type, b
         }
     }
 
-    if(lock_type == LockType::Write)
+    if(create)
     {
         this->increment_version_no();
     }
@@ -300,7 +298,7 @@ size_t HashMap::node_t::byte_size() const
 }
 
 HashMap::iterator_t::iterator_t(HashMap &map, bucketid_t bpos)
-    : m_map(map), m_bucket(bpos), m_pos(0)
+    : m_map(map), m_shard(NUM_SHARDS), m_bucket(bpos), m_pos(0)
 {
     if(bpos < NUM_BUCKETS)
     {
@@ -309,11 +307,12 @@ HashMap::iterator_t::iterator_t(HashMap &map, bucketid_t bpos)
 }
 
 HashMap::iterator_t::iterator_t(HashMap &map, bucketid_t bpos, std::vector<PageHandle<node_t>> &current_nodes, uint32_t pos)
-    : m_map(map), m_bucket(bpos), m_pos(pos)
+    : m_map(map), m_shard(bpos % NUM_SHARDS), m_bucket(bpos), m_pos(pos)
 {
+    m_map.m_shards[m_shard].read_lock();
+
     for(auto &it: current_nodes)
     {
-        it->read_lock();
         m_current_nodes.emplace_back(credb::trusted::duplicate(it));
     }
 }
@@ -329,23 +328,25 @@ HashMap::iterator_t HashMap::iterator_t::duplicate()
 
 void HashMap::iterator_t::clear()
 {
-    for(auto &node: m_current_nodes)
+    if(m_shard < NUM_SHARDS)
     {
-        node->read_unlock();
+        m_map.m_shards[m_shard].read_unlock();
     }
 
     m_current_nodes.clear();
     m_bucket = NUM_BUCKETS;
+    m_shard = NUM_SHARDS;
 }
 
 void HashMap::iterator_t::set_value(const ValueType &new_value)
 {
+    auto &s = m_map.m_shards[m_shard];
+    s.read_to_write_lock();
+
     auto rit = m_current_nodes.rbegin();
     auto &current = *rit;
  
-    current->read_to_write_lock();
     current->insert(key(), new_value);
-    current->write_to_read_lock();
 
     ++rit;
 
@@ -353,13 +354,13 @@ void HashMap::iterator_t::set_value(const ValueType &new_value)
     for(; rit != m_current_nodes.rend(); ++rit)
     {
         auto &current = *rit;
-        current->read_to_write_lock();
         current->increment_version_no();
-        current->write_to_read_lock();
     }
 
     auto &bucket = m_map.m_buckets[m_bucket];
     bucket.version += 1;
+
+    s.write_to_read_lock();
 }
 
 void HashMap::iterator_t::operator++()
@@ -379,7 +380,7 @@ void HashMap::iterator_t::operator++()
     
     if(m_pos >= current->size())
     {
-        auto succ = current->get_successor(LockType::Read, false, m_map.m_buffer);
+        auto succ = current->get_successor(false, m_map.m_buffer);
         m_pos = 0;
 
         if(succ)
@@ -436,13 +437,22 @@ void HashMap::iterator_t::next_bucket()
 {
     while(m_bucket < NUM_BUCKETS)
     {
-        for(auto &node: m_current_nodes)
-        {
-            node->read_unlock();
-        }
         m_current_nodes.clear();
 
-        auto current = m_map.get_node(m_bucket, LockType::Read, false);
+        auto current = m_map.get_node(m_bucket, false);
+
+        auto shard = m_bucket % HashMap::NUM_SHARDS;
+        
+        if(shard != m_shard)
+        {
+            if(m_shard < NUM_SHARDS)
+            {
+                m_map.m_shards[m_shard].read_unlock();
+            }
+
+            m_shard = shard;
+            m_map.m_shards[m_shard].read_lock();
+        }
 
         if(current)
         {
@@ -458,12 +468,7 @@ void HashMap::iterator_t::next_bucket()
     // at end
     if(m_bucket == NUM_BUCKETS)
     {
-        for(auto &node: m_current_nodes)
-        {
-            node->read_unlock();
-        }
-
-        m_current_nodes.clear();
+        clear();
     }
 }
 
@@ -482,7 +487,11 @@ HashMap::iterator_t HashMap::end() { return { *this, NUM_BUCKETS }; }
 void HashMap::insert(const KeyType &key, const ValueType &value)
 {
     auto b = to_bucket(key);
-    auto node = get_node(b, LockType::Write, true);
+    auto &s = m_shards[b % NUM_SHARDS];
+
+    s.write_lock();
+
+    auto node = get_node(b, true);
 
     bool done = false;
 
@@ -492,42 +501,45 @@ void HashMap::insert(const KeyType &key, const ValueType &value)
 
         if(!done)
         {
-            auto succ = node->get_successor(LockType::Write, true, m_buffer);
-            node->write_unlock();
+            auto succ = node->get_successor(true, m_buffer);
             node = std::move(succ);
         }
     }
 
     m_size += 1;
-    node->write_unlock();
+
+    s.write_unlock();
 }
 
 bool HashMap::get(const KeyType& key, ValueType &value_out)
 {
-    auto b = to_bucket(key);
-    auto node = get_node(b, LockType::Read, false);
+    auto bid = to_bucket(key);
+    auto &s = m_shards[bid % NUM_SHARDS];
+    
+    s.read_lock();
+    auto node = get_node(bid, false);
 
     while(node)
     {
         if(node->get(key, value_out))
         {
-            node->read_unlock();
+            s.read_unlock();
             return true;
         }
 
-        auto succ = node->get_successor(LockType::Read, false, m_buffer);
-        node->read_unlock();
-        node = std::move(succ);
+        node = node->get_successor(false, m_buffer);
     }
 
+    s.read_unlock();
     return false;
 }
 
-PageHandle<HashMap::node_t> HashMap::get_node(const bucketid_t bid, LockType lock_type, bool create)
+PageHandle<HashMap::node_t> HashMap::get_node(const bucketid_t bid, bool create)
 {
     std::lock_guard<credb::Mutex> lock(m_node_mutex);
     
     auto &bucket = m_buckets[bid];
+
     PageHandle<node_t> node;
 
     if(bucket.page_no == INVALID_PAGE_NO)
@@ -554,12 +566,10 @@ PageHandle<HashMap::node_t> HashMap::get_node(const bucketid_t bid, LockType loc
         }
     }
 
-    if(lock_type == LockType::Write)
+    if(create)
     {
         bucket.version += 1;
     }
-
-    node->lock(lock_type);
 
     return node;
 }
