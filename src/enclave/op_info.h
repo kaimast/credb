@@ -5,6 +5,7 @@
 #pragma once
 
 #include <string>
+#include <array>
 #include <json/Document.h>
 #include "credb/event_id.h"
 #include "util/OperationType.h"
