@@ -905,7 +905,7 @@ void RemoteParty::handle_request_has_object(bitstream &input, const OpContext &o
 
 void RemoteParty::handle_request_get_object(bitstream &input, const OpContext &op_context, bitstream &output, bool generate_witness)
 {
-    std::string full_path;
+    std::string collection, full_path;
     input >> collection >> full_path;
 
     auto [key, path] = parse_path(full_path);
