@@ -905,20 +905,14 @@ void RemoteParty::handle_request_has_object(bitstream &input, const OpContext &o
 
 void RemoteParty::handle_request_get_object(bitstream &input, const OpContext &op_context, bitstream &output, bool generate_witness)
 {
-    std::string collection, key;
-    input >> collection >> key;
+    std::string full_path;
+    input >> collection >> full_path;
 
-    std::string path;
-    size_t ppos;
-
-    if((ppos = key.find(".")) != std::string::npos)
-    {
-        path = key.substr(ppos + 1, std::string::npos);
-        key = key.substr(0, ppos);
-    }
+    auto [key, path] = parse_path(full_path);
 
     auto it = m_ledger.iterate(op_context, collection, key, path);
     auto [eid, value] = it.next();
+    it.clear();
 
     bitstream bstream;
     bitstream &out = generate_witness ? bstream : output;
