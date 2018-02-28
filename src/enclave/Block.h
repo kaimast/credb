@@ -15,6 +15,11 @@ namespace trusted
 class BufferManager;
 class ObjectEventHandle;
 
+/**
+ * All objects are stored in blocks
+ * Blocks hold a single buffer that can easily be written to disk
+ * All writes are append-only
+ */
 class Block : public Page
 {
 private:
@@ -28,7 +33,18 @@ public:
     Block(const Block &other) = delete;
 
     bitstream serialize() const override;
+    
+    /**
+     * Get the amount of memory that is occupied by this datastructure
+     *
+     * @note this might contain memory that has been reserved but not written to yet
+     */
     size_t byte_size() const override;
+
+    /**
+     * Get the number of bytes that are actual stored data
+     */
+    size_t get_data_size() const { return m_data.size(); }
 
     bool is_pending() const;
     uint32_t index_size() const;

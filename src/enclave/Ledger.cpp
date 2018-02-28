@@ -901,7 +901,7 @@ void Ledger::organize_ledger(shard_id_t shard_no)
     auto pending = shard.get_block(shard.pending_block_id());
 
     // Wait until we have reached at least min block size
-    if(pending->byte_size() < MIN_BLOCK_SIZE)
+    if(pending->get_data_size() < MIN_BLOCK_SIZE)
     {
         shard.write_unlock();
         return;

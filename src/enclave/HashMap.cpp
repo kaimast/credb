@@ -257,18 +257,20 @@ PageHandle<HashMap::node_t> HashMap::node_t::get_successor(bool create, BufferMa
 
     if(header.successor == INVALID_PAGE_NO)
     {
-        if(!create)
+        if(create)
+        {
+            res = buffer.new_page<node_t>();
+            header.successor = res->page_no();
+
+            sview.move_to(0);
+            sview << header;
+
+            mark_page_dirty();
+        }
+        else
         {
             return PageHandle<HashMap::node_t>();
         }
-
-        res = buffer.new_page<node_t>();
-        header.successor = res->page_no();
-
-        sview.move_to(0);
-        sview << header;
-
-        mark_page_dirty();
     }
     else
     {
@@ -544,13 +546,15 @@ PageHandle<HashMap::node_t> HashMap::get_node(const bucketid_t bid, bool create)
 
     if(bucket.page_no == INVALID_PAGE_NO)
     {
-        if(!create)
+        if(create)
+        {
+            node = m_buffer.new_page<node_t>();
+            bucket.page_no = node->page_no();
+        }
+        else
         {
             return PageHandle<HashMap::node_t>();
         }
-
-        node = m_buffer.new_page<node_t>();
-        bucket.page_no = node->page_no();
     }
     else
     {

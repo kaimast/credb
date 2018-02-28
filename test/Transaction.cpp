@@ -47,6 +47,25 @@ TEST_F(TransactionTest, create_witness)
     EXPECT_TRUE(res.witness.valid(conn->get_server_cert()));
 }
 
+TEST_F(TransactionTest, read_only_tx)
+{
+    auto conn = create_client("test", "testserver", "localhost");
+    auto c = conn->get_collection("default");
+    c->put("food", json::String("apple"));
+
+    auto start_size = json::Document(conn->get_statistics(), "total_file_size").as_integer();
+
+    auto t = conn->init_transaction(IsolationLevel::RepeatableRead);
+    auto tc = t->get_collection("default");
+    tc->get("food");
+    auto res = t->commit(true);
+    EXPECT_TRUE(res.success);
+
+    auto end_size = json::Document(conn->get_statistics(), "total_file_size").as_integer();
+
+    EXPECT_EQ(start_size, end_size);
+}
+
 TEST_F(TransactionTest, update_value)
 {
     auto conn = create_client("test", "testserver", "localhost");
