@@ -64,7 +64,7 @@ inline event_id_t Ledger::add(const OpContext &op_context,
                        const std::string &path,
                        LockHandle *lock_handle_)
 {
-    std::unordered_set<event_id_t> read_set, write_set;
+    const std::unordered_set<event_id_t> read_set, write_set;
 
     if(prepare_write(op_context, collection, key, path, OperationType::AddToObject, lock_handle_))
     {
@@ -78,7 +78,7 @@ inline event_id_t Ledger::add(const OpContext &op_context,
 
 inline event_id_t Ledger::remove(const OpContext &op_context, const std::string &collection, const std::string &key, LockHandle *lock_handle_)
 {
-    std::unordered_set<event_id_t> read_set, write_set;
+    const std::unordered_set<event_id_t> read_set, write_set;
     json::Document to_write;
     const std::string path;
 
@@ -99,7 +99,7 @@ inline event_id_t Ledger::put(const OpContext &op_context,
                        const std::string &path,
                        LockHandle *lock_handle_)
 {
-    std::unordered_set<event_id_t> read_set, write_set;
+    const std::unordered_set<event_id_t> read_set, write_set;
 
     if(prepare_write(op_context, collection, key, path, OperationType::PutObject, lock_handle_))
     {

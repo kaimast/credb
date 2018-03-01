@@ -516,8 +516,8 @@ event_id_t Ledger::apply_write(const OpContext &op_context,
                        const std::string &path,
                        LockHandle *lock_handle_,
                        OperationType op_type,
-                       std::unordered_set<event_id_t> &read_set,
-                       std::unordered_set<event_id_t> &write_set)
+                       const std::unordered_set<event_id_t> &read_set,
+                       const std::unordered_set<event_id_t> &write_set)
 {
     auto s = get_shard(collection, key);
 
@@ -628,8 +628,8 @@ event_id_t Ledger::put_next_version(const OpContext &op_context,
                                     event_id_t previous_id,
                                     const ObjectEventHandle &previous_version,
                                     LockHandle &lock_handle,
-                                    std::unordered_set<event_id_t> &read_set,
-                                    std::unordered_set<event_id_t> &write_set)
+                                    const std::unordered_set<event_id_t> &read_set,
+                                    const std::unordered_set<event_id_t> &write_set)
 {
     if(!op_context.valid())
     {

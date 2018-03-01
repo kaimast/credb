@@ -225,8 +225,8 @@ public:
                        const std::string &path,
                        LockHandle *lock_handle_,
                        OperationType op_type,
-                       std::unordered_set<event_id_t> &read_set,
-                       std::unordered_set<event_id_t> &write_set);
+                       const std::unordered_set<event_id_t> &read_set,
+                       const std::unordered_set<event_id_t> &write_set);
 
 private:
     Enclave &m_enclave;
@@ -268,8 +268,8 @@ private:
                                 event_id_t previous_id,
                                 const ObjectEventHandle &previous_version,
                                 LockHandle &lock_handle,
-                                std::unordered_set<event_id_t> &read_set,
-                                std::unordered_set<event_id_t> &write_set);
+                                const std::unordered_set<event_id_t> &read_set,
+                                const std::unordered_set<event_id_t> &write_set);
 
     Collection *try_get_collection(const std::string &name);
 
