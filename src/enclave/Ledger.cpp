@@ -541,8 +541,6 @@ event_id_t Ledger::apply_write(const OpContext &op_context,
         }
     }
 
-    json::Document policy;
-
     if(!path.empty() && !previous_version.valid())
     {
         // can't update field of non-existing version
@@ -562,8 +560,8 @@ event_id_t Ledger::apply_write(const OpContext &op_context,
     }
     else
     {
-        json::Document view = previous_version.value();
-        json::Document policy(view, "policy", false);
+        auto value = previous_version.value();
+        auto policy = previous_version.get_policy();
 
         if(!policy.empty() && !check_object_policy(policy, op_context, collection, key, path, op_type, lock_handle))
         {
@@ -574,7 +572,7 @@ event_id_t Ledger::apply_write(const OpContext &op_context,
         {
             if(op_type == OperationType::AddToObject)
             {
-                json::Document doc = view.duplicate(true);
+                json::Document doc = value.duplicate(true);
                 doc.add(path, to_write);
 
                 res = put_next_version(op_context, collection, key, doc, number, previous_id, previous_version, lock_handle, read_set, write_set);
@@ -587,7 +585,7 @@ event_id_t Ledger::apply_write(const OpContext &op_context,
                 }
                 else
                 {
-                    json::Document doc = view.duplicate(true);
+                    json::Document doc = value.duplicate(true);
                     doc.insert(path, to_write);
 
                     res = put_next_version(op_context, collection, key, doc, number, previous_id, previous_version, lock_handle, read_set, write_set);
@@ -614,7 +612,7 @@ event_id_t Ledger::apply_write(const OpContext &op_context,
 
     if(!lock_handle_)
     {
-        organize_ledger(get_shard(collection, key));
+        organize_ledger(s);
     }
 
     return res;
@@ -947,9 +945,9 @@ ObjectEventHandle Ledger::get_latest_version(const OpContext &op_context,
         return ObjectEventHandle();
     }
 
-    json::Document policy;
+    auto policy = event.get_policy();
 
-    if(!event.get_policy(policy))
+    if(policy.empty())
     {
         // Object has no security policy
         return event;

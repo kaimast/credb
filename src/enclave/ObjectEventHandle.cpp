@@ -85,17 +85,9 @@ json::Document ObjectEventHandle::value(const std::string &path) const
     return json::Document(view, path, false);
 }
 
-bool ObjectEventHandle::get_policy(json::Document &out) const
+json::Document ObjectEventHandle::get_policy() const
 {
-    json::Document val = value();
-    json::Document view(val, "policy", false);
-    if(view.empty())
-    {
-        return false;
-    }
-
-    out = std::move(view);
-    return true;
+    return json::Document(value(), "policy", false);
 }
 
 } // namespace trusted

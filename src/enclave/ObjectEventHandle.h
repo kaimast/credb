@@ -44,7 +44,8 @@ public:
     version_number_t version_number() const;
     json::Document value() const;
     json::Document value(const std::string &path) const;
-    bool get_policy(json::Document &out) const;
+    
+    json::Document get_policy() const;
 
     ObjectEventHandle duplicate() const
     {
