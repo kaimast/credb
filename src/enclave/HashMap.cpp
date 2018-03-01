@@ -8,6 +8,11 @@ namespace credb
 namespace trusted
 {
 
+inline void increment_version(HashMap::version_no_t &vno)
+{
+    vno = (vno + 1) % UINT_LEAST16_MAX;
+}
+
 inline PageHandle<HashMap::node_t> duplicate(PageHandle<HashMap::node_t> &hdl)
 {
     if(!hdl)
@@ -20,7 +25,6 @@ inline PageHandle<HashMap::node_t> duplicate(PageHandle<HashMap::node_t> &hdl)
         auto &buffer = page.buffer_manager();
         return buffer.get_page<HashMap::node_t>(page.page_no());
     }
-    //return PageHandle<T>(*m_page);
 }
 
 
@@ -87,8 +91,8 @@ void HashMap::node_t::increment_version_no()
     header_t header;
     sview >> header;
 
-    header.version += 1;
-    header.successor_version += 1;
+    increment_version(header.version);
+    increment_version(header.successor_version);
 
     sview.move_to(0);
     sview << header;
@@ -208,7 +212,8 @@ bool HashMap::node_t::insert(const KeyType &key, const ValueType &value)
         {
             header.size += 1;
         }
-        header.version += 1;
+    
+        increment_version(header.version);
 
         sview.move_to(0);
         sview << header;
@@ -360,7 +365,7 @@ void HashMap::iterator_t::set_value(const ValueType &new_value)
     }
 
     auto &bucket = m_map.m_buckets[m_bucket];
-    bucket.version += 1;
+    increment_version(bucket.version);
 
     s.write_to_read_lock();
 }
@@ -572,7 +577,7 @@ PageHandle<HashMap::node_t> HashMap::get_node(const bucketid_t bid, bool create)
 
     if(create)
     {
-        bucket.version += 1;
+        increment_version(bucket.version);
     }
 
     return node;

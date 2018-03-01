@@ -174,7 +174,7 @@ private:
     struct bucket_t
     {
         page_no_t page_no;
-        version_number_t version;
+        version_no_t version;
     };
     
     bucket_t m_buckets[NUM_BUCKETS];
