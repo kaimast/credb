@@ -96,7 +96,7 @@ public:
         return true;
     }
 
-    void extract_writes(std::array<uint16_t, NUM_SHARDS> &write_set)
+    void extract_writes(std::array<uint16_t, NUM_SHARDS> &write_set) override
     {
         (void) write_set;
     }

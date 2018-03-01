@@ -445,9 +445,6 @@ void HashMap::iterator_t::next_bucket()
     while(m_bucket < NUM_BUCKETS)
     {
         m_current_nodes.clear();
-
-        auto current = m_map.get_node(m_bucket, false);
-
         auto shard = m_bucket % HashMap::NUM_SHARDS;
         
         if(shard != m_shard)
@@ -460,6 +457,8 @@ void HashMap::iterator_t::next_bucket()
             m_shard = shard;
             m_map.m_shards[m_shard].read_lock();
         }
+
+        auto current = m_map.get_node(m_bucket, false);
 
         if(current)
         {
