@@ -133,6 +133,38 @@ inline const std::unordered_map<std::string, Collection>& Ledger::collections() 
     return m_collections;
 }
 
+inline ObjectEventHandle Ledger::get_latest_event(
+                              const std::string &collection,
+                              const std::string &key,
+                              event_id_t &event_id,
+                              LockHandle &lock_handle,
+                              LockType lock_type)
+{
+    event_id = INVALID_EVENT;
+
+    if(key.empty())
+    {
+        return ObjectEventHandle();
+    }
+
+    auto p_col = try_get_collection(collection);
+
+    if(!p_col)
+    {
+        return ObjectEventHandle();
+    }
+
+    auto &col = *p_col;
+
+    if(!col.primary_index().get(key, event_id))
+    {
+        return ObjectEventHandle();
+    }
+
+    auto block = lock_handle.get_block(event_id.shard, event_id.block, lock_type);
+    return block->get_event(event_id.index);
+}
+
 
 
 }

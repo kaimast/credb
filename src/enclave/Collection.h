@@ -6,6 +6,7 @@
 
 #include <bitstream.h>
 #include "util/defines.h"
+#include "HashMap.h"
 
 namespace credb
 {
@@ -15,7 +16,6 @@ namespace trusted
 class Ledger;
 class Enclave;
 class Index;
-class HashMap;
 class RemoteParties;
 class StringIndex;
 class BufferManager;

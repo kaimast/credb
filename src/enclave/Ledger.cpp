@@ -689,7 +689,7 @@ event_id_t Ledger::put_next_version(const OpContext &op_context,
     {
         writer.write_integer(INITIAL_VERSION_NO);
     }
-
+    
     writer.start_array();
     for(auto &read: read_set)
     {
@@ -711,7 +711,6 @@ event_id_t Ledger::put_next_version(const OpContext &op_context,
         writer.end_array();
     }
     writer.end_array();
-
     writer.end_array();
 
     auto new_version = writer.make_document();
@@ -963,38 +962,6 @@ ObjectEventHandle Ledger::get_latest_version(const OpContext &op_context,
             return ObjectEventHandle();
         }
     }
-}
-
-ObjectEventHandle Ledger::get_latest_event(
-                              const std::string &collection,
-                              const std::string &key,
-                              event_id_t &event_id,
-                              LockHandle &lock_handle,
-                              LockType lock_type)
-{
-    event_id = INVALID_EVENT;
-
-    if(key.empty())
-    {
-        return ObjectEventHandle();
-    }
-
-    auto p_col = try_get_collection(collection);
-
-    if(!p_col)
-    {
-        return ObjectEventHandle();
-    }
-
-    auto &col = *p_col;
-
-    if(!col.primary_index().get(key, event_id))
-    {
-        return ObjectEventHandle();
-    }
-
-    auto block = lock_handle.get_block(event_id.shard, event_id.block, lock_type);
-    return block->get_event(event_id.index);
 }
 
 uint32_t Ledger::count_objects(const OpContext &op_context, const std::string &collection, const json::Document &predicates)
