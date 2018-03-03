@@ -58,6 +58,11 @@ public:
      * This is only needed for downstream mode
      */
     [[nodiscard]] bool decrypt_disk(uint8_t *buffer, int32_t size, bitstream &bstream);
+
+    sgx_aes_gcm_128bit_key_t& disk_key()
+    {
+        return m_disk_key;
+    }
  
 private:
     sgx_aes_gcm_128bit_key_t m_disk_key;

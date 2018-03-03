@@ -67,7 +67,7 @@ bool LocalEncryptedIO::write_to_disk(const std::string &filename, const bitstrea
 
     uint8_t aes_gcm_iv[SAMPLE_SP_IV_SIZE] = { 0 };
 
-    auto ret = sgx_rijndael128GCM_encrypt(&m_disk_key, data.data(), data.size(), cdata,
+    auto ret = sgx_rijndael128GCM_encrypt(&disk_key(), data.data(), data.size(), cdata,
                                           &aes_gcm_iv[0], SAMPLE_SP_IV_SIZE, nullptr, 0, tag);
 
     if(ret != SGX_SUCCESS)
