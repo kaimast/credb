@@ -47,7 +47,8 @@ public:
 
     Ledger(const Ledger &other) = delete;
 
-    bool has_object(const std::string &collection, const std::string &key);
+    bool has_object(const std::string &collection, const std::string &key,
+                    LockHandle *lock_handle_ = nullptr);
 
     event_id_t add(const OpContext &op_context,
                    const std::string &collection,
@@ -244,7 +245,7 @@ private:
                             LockHandle &lock_handle,
                             LockType lock_type);
 
-    /// This function takes in a an event and finds a version of the object that is <= event
+    /// This function takes in an event and finds a version of the object that is <= event
     /// It might need to lock a new Block which will be stored in previous_version_block
     ObjectEventHandle get_previous_version(shard_id_t shard_no,
                               const ObjectEventHandle &current_event,

@@ -143,8 +143,10 @@ bool Ledger::unset_trigger(const std::string &collection, remote_party_id identi
 }
 
 
-bool Ledger::has_object(const std::string &collection, const std::string &key)
+bool Ledger::has_object(const std::string &collection, const std::string &key, LockHandle *lock_handle_)
 {
+    LockHandle lock_handle(*this, lock_handle_);
+
     event_id_t id;
     auto col = try_get_collection(collection);
 
@@ -153,7 +155,13 @@ bool Ledger::has_object(const std::string &collection, const std::string &key)
         return false;
     }
 
-    return col->primary_index().get(key, id);
+    if(!col->primary_index().get(key, id))
+    {
+        return false;
+    }
+
+    auto hdl = get_event(id, lock_handle, LockType::Read);
+    return hdl.get_type() == ObjectEventType::NewVersion;
 }
 
 uint32_t Ledger::count_writes(const OpContext &op_context,
@@ -721,8 +729,9 @@ event_id_t Ledger::put_next_version(const OpContext &op_context,
     event_id_t event_id = { shard_no, pending->identifier(), index };
 
     bitstream index_changes;
-    index_changes << collection;
-    col.primary_index().insert(key, event_id); //, &index_changes);
+    std::string index_name;
+    index_changes << collection << index_name;
+    col.primary_index().insert(key, event_id, &index_changes);
 #ifndef TEST
     col.notify_triggers(m_enclave.remote_parties());
 #endif
@@ -825,15 +834,17 @@ bool Ledger::clear(const OpContext &op_context, const std::string &collection)
         if(previous_event.get_type() != ObjectEventType::Deletion)
         {
             auto id = put_tombstone(op_context, previous_id, lock_handle);
-            bitstream changes;
-            changes << collection;
+            bitstream index_changes;
+            std::string index_name;
+
+            index_changes << collection << index_name;
             
-            it.set_value(id, &changes);
+            it.set_value(id, &index_changes);
 
             m_object_count--;
            
             // tell downstream
-            send_index_updates_to_downstream(changes, shard, pending->identifier());
+            send_index_updates_to_downstream(index_changes, shard, pending->identifier());
         }
 
         ++it;

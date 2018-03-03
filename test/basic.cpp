@@ -70,6 +70,23 @@ TEST(Basic, get_is_set_without_key)
     c->clear();
 }
 
+TEST(Basic, has_object)
+{
+    auto conn = credb::create_client("test", "testserver", "localhost");
+    auto c = conn->get_collection("default");
+
+    auto res1 = c->has_object("foo");
+    
+    c->put("foo", json::String("bar"));
+
+    auto res2 = c->has_object("foo");
+
+    EXPECT_FALSE(res1);
+    EXPECT_TRUE(res2);
+
+    c->clear();
+}
+
 TEST(Basic, get_is_set)
 {
     auto conn = credb::create_client("test", "testserver", "localhost");
@@ -77,7 +94,6 @@ TEST(Basic, get_is_set)
 
     const size_t NUM_OBJECTS = 10*1000;
 
-    size_t start_size = c->size();
     std::string objs[NUM_OBJECTS];
 
     for(size_t i = 0; i < NUM_OBJECTS; ++i)
@@ -92,7 +108,7 @@ TEST(Basic, get_is_set)
         ASSERT_EQ(val, value(i));
     }
 
-    ASSERT_EQ(c->size(), NUM_OBJECTS + start_size);
+    ASSERT_EQ(c->size(), NUM_OBJECTS);
 
     c->clear();
 }

@@ -194,6 +194,8 @@ void HashMap::apply_changes(bitstream &changes)
     }
 
     bucket = new_val;
+
+    m_bucket_cond.notify_all();
 }
 
 bool HashMap::node_t::has_entry(const KeyType &key, const ValueType &value)
@@ -383,7 +385,7 @@ void HashMap::iterator_t::set_value(const ValueType &new_value, bitstream *out_c
     auto &current = *rit;
  
     current->insert(key(), new_value);
-
+    current->flush_page();
     ++rit;
 
     // move up and increment version nos
@@ -391,6 +393,7 @@ void HashMap::iterator_t::set_value(const ValueType &new_value, bitstream *out_c
     {
         auto &current = *rit;
         current->increment_version_no();
+        current->flush_page();
     }
 
     auto &bucket = m_map.m_buckets[m_bucket];
@@ -538,6 +541,8 @@ void HashMap::insert(const KeyType &key, const ValueType &value, bitstream *out_
             auto succ = node->get_successor(true, *this, lock);
             node = std::move(succ);
         }
+
+        node->flush_page();
     }
 
     if(out_changes)
@@ -596,7 +601,10 @@ PageHandle<HashMap::node_t> HashMap::get_node_internal(const page_no_t page_no, 
                 // Notifications are always sent after updating the files on disk, so it safe to wait here
                 
                 node.clear();
+
+                log_info("wait1");
                 m_bucket_cond.wait(shard_lock);
+                log_info("wait2");
             }
             else
             {

@@ -125,6 +125,11 @@ class BufferManager
         // Before calling: RLock shard_t
         template <class T> PageHandle<T> get_page_internal(page_no_t page_no, bool load)
         {
+            if(page_no == INVALID_PAGE_NO)
+            {
+                return PageHandle<T>();
+            }
+
             auto it = m_metas.find(page_no);
             internal_page_meta_t *meta = nullptr;
             T *page = nullptr;

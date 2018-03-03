@@ -92,7 +92,7 @@ void has_obj_info_t::collect_shard_lock_type()
 bool has_obj_info_t::validate()
 {
     {
-        auto res = transaction().ledger.has_object(m_collection, m_key);
+        auto res = transaction().ledger.has_object(m_collection, m_key, &transaction().lock_handle);
         
         if(res != m_result)
         {
