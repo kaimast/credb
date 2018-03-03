@@ -26,7 +26,7 @@ public:
         return 0;
     }
 
-    bool is_remote() const
+    bool is_remote() const override
     {
         return true;
     }
