@@ -1,5 +1,6 @@
 #include "Enclave.h"
 #include "PendingBitstreamResponse.h"
+#include "LocalEncryptedIO.h"
 #include "RemoteEncryptedIO.h"
 
 #include <sgx_utils.h>
@@ -27,7 +28,7 @@ Enclave *g_enclave;
 static constexpr size_t BUFFER_SIZE = 70 << 20;
 
 Enclave::Enclave()
-: m_encrypted_io(new EncryptedIO), m_buffer_manager(m_encrypted_io.get(), "buffer", BUFFER_SIZE), m_ledger(*this), m_identity(nullptr)
+: m_encrypted_io(new LocalEncryptedIO), m_buffer_manager(m_encrypted_io.get(), "buffer", BUFFER_SIZE), m_ledger(*this), m_identity(nullptr)
 #ifndef TEST
  , m_peers(*this), m_clients(*this)
 #endif

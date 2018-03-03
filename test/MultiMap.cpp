@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include "../src/enclave/MultiMap.h"
 #include "../src/enclave/BufferManager.h"
+#include "../src/enclave/LocalEncryptedIO.h"
+
 #include "credb/defines.h"
 
 using namespace credb;
@@ -12,7 +14,7 @@ class MultiMapTest : public testing::Test
 
 TEST(MultiMapTest, serialize_node)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
 
     auto node1 = buffer.new_page<MultiMap::node_t>();
@@ -35,7 +37,7 @@ TEST(MultiMapTest, serialize_node)
 
 TEST(MultiMapTest, serialize_node_successor)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
 
     auto node1 = buffer.new_page<MultiMap::node_t>();
@@ -65,14 +67,14 @@ TEST(MultiMapTest, serialize_node_successor)
 
 TEST(MultiMapTest, empty_map)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     MultiMap map(buffer, "test_multi_map");
 }
 
 TEST(MultiMapTest, iterate_one)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     MultiMap map(buffer, "test_multi_map");
 
@@ -93,7 +95,7 @@ TEST(MultiMapTest, iterate_one)
 
 TEST(MultiMapTest, clear)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     MultiMap map(buffer, "test_multi_map");
 
@@ -116,7 +118,7 @@ TEST(MultiMapTest, clear)
 
 TEST(MultiMapTest, iterate_many)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     MultiMap map(buffer, "test_multi_map");
 
@@ -142,7 +144,7 @@ TEST(MultiMapTest, iterate_many)
 
 TEST(MultiMapTest, remove)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     MultiMap map(buffer, "test_multi_map");
 
@@ -160,7 +162,7 @@ TEST(MultiMapTest, remove)
 
 TEST(MultiMapTest, find_union)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     MultiMap map(buffer, "test_multi_map");
 
@@ -184,7 +186,7 @@ TEST(MultiMapTest, find_union)
 
 TEST(MultiMapTest, find_intersect)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     MultiMap map(buffer, "test_multi_map");
 
@@ -208,7 +210,7 @@ TEST(MultiMapTest, find_intersect)
 
 TEST(MultiMapTest, lots_of_data)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     MultiMap map(buffer, "test_multi_map");
 
@@ -232,7 +234,7 @@ TEST(MultiMapTest, lots_of_data)
 
 TEST(MultiMapTest, lots_of_data_random)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     MultiMap map(buffer, "test_multi_map");
 
@@ -264,7 +266,7 @@ TEST(MultiMapTest, lots_of_data_random)
 
 TEST(MultiMapTest, large_bucket)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 70<<20);
     MultiMap map(buffer, "test_multi_map");
 

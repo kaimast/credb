@@ -570,12 +570,13 @@ void Peer::handle_message(const uint8_t *data, uint32_t len)
         case MessageType::PushIndexUpdate:
         {
             unlock();
-            auto changes = new bitstream;
-            size_t id;
+            bitstream changes;
             shard_id_t shard;
             page_no_t block_page_no;
-            input >> id >> *changes >> shard >> block_page_no;
-            m_ledger.put_object_index_from_upstream(id, changes, shard, block_page_no);
+
+            input >> changes >> shard >> block_page_no;
+            
+            m_ledger.put_object_index_from_upstream(changes, shard, block_page_no);
             lock();
             break;
         }

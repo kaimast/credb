@@ -45,6 +45,8 @@ public:
 
     void unset_trigger(remote_party_id identifier);
 
+    void update_index(const std::string &name, bitstream &changes);
+
     HashMap &primary_index() { return *m_primary_index; }
 
     std::unordered_map<std::string, Index *> secondary_indexes() { return m_secondary_indexes; }

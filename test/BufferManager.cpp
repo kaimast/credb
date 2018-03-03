@@ -1,7 +1,9 @@
 #include <cstdlib>
 #include <algorithm>
 #include <gtest/gtest.h>
+
 #include "../src/enclave/Enclave.h"
+#include "../src/enclave/LocalEncryptedIO.h"
 #include "../src/enclave/BufferManager.h"
 #include "../src/enclave/EvictionAlgorithm.h"
 
@@ -81,7 +83,7 @@ public:
 
 TEST(BufferManagerTest, new_and_get_page)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<10);
     const size_t size = 100;
 
@@ -92,7 +94,7 @@ TEST(BufferManagerTest, new_and_get_page)
 
 TEST(BufferManagerTest, handle_point_to_same_page)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<10);
     const size_t size = 100;
 
@@ -111,7 +113,7 @@ TEST(BufferManagerTest, reload_page)
     const int n = 100;
     const size_t buffer_size = 1<<10;
     const size_t page_size = buffer_size / (n / 10);
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", buffer_size);
 
     std::vector<std::tuple<page_no_t, bitstream>> v1;

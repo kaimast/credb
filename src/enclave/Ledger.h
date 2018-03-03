@@ -183,7 +183,8 @@ public:
 
     void clear_cached_blocks();
     void load_upstream_index_root(const std::vector<std::string> &collection_names);
-    void put_object_index_from_upstream(size_t input_id, bitstream *input_changes, shard_id_t input_shard, page_no_t input_block_page_no);
+
+    void put_object_index_from_upstream(bitstream &changes, shard_id_t shard_id, page_no_t block_page_no);
 
     void unload_everything(); // for debug purpose
     void dump_metadata(bitstream &output); // for debug purpose
@@ -285,19 +286,6 @@ private:
 
     size_t m_object_count;
     size_t m_version_count;
-
-    credb::Mutex m_put_object_index_mutex;
-    size_t m_put_object_index_last_id;
-    bool m_put_object_index_running;
-    using put_object_index_item_t = std::tuple<size_t, bitstream *, shard_id_t, page_no_t>;
-    struct put_object_index_item_t_compare_t
-    {
-        bool operator()(const put_object_index_item_t &t1, const put_object_index_item_t &t2)
-        {
-            return std::get<0>(t1) > std::get<0>(t2);
-        }
-    };
-    std::priority_queue<put_object_index_item_t, std::vector<put_object_index_item_t>, put_object_index_item_t_compare_t> m_put_object_index_queue;
 };
 
 } // namespace trusted

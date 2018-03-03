@@ -83,6 +83,18 @@ bool Collection::create_index(const std::string &name, const std::vector<std::st
     return true;
 }
 
+void Collection::update_index(const std::string &name, bitstream &changes)
+{
+    if(name.empty())
+    {
+        primary_index().apply_changes(changes);
+    }
+    else
+    {
+        //TODO
+    }
+}
+
 void Collection::set_trigger(remote_party_id identifier)
 {
     log_debug("Set trigger");

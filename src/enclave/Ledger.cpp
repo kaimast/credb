@@ -43,7 +43,7 @@ namespace trusted
 
 Ledger::Ledger(Enclave &enclave)
 : m_enclave(enclave), m_buffer_manager(m_enclave.buffer_manager()),
-  m_object_count(0), m_version_count(0), m_put_object_index_last_id(0), m_put_object_index_running(false)
+  m_object_count(0), m_version_count(0)
 {
     for(auto &shard : m_shards)
     {
@@ -597,7 +597,7 @@ event_id_t Ledger::apply_write(const OpContext &op_context,
 
                 // put-tombstone doesn't update the index
                 auto &col = get_collection(collection);
-                col.primary_index().insert(key, res); //, &index_changes);
+                col.primary_index().insert(key, res);
 
                 m_object_count--;
             }
@@ -745,10 +745,6 @@ void Ledger::send_index_updates_to_downstream(const bitstream &index_changes, sh
     (void)shard;
     (void)invalidated_page;
 #else
-    m_put_object_index_mutex.lock();
-    size_t id = ++m_put_object_index_last_id;
-    m_put_object_index_mutex.unlock();
-
     for(auto downstream_id : m_enclave.peers().get_downstream_set())
     {
         //        log_debug("forwarding index to downstream_id=" + std::to_string(downstream_id));
@@ -760,74 +756,35 @@ void Ledger::send_index_updates_to_downstream(const bitstream &index_changes, sh
         }
         peer->lock();
 
+        std::string index_name;
+
         bitstream update_msg;
         update_msg << static_cast<mtype_data_t>(MessageType::PushIndexUpdate);
-        update_msg << id;
         update_msg << index_changes;
         update_msg << shard;
         update_msg << invalidated_page;
+        update_msg << index_name;
         peer->send(update_msg);
         peer->unlock();
     }
 #endif
 }
 
-void Ledger::put_object_index_from_upstream(size_t input_id, bitstream *input_changes, shard_id_t input_shard, page_no_t input_block_page_no)
+void Ledger::put_object_index_from_upstream(bitstream &changes, shard_id_t shard_id, page_no_t block_page_no)
 {
-    m_put_object_index_mutex.lock();
-    m_put_object_index_queue.emplace(input_id, input_changes, input_shard, input_block_page_no);
-    if(m_put_object_index_running)
+    std::string collection, index;
+    changes >> collection >> index;
+ 
+    auto &col = get_collection(collection, true);
+    col.update_index(index, changes);
+
+    // invalidate data block cache
+    if(block_page_no != INVALID_PAGE_NO)
     {
-        m_put_object_index_mutex.unlock();
-        return;
-    }
-
-    m_put_object_index_running = true;
-    m_put_object_index_mutex.unlock();
-
-    for(;;)
-    {
-        m_put_object_index_mutex.lock();
-        if(m_put_object_index_queue.empty())
-        {
-            m_put_object_index_running = false;
-            m_put_object_index_mutex.unlock();
-            return;
-        }
-
-        auto[id, changes, shard_id, block_page_no] = m_put_object_index_queue.top();
-        if(m_put_object_index_last_id && id != m_put_object_index_last_id + 1)
-        {
-            // although TCP guarantees packet order, it can still be reordered at this function.
-            //            log_debug("Waiting for Update #" +
-            //            std::to_string(m_put_object_index_last_id+1) + " got #" +
-            //            std::to_string(id) + ", return.");
-            m_put_object_index_running = false;
-            m_put_object_index_mutex.unlock();
-            return;
-        }
-
-        // FIXME: what if the very first update is reordered?
-        m_put_object_index_last_id = id;
-        m_put_object_index_queue.pop();
-        m_put_object_index_mutex.unlock();
-
-        // update string index
-        std::string collection;
-        *changes >> collection;
-        //auto &col = get_collection(collection, true);
-        // FIXME col.primary_index().apply_changes(*changes);
-
-        // invalidate data block cache
-        if(block_page_no != INVALID_PAGE_NO)
-        {
-            auto &shard = *m_shards[shard_id];
-            shard.write_lock();
-            shard.discard_cached_block(block_page_no);
-            shard.write_unlock();
-        }
-
-        delete changes;
+        auto &shard = *m_shards[shard_id];
+        shard.write_lock();
+        shard.discard_cached_block(block_page_no);
+        shard.write_unlock();
     }
 }
 
@@ -870,8 +827,8 @@ bool Ledger::clear(const OpContext &op_context, const std::string &collection)
             auto id = put_tombstone(op_context, previous_id, lock_handle);
             bitstream changes;
             changes << collection;
-            //it.set_value({ shard, pending->identifier(), index }, &changes);
-            it.set_value(id);
+            
+            it.set_value(id, &changes);
 
             m_object_count--;
            

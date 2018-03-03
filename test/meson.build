@@ -7,7 +7,6 @@ test_cpp_files = files(
     'main.cpp',
     'Transaction.cpp',
     'BufferManager.cpp',
-    'StringIndex.cpp',
     'HashMap.cpp',
     'MultiMap.cpp',
     'Disk.cpp',
@@ -48,7 +47,8 @@ test_extra_cpp_files = files(
     '../src/enclave/Task.cpp',
     '../src/enclave/BufferManager.cpp',
     '../src/enclave/StringIndex.cpp',
-    '../src/enclave/EncryptedIO.cpp'
+    '../src/enclave/EncryptedIO.cpp',
+    '../src/enclave/LocalEncryptedIO.cpp'
 )
 
 test_compile_args = compile_args + ['-DTEST', '-DFAKE_ENCLAVE']

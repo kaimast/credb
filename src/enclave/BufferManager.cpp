@@ -13,7 +13,7 @@ BufferManager::shard_t::~shard_t()
         auto meta = it.second;
         {
             meta->lock();
-            flush_page(*meta);
+            flush_page_internal(*meta);
             meta->unlock();
         }
         delete meta->page();
@@ -108,7 +108,7 @@ void BufferManager::shard_t::flush_all_pages()
     {
         auto &meta = *it.second;
         meta.lock();
-        flush_page(meta);
+        flush_page_internal(meta);
         meta.unlock();
     }
     m_lock.read_unlock();
@@ -157,7 +157,7 @@ void BufferManager::shard_t::discard_all_cache()
     m_lock.write_unlock();
 }
 
-void BufferManager::shard_t::flush_page(internal_page_meta_t &meta)
+void BufferManager::shard_t::flush_page_internal(internal_page_meta_t &meta)
 {
     if(meta.dirty())
     {
@@ -176,7 +176,7 @@ void BufferManager::shard_t::flush_page(page_no_t page_no)
     m_lock.read_unlock();
 
     meta.lock();
-    flush_page(meta);
+    this->flush_page_internal(meta);
     meta.unlock();
 }
 
@@ -189,7 +189,7 @@ BufferManager::metas_map_t::iterator BufferManager::shard_t::unload_page(page_no
 
     meta->lock();
     assert(!meta->cnt_pin);
-    flush_page(*meta);
+    flush_page_internal(*meta);
     m_loaded_size -= meta->size();
     meta->unlock();
 

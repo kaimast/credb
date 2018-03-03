@@ -26,7 +26,7 @@ public:
     using KeyType = std::string;
     using ValueType = event_id_t; //NOTE value type must be constant size to allow updates
     using bucketid_t = uint16_t;
-    using version_no_t = uint16_t;
+    using version_no_t = uint32_t;
 
     class node_t : public Page
     {
@@ -77,12 +77,14 @@ public:
          */
         std::pair<KeyType, ValueType> get(size_t pos) const;
 
-        PageHandle<node_t> get_successor(bool create, BufferManager &buffer);
+        PageHandle<node_t> get_successor(bool create, HashMap &map, RWHandle &shard_lock);
 
         /**
          * Does this node hold a specified entry?
          */
         bool has_entry(const KeyType &key, const ValueType &value);
+
+        page_no_t successor() const;
         
     private:
         struct header_t
@@ -113,7 +115,7 @@ public:
         bool operator!=(const iterator_t &other) const;
         bool operator==(const iterator_t &other) const;
 
-        void set_value(const ValueType &new_value);
+        void set_value(const ValueType &new_value, bitstream *changes = nullptr);
 
     private:
         iterator_t(HashMap &map, bucketid_t bpos, std::vector<PageHandle<node_t>> &current_nodes, uint32_t pos);
@@ -124,7 +126,9 @@ public:
 
         HashMap &m_map;
 
-        uint16_t m_shard;
+        uint16_t m_shard_id;
+        RWHandle m_shard_lock;
+
         bucketid_t m_bucket;
 
         std::vector<PageHandle<node_t>> m_current_nodes;
@@ -148,13 +152,14 @@ public:
     HashMap(BufferManager &buffer, const std::string &name);
     ~HashMap();
 
+    void apply_changes(bitstream &changes);
+
     iterator_t begin();
     iterator_t end();
-    void insert(const KeyType &key, const ValueType &value);
+
+    void insert(const KeyType &key, const ValueType &value, bitstream *out_changes = nullptr);
     
     bool get(const KeyType& key, ValueType &value_out);
-
-    PageHandle<node_t> get_node(const bucketid_t bid, bool create);
 
     /**
      * The number of entries stored in the map
@@ -163,13 +168,16 @@ public:
 
 private:
     friend class iterator_t;
+    friend class node_t;
 
+    PageHandle<node_t> get_node(const bucketid_t bid, bool create, RWHandle &shard_lock);
+
+    PageHandle<node_t> get_node_internal(const page_no_t page_no, bool create, version_no_t expected_version, RWHandle &shard_lock);
+    
     bucketid_t to_bucket(const KeyType key) const;
 
     BufferManager &m_buffer;
     const std::string m_name;
-    credb::Mutex m_node_mutex;
-    std::atomic<size_t> m_size;
 
     struct bucket_t
     {
@@ -177,6 +185,9 @@ private:
         version_no_t version;
     };
     
+    std::condition_variable_any m_bucket_cond;
+    
+    std::atomic<size_t> m_size;
     bucket_t m_buckets[NUM_BUCKETS];
     RWLockable m_shards[NUM_SHARDS];
 };

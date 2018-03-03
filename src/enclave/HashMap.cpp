@@ -10,7 +10,8 @@ namespace trusted
 
 inline void increment_version(HashMap::version_no_t &vno)
 {
-    vno = (vno + 1) % UINT_LEAST16_MAX;
+//    vno = (vno + 1) % UINT_LEAST16_MAX;
+    vno += 1;
 }
 
 inline PageHandle<HashMap::node_t> duplicate(PageHandle<HashMap::node_t> &hdl)
@@ -109,6 +110,15 @@ HashMap::version_no_t HashMap::node_t::version_no() const
     return header.version;
 }
 
+HashMap::version_no_t HashMap::node_t::successor() const
+{
+    bitstream sview;
+    sview.assign(m_data.data(), m_data.size(), true);
+    header_t header;
+    sview >> header;
+    return header.successor;
+}
+
 size_t HashMap::node_t::size() const
 {
     bitstream sview;
@@ -141,7 +151,49 @@ std::pair<HashMap::KeyType, HashMap::ValueType> HashMap::node_t::get(size_t pos)
         cpos += 1;
     }
     
-    throw std::runtime_error("Out of bounds!");
+    throw std::runtime_error("HashMap::node_t::get falied: Out of bounds!");
+}
+
+void HashMap::apply_changes(bitstream &changes)
+{
+    bucketid_t bid;
+    bucket_t new_val;
+    changes >> bid >> new_val;
+
+    auto &bucket = m_buckets[bid];
+
+    if(bucket.version > new_val.version)
+    {
+        // outdated update
+        return;
+    }
+
+    auto &s = m_shards[bid % NUM_SHARDS];
+
+    WriteLock lock(s);
+
+    // Discard all cached pages of that bucket
+    auto current = m_buffer.get_page_if_cached<HashMap::node_t>(bucket.page_no);
+
+    std::vector<page_no_t> nodes;
+    if(current)
+    {
+        nodes.push_back(current->page_no());
+    }
+
+    while(current)
+    {
+        auto succ = current->successor();
+        nodes.push_back(current->page_no());
+        current = m_buffer.get_page_if_cached<HashMap::node_t>(succ);
+    }
+
+    for(auto node: nodes)
+    {
+        m_buffer.discard_cache(node);
+    }
+
+    bucket = new_val;
 }
 
 bool HashMap::node_t::has_entry(const KeyType &key, const ValueType &value)
@@ -251,52 +303,34 @@ bool HashMap::node_t::get(const KeyType& key, ValueType &value_out)
     return false;
 }
 
-PageHandle<HashMap::node_t> HashMap::node_t::get_successor(bool create, BufferManager &buffer)
+PageHandle<HashMap::node_t> HashMap::node_t::get_successor(bool create, HashMap &map, RWHandle &shard_lock)
 {
     bitstream sview;
     sview.assign(m_data.data(), m_data.size(), true);
     header_t header;
     sview >> header;
 
-    PageHandle<HashMap::node_t> res;
-
-    if(header.successor == INVALID_PAGE_NO)
-    {
-        if(create)
-        {
-            res = buffer.new_page<node_t>();
-            header.successor = res->page_no();
-
-            sview.move_to(0);
-            sview << header;
-
-            mark_page_dirty();
-        }
-        else
-        {
-            return PageHandle<HashMap::node_t>();
-        }
-    }
-    else
-    {
-        res = buffer.get_page<node_t>(header.successor);
-
-        if(res->version_no() != header.successor_version)
-        {
-            auto msg = "Staleness detected! HashMap node: " + std::to_string(res->page_no()) +
-                       "  Expected version: " + std::to_string(header.successor_version) +
-                       " Read: " + std::to_string(res->version_no());
-            log_error(msg);
-            throw StalenessDetectedException(msg);
-        }
-    }
+    PageHandle<HashMap::node_t> node = map.get_node_internal(header.successor, create, header.successor_version, shard_lock);
 
     if(create)
     {
-        this->increment_version_no();
+        bitstream sview;
+        sview.assign(m_data.data(), m_data.size(), true);
+        header_t header;
+        sview >> header;
+
+        header.successor = node->page_no();
+
+        increment_version(header.version);
+        increment_version(header.successor_version);
+
+        sview.move_to(0);
+        sview << header;
+
+        mark_page_dirty();
     }
 
-    return res;
+    return node;
 } 
 
 size_t HashMap::node_t::byte_size() const
@@ -305,7 +339,7 @@ size_t HashMap::node_t::byte_size() const
 }
 
 HashMap::iterator_t::iterator_t(HashMap &map, bucketid_t bpos)
-    : m_map(map), m_shard(NUM_SHARDS), m_bucket(bpos), m_pos(0)
+    : m_map(map), m_shard_id(NUM_SHARDS), m_bucket(bpos), m_pos(0)
 {
     if(bpos < NUM_BUCKETS)
     {
@@ -314,9 +348,9 @@ HashMap::iterator_t::iterator_t(HashMap &map, bucketid_t bpos)
 }
 
 HashMap::iterator_t::iterator_t(HashMap &map, bucketid_t bpos, std::vector<PageHandle<node_t>> &current_nodes, uint32_t pos)
-    : m_map(map), m_shard(bpos % NUM_SHARDS), m_bucket(bpos), m_pos(pos)
+    : m_map(map), m_shard_id(bpos % NUM_SHARDS), m_bucket(bpos), m_pos(pos)
 {
-    m_map.m_shards[m_shard].read_lock();
+    m_shard_lock = ReadLock(m_map.m_shards[m_shard_id]);
 
     for(auto &it: current_nodes)
     {
@@ -335,20 +369,15 @@ HashMap::iterator_t HashMap::iterator_t::duplicate()
 
 void HashMap::iterator_t::clear()
 {
-    if(m_shard < NUM_SHARDS)
-    {
-        m_map.m_shards[m_shard].read_unlock();
-    }
-
+    m_shard_lock.clear();
     m_current_nodes.clear();
     m_bucket = NUM_BUCKETS;
-    m_shard = NUM_SHARDS;
+    m_shard_id = NUM_SHARDS;
 }
 
-void HashMap::iterator_t::set_value(const ValueType &new_value)
+void HashMap::iterator_t::set_value(const ValueType &new_value, bitstream *out_changes)
 {
-    auto &s = m_map.m_shards[m_shard];
-    s.read_to_write_lock();
+    m_shard_lock.lockable().read_to_write_lock();
 
     auto rit = m_current_nodes.rbegin();
     auto &current = *rit;
@@ -367,7 +396,9 @@ void HashMap::iterator_t::set_value(const ValueType &new_value)
     auto &bucket = m_map.m_buckets[m_bucket];
     increment_version(bucket.version);
 
-    s.write_to_read_lock();
+    *out_changes << m_bucket << bucket;
+
+    m_shard_lock.lockable().write_to_read_lock();
 }
 
 void HashMap::iterator_t::operator++()
@@ -387,7 +418,7 @@ void HashMap::iterator_t::operator++()
     
     if(m_pos >= current->size())
     {
-        auto succ = current->get_successor(false, m_map.m_buffer);
+        auto succ = current->get_successor(false, m_map, m_shard_lock);
         m_pos = 0;
 
         if(succ)
@@ -447,18 +478,15 @@ void HashMap::iterator_t::next_bucket()
         m_current_nodes.clear();
         auto shard = m_bucket % HashMap::NUM_SHARDS;
         
-        if(shard != m_shard)
+        if(shard != m_shard_id)
         {
-            if(m_shard < NUM_SHARDS)
-            {
-                m_map.m_shards[m_shard].read_unlock();
-            }
+            m_shard_lock.clear();
 
-            m_shard = shard;
-            m_map.m_shards[m_shard].read_lock();
+            m_shard_id = shard;
+            m_shard_lock = ReadLock(m_map.m_shards[m_shard_id]);
         }
 
-        auto current = m_map.get_node(m_bucket, false);
+        auto current = m_map.get_node(m_bucket, false, m_shard_lock);
 
         if(current)
         {
@@ -490,14 +518,14 @@ HashMap::iterator_t HashMap::begin() { return { *this, 0 }; }
 
 HashMap::iterator_t HashMap::end() { return { *this, NUM_BUCKETS }; }
 
-void HashMap::insert(const KeyType &key, const ValueType &value)
+void HashMap::insert(const KeyType &key, const ValueType &value, bitstream *out_changes)
 {
     auto b = to_bucket(key);
     auto &s = m_shards[b % NUM_SHARDS];
 
-    s.write_lock();
+    WriteLock lock(s);
 
-    auto node = get_node(b, true);
+    auto node = get_node(b, true, lock);
 
     bool done = false;
 
@@ -507,14 +535,17 @@ void HashMap::insert(const KeyType &key, const ValueType &value)
 
         if(!done)
         {
-            auto succ = node->get_successor(true, m_buffer);
+            auto succ = node->get_successor(true, *this, lock);
             node = std::move(succ);
         }
     }
 
-    m_size += 1;
+    if(out_changes)
+    {
+        *out_changes << b << m_buckets[b];
+    }
 
-    s.write_unlock();
+    m_size += 1;
 }
 
 bool HashMap::get(const KeyType& key, ValueType &value_out)
@@ -522,63 +553,79 @@ bool HashMap::get(const KeyType& key, ValueType &value_out)
     auto bid = to_bucket(key);
     auto &s = m_shards[bid % NUM_SHARDS];
     
-    s.read_lock();
-    auto node = get_node(bid, false);
+    ReadLock lock(s);
+
+    auto node = get_node(bid, false, lock);
 
     while(node)
     {
         if(node->get(key, value_out))
         {
-            s.read_unlock();
             return true;
         }
 
-        node = node->get_successor(false, m_buffer);
+        node = node->get_successor(false, *this, lock);
     }
 
-    s.read_unlock();
     return false;
 }
 
-PageHandle<HashMap::node_t> HashMap::get_node(const bucketid_t bid, bool create)
+PageHandle<HashMap::node_t> HashMap::get_node_internal(const page_no_t page_no, bool create, version_no_t expected_version, RWHandle &shard_lock)
 {
-    std::lock_guard<credb::Mutex> lock(m_node_mutex);
-    
-    auto &bucket = m_buckets[bid];
-
-    PageHandle<node_t> node;
-
-    if(bucket.page_no == INVALID_PAGE_NO)
+    if(page_no == INVALID_PAGE_NO)
     {
         if(create)
         {
-            node = m_buffer.new_page<node_t>();
-            bucket.page_no = node->page_no();
+            return m_buffer.new_page<node_t>();
         }
         else
         {
             return PageHandle<HashMap::node_t>();
         }
     }
-    else
-    {
-        node = m_buffer.get_page<node_t>(bucket.page_no);
 
-        if(node->version_no() != bucket.version)
+    while(true)
+    {
+        auto node = m_buffer.get_page<HashMap::node_t>(page_no);
+
+        if(node->version_no() != expected_version)
         {
-            auto msg = "Staleness detected! StringIndex node: " + std::to_string(bucket.page_no) +
-                       "  Expected version: " + std::to_string(bucket.version) +
-                       " Read: " + std::to_string(node->version_no());
-            log_error(msg);
-            throw StalenessDetectedException(msg);
+            if(m_buffer.get_encrypted_io().is_remote())
+            {
+                // The remote party might be in the process of updating it
+                // Notifications are always sent after updating the files on disk, so it safe to wait here
+                
+                node.clear();
+                m_bucket_cond.wait(shard_lock);
+            }
+            else
+            {
+                auto msg = "Staleness detected! StringIndex node: " + std::to_string(page_no) +
+                       "  Expected version: " + std::to_string(expected_version) +
+                       "  Read: " + std::to_string(node->version_no());
+              
+                log_error(msg);
+                throw StalenessDetectedException(msg);
+            }
+        }
+        else
+        {
+            return node;
         }
     }
+}
+
+PageHandle<HashMap::node_t> HashMap::get_node(const bucketid_t bid, bool create, RWHandle &shard_lock)
+{
+    auto &bucket = m_buckets[bid];
+    auto node = get_node_internal(bucket.page_no, create, bucket.version, shard_lock);
 
     if(create)
     {
+        bucket.page_no = node->page_no();
         increment_version(bucket.version);
     }
-
+    
     return node;
 }
 

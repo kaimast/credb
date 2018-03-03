@@ -49,6 +49,7 @@ enclave_cpp_file_names=[
     'BufferManager.cpp',
     'StringIndex.cpp',
     'EncryptedIO.cpp',
+    'LocalEncryptedIO.cpp',
     'RemoteEncryptedIO.cpp',
 ]
 

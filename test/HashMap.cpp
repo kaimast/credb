@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 #include <iostream>
+
+#include "../src/enclave/LocalEncryptedIO.h"
 #include "../src/server/Disk.h"
 #include "../src/enclave/HashMap.h"
 #include "../src/enclave/BufferManager.h"
@@ -14,7 +16,7 @@ class HashMapTest : public testing::Test
 
 TEST(HashMapTest, insert_single_and_get)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     string_index_t index(buffer, "test_string_index");
 
@@ -32,7 +34,7 @@ TEST(HashMapTest, insert_single_and_get)
 
 TEST(HashMapTest, update)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     string_index_t index(buffer, "test_string_index");
 
@@ -52,7 +54,7 @@ TEST(HashMapTest, update)
 
 TEST(HashMapTest, many)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     string_index_t index(buffer, "test_string_index");
 
@@ -73,7 +75,7 @@ TEST(HashMapTest, many)
 
 TEST(HashMapTest, iterate)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     string_index_t index(buffer, "test_string_index");
 
@@ -97,7 +99,7 @@ TEST(HashMapTest, iterate)
 
 TEST(HashMapTest, very_large_iterate)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     string_index_t index(buffer, "test_string_index");
 
@@ -125,7 +127,7 @@ TEST(HashMapTest, very_large_iterate)
 
 TEST(HashMapTest, iterate_set_value)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     string_index_t index(buffer, "test_string_index");
 
@@ -150,7 +152,7 @@ TEST(HashMapTest, iterate_set_value)
 TEST(HashMapTest, staleness_attack_object)
 {
     using snapshot_t = std::vector<std::tuple<std::string, std::vector<uint8_t>>>;
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     string_index_t index(buffer, "test_string_index");
     event_id_t val1 = {1, 2, 3}, val2 = {4, 5, 6}, val3 = {7, 8, 9};
@@ -199,7 +201,7 @@ TEST(HashMapTest, staleness_attack_object)
 
 TEST(HashMapTest, bug)
 {
-    EncryptedIO encrypted_io;
+    LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
     string_index_t index(buffer, "test_string_index");
     event_id_t eid;

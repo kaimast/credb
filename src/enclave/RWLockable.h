@@ -40,9 +40,108 @@ public:
     void lock(LockType lock_type);
     void unlock(LockType lock_type);
 
+    void wait(LockType lock_type);
+
 private:
     credb::Mutex m_mutex;
     std::condition_variable_any m_cond;
 
     uint32_t m_read_count = 0;
+};
+
+class RWHandle
+{
+public:
+    RWHandle(RWLockable &lockable, LockType type)
+        : m_lockable(&lockable), m_type(type)
+    {
+        lock();
+    }
+
+    RWHandle()
+        : m_lockable(nullptr)
+    {}
+
+    ~RWHandle()
+    {
+        clear();
+    }
+
+    void clear()
+    {
+        if(valid())
+        {
+            unlock();
+        }
+
+        m_lockable = nullptr;
+    }
+
+    RWHandle(RWHandle &&other)
+        : m_lockable(other.m_lockable), m_type(other.m_type)
+    {
+        other.m_lockable = nullptr;
+    }
+
+    bool valid() const
+    {
+        return m_lockable != nullptr;
+    }
+
+    void operator=(RWHandle &&other)
+    {
+        m_lockable = other.m_lockable;
+        m_type = other.m_type;
+
+        other.m_lockable = nullptr;
+    }
+
+    void lock()
+    {
+        if(m_type == LockType::Read)
+        {
+            m_lockable->read_lock();
+        }
+        else
+        {
+            m_lockable->write_lock();
+        }
+    }
+
+    void unlock()
+    {
+        if(m_type == LockType::Read)
+        {
+            m_lockable->read_unlock();
+        }
+        else
+        {
+            m_lockable->write_unlock();
+        }
+    }
+
+    RWLockable& lockable()
+    {
+        return *m_lockable;
+    }
+
+private:
+    RWLockable *m_lockable;
+    LockType m_type;
+};
+
+class ReadLock : public RWHandle
+{
+public:
+    ReadLock(RWLockable &lockable)
+        : RWHandle(lockable, LockType::Read)
+    {}
+};
+
+class WriteLock : public RWHandle
+{
+public:
+    WriteLock(RWLockable &lockable)
+        : RWHandle(lockable, LockType::Write)
+    {}
 };

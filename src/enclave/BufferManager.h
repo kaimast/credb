@@ -65,7 +65,11 @@ class BufferManager
         // Before calling: no lock requirement
         void mark_page_dirty(page_no_t page_no);
 
-        // Before calling: no lock requirement
+        /**
+         * @brief Write page to disk, if dirty
+         *
+         * @note Before calling: no lock requirement
+         */
         void flush_page(page_no_t page_no);
 
         // Before calling: no lock requirement
@@ -178,7 +182,7 @@ class BufferManager
         void unpin_page(page_no_t page_no);
 
         // Before calling: Lock internal_page_meta_t
-        void flush_page(internal_page_meta_t &meta);
+        void flush_page_internal(internal_page_meta_t &meta);
 
         // Before calling: WLock shard_t
         metas_map_t::iterator unload_page(page_no_t page_no);
@@ -217,8 +221,9 @@ public:
     void mark_page_dirty(page_no_t page_no);
 
     /**
-     * Write page to disk
-     * Before calling: no lock requirement
+     * Write page to disk, if dirty
+     *
+     * @note before calling: no lock requirement
      */
     void flush_page(page_no_t page_no);
 
@@ -267,6 +272,8 @@ public:
 
     // Before calling: no lock required
     void set_encrypted_io(EncryptedIO *encrypted_io);
+
+    EncryptedIO& get_encrypted_io() { return *m_encrypted_io; }
 
 private:
     // Before calling: no lock required
