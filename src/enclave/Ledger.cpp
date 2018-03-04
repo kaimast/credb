@@ -24,7 +24,6 @@
 #include "PendingBooleanResponse.h"
 #include "Shard.h"
 #include "HashMap.h"
-#include "StringIndex.h"
 #include "credb/Client.h"
 #include "logging.h"
 

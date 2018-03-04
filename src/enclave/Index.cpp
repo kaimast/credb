@@ -18,7 +18,7 @@ const std::string &Index::name() const { return m_name; }
 
 
 HashIndex::HashIndex(BufferManager &buffer, const std::string &name, const std::vector<std::string> &paths)
-: Index(name, paths), m_map(buffer, "index_" + name)
+: Index(name, paths), m_map(buffer)
 {
     if(paths.size() != 1)
     {

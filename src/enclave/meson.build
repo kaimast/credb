@@ -47,7 +47,6 @@ enclave_cpp_file_names=[
     'RemotePartyRunner.cpp',
     'Task.cpp',
     'BufferManager.cpp',
-    'StringIndex.cpp',
     'EncryptedIO.cpp',
     'LocalEncryptedIO.cpp',
     'RemoteEncryptedIO.cpp',

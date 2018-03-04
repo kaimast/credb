@@ -5,7 +5,6 @@
 #include "HashMap.h"
 #include "Ledger.h"
 #include "RemoteParties.h"
-#include "StringIndex.h"
 #include "logging.h"
 
 namespace credb

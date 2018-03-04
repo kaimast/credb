@@ -46,7 +46,6 @@ test_extra_cpp_files = files(
     '../src/enclave/machineprimitives_asm.S',
     '../src/enclave/Task.cpp',
     '../src/enclave/BufferManager.cpp',
-    '../src/enclave/StringIndex.cpp',
     '../src/enclave/EncryptedIO.cpp',
     '../src/enclave/LocalEncryptedIO.cpp'
 )

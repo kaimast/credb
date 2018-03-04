@@ -5,11 +5,13 @@
 #include <tuple>
 #include <unordered_set>
 
+#include "version_number.h"
 #include "BufferManager.h"
 #include "RWLockable.h"
 #include "credb/event_id.h"
 #include "util/defines.h"
 #include "ObjectListIterator.h"
+#include "HashMapNode.h"
 
 namespace credb
 {
@@ -21,82 +23,12 @@ class HashMap
 public:
     static constexpr size_t NUM_BUCKETS = 8192;
     static constexpr size_t NUM_SHARDS = 64;
-    static constexpr size_t MAX_NODE_SIZE = 1024;
 
     using KeyType = std::string;
     using ValueType = event_id_t; //NOTE value type must be constant size to allow updates
     using bucketid_t = uint16_t;
-    using version_no_t = uint32_t;
 
-    class node_t : public Page
-    {
-    public:
-        // about the byte size of a bucket:
-        //   (1) sizeof(*this)
-        //   (2) get_unordered_container_value_byte_size = hash bucket count * sizeof
-        //   std::pair<KeyType, std::unordered_set<ValueType>> (3) get_heap_size_of(KeyType) =
-        //   get_heap_size_of(uint64_t) = 0
-        //    *  now consider the heap size of std::unordered_set
-        //    *  sizeof std::unordered_set has been counted in (2)
-        //   (4) get_unordered_container_value_byte_size = hash bucket count * sizeof ValueType
-        //   (5) get_heap_size_of(ValueType) = get_heap_size_of(std::string) = std::string.size()
-        node_t(BufferManager &buffer, page_no_t page_no);
-        node_t(BufferManager &buffer, page_no_t page_no, bitstream &bstream);
-
-        bitstream serialize() const override;
-        size_t byte_size() const override;
-
-        bool get(const KeyType& key, ValueType &value_out);
-
-        /**
-         * Insert or update an entry
-         *
-         * @return True if successfully insert, False if not enough space
-         */
-        bool insert(const KeyType &key, const ValueType &value);
-
-        version_no_t version_no() const;
-
-        /**
-         * Increment the version no and successor version in the header
-         * Only needed for iterator
-         */
-        void increment_version_no();
-
-        /**
-         *  Get the number of elements in this node
-         *  @note this will return the number excluding successor
-         */
-        size_t size() const;
-
-        /**
-         * Get entry at pos
-         *
-         * @param pos
-         *      The position to query. Must be smaller than size()
-         */
-        std::pair<KeyType, ValueType> get(size_t pos) const;
-
-        PageHandle<node_t> get_successor(bool create, HashMap &map, RWHandle &shard_lock);
-
-        /**
-         * Does this node hold a specified entry?
-         */
-        bool has_entry(const KeyType &key, const ValueType &value);
-
-        page_no_t successor() const;
-        
-    private:
-        struct header_t
-        {
-            version_no_t version;
-            page_no_t successor;
-            version_no_t successor_version;
-            size_t size;
-        };
-
-        bitstream m_data;
-    };
+    using node_t = HashMapNode<KeyType, ValueType>;
 
     class iterator_t
     {
@@ -168,11 +100,12 @@ public:
 
 private:
     friend class iterator_t;
-    friend class node_t;
 
     PageHandle<node_t> get_node(const bucketid_t bid, bool create, RWHandle &shard_lock);
 
-    PageHandle<node_t> get_node_internal(const page_no_t page_no, bool create, version_no_t expected_version, RWHandle &shard_lock);
+    PageHandle<node_t> get_successor(PageHandle<node_t>& prev, bool create, RWHandle &shard_lock);
+
+    PageHandle<node_t> get_node_internal(const page_no_t page_no, bool create, version_number expected_version, RWHandle &shard_lock);
     
     bucketid_t to_bucket(const KeyType key) const;
 
@@ -182,7 +115,7 @@ private:
     struct bucket_t
     {
         page_no_t page_no;
-        version_no_t version;
+        version_number version;
     };
     
     std::condition_variable_any m_bucket_cond;
