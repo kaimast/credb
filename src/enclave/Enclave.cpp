@@ -123,6 +123,7 @@ void Enclave::set_upstream(remote_party_id upstream_id)
         log_error("Downstream mode has already been set before");
         abort();
     }
+
     m_downstream_mode = true;
     m_upstream_id = upstream_id;
 
@@ -157,11 +158,19 @@ void Enclave::set_upstream(remote_party_id upstream_id)
 
     m_ledger.clear_cached_blocks();
 
-    std::vector<std::string> collection_names;
-    bstream >> collection_names;
-    m_ledger.load_upstream_index_root(collection_names);
-#endif
+    uint32_t size;
+    bstream >> size;
 
+    for(uint32_t i = 0; i < size; ++i)
+    {
+        std::string col;
+        bstream >> col;
+
+        log_debug("Reload StringIndex root of collection [" + col + "]");
+        m_ledger.get_collection(col, true).primary_index().load_root(bstream);
+    }
+#endif
+    
     log_info("successfully connected to the upstream");
 }
 

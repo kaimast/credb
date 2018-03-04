@@ -101,9 +101,9 @@ PageHandle<MultiMap::node_t> MultiMap::get_node_internal(const page_no_t page_no
     }
 }
 
-PageHandle<MultiMap::node_t> MultiMap::get_node(const bucketid_t bid, bool create, RWHandle &shard_lock, bool modify)
+PageHandle<MultiMap::node_t> MultiMap::get_node(const bucketid_t bucket_id, bool create, RWHandle &shard_lock, bool modify)
 {
-    auto &bucket = m_buckets[bid];
+    auto &bucket = m_buckets[bucket_id];
     auto node = get_node_internal(bucket.page_no, create, bucket.version, shard_lock);
 
     if(create || modify)

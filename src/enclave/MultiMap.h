@@ -82,7 +82,7 @@ private:
     void find_intersect(const KeyType &key, std::unordered_set<ValueType> &out);
     void find_union(const KeyType &key, std::unordered_set<ValueType> &out);
 
-    PageHandle<node_t> get_node(const bucketid_t bucket, bool create, RWHandle &shard_lock, bool modify = false);
+    PageHandle<node_t> get_node(const bucketid_t bucket_id, bool create, RWHandle &shard_lock, bool modify = false);
 
     PageHandle<node_t> get_successor(PageHandle<node_t>& prev, bool create, RWHandle &shard_lock, bool modify = false);
 
@@ -90,9 +90,9 @@ private:
  
     friend class iterator_t;
 
-    RWLockable& get_shard(bucketid_t bucket)
+    RWLockable& get_shard(bucketid_t bucket_id)
     {
-        return m_shards[bucket % NUM_SHARDS];
+        return m_shards[bucket_id % NUM_SHARDS];
     }
 
     bucketid_t to_bucket(const KeyType key) const;

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <bitstream.h>
 #include <tuple>
+#include <array>
 #include <unordered_set>
 
 #include "version_number.h"
@@ -47,7 +48,7 @@ public:
         bool operator!=(const iterator_t &other) const;
         bool operator==(const iterator_t &other) const;
 
-        void set_value(const ValueType &new_value, bitstream *changes = nullptr);
+        void set_value(const ValueType &new_value, bitstream *out_changes = nullptr);
 
     private:
         iterator_t(HashMap &map, bucketid_t bpos, std::vector<PageHandle<node_t>> &current_nodes, uint32_t pos);
@@ -98,6 +99,10 @@ public:
      */
     size_t size() const;
 
+    void serialize_root(bitstream &out);
+
+    void load_root(bitstream &in);
+
 private:
     friend class iterator_t;
 
@@ -122,7 +127,8 @@ private:
     
     std::atomic<size_t> m_size;
     bucket_t m_buckets[NUM_BUCKETS];
-    RWLockable m_shards[NUM_SHARDS];
+
+    std::array<RWLockable, NUM_SHARDS> m_shards;
 };
 
 

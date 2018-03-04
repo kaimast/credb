@@ -133,6 +133,11 @@ inline const std::unordered_map<std::string, Collection>& Ledger::collections() 
     return m_collections;
 }
 
+inline std::unordered_map<std::string, Collection>& Ledger::collections()
+{
+    return m_collections;
+}
+
 inline ObjectEventHandle Ledger::get_latest_event(
                               const std::string &collection,
                               const std::string &key,

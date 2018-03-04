@@ -182,8 +182,9 @@ public:
 
     const std::unordered_map<std::string, Collection> &collections() const;
 
+    std::unordered_map<std::string, Collection> &collections();
+
     void clear_cached_blocks();
-    void load_upstream_index_root(const std::vector<std::string> &collection_names);
 
     void put_object_index_from_upstream(bitstream &changes, shard_id_t shard_id, page_no_t block_page_no);
 
@@ -230,6 +231,8 @@ public:
                        const std::unordered_set<event_id_t> &read_set,
                        const std::unordered_set<event_id_t> &write_set);
 
+    Collection &get_collection(const std::string &name, bool create = false);
+
 private:
     Enclave &m_enclave;
     BufferManager &m_buffer_manager;
@@ -275,7 +278,6 @@ private:
 
     Collection *try_get_collection(const std::string &name);
 
-    Collection &get_collection(const std::string &name, bool create = false);
 
     void organize_ledger(uint16_t shard_no);
 

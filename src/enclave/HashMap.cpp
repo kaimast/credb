@@ -416,6 +416,36 @@ PageHandle<HashMap::node_t> HashMap::get_node(const bucketid_t bid, bool create,
     return node;
 }
 
+void HashMap::serialize_root(bitstream &out)
+{
+    for(auto &shard: m_shards)
+    {
+        shard.read_lock();
+    }
+
+    out << m_buckets;
+
+    for(auto &shard: m_shards)
+    {
+        shard.read_unlock();
+    }
+}
+
+void HashMap::load_root(bitstream &in)
+{
+    for(auto &shard : m_shards)
+    {
+        shard.write_lock();
+    }
+
+    in >> m_buckets;
+
+    for(auto &shard : m_shards)
+    {
+        shard.write_unlock();
+    }
+}
+
 size_t HashMap::size() const { return m_size; }
 
 HashMap::bucketid_t HashMap::to_bucket(const KeyType key) const

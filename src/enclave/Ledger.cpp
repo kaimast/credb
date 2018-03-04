@@ -1090,16 +1090,6 @@ Ledger::iterate(const OpContext &op_context, const std::string &collection, cons
     return ObjectIterator(op_context, collection, key, path, *this, lock_handle);
 }
 
-void Ledger::load_upstream_index_root(const std::vector<std::string> &collection_names)
-{
-    for(auto &name : collection_names)
-    {
-        log_debug("Reload StringIndex root of collection [" + name + "]");
-        (void)name;
-        //FIXME get_collection(name, true).primary_index().reload_root_node();
-    }
-}
-
 void Ledger::dump_metadata(bitstream &output)
 {
     // ledger

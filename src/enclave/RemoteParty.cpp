@@ -842,14 +842,16 @@ void RemoteParty::handle_request_upstream_mode(bitstream &input,
         bstream.write_raw_data(reinterpret_cast<const uint8_t *>(disk_key), sizeof(disk_key));
 
         log_debug("Sending collection list");
-        std::vector<std::string> collection_names;
-        
-        for(const auto &item : m_ledger.collections())
-        {
-            collection_names.emplace_back(item.first);
-        }
 
-        bstream << collection_names;
+        auto &cols = m_ledger.collections();
+        uint32_t size = cols.size();
+        bstream << size;
+
+        for(auto &[name, col] : cols)
+        {
+            bstream << name;
+            col.primary_index().serialize_root(bstream);
+        }
 
         output << bstream;
         break;
