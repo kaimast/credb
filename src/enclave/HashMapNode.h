@@ -145,8 +145,14 @@ public:
     void increment_version_no()
     {
         auto &h = header();
-
         h.version.increment();
+
+        mark_page_dirty();
+    }
+
+    void increment_successor_version()
+    {
+        auto &h = header();
         h.successor_version.increment();
 
         mark_page_dirty();

@@ -10,32 +10,6 @@ namespace credb
 namespace trusted
 {
 
-PageHandle<MultiMap::node_t> MultiMap::get_successor(PageHandle<MultiMap::node_t> &prev, bool create, RWHandle &shard_lock, bool modify)
-{
-    if(!prev)
-    {
-        return PageHandle<MultiMap::node_t>();
-    }
-
-    auto succ = prev->successor();
-    auto node = get_node_internal(succ, create, prev->successor_version(), shard_lock);
-
-    if(create)
-    {
-        if(succ == INVALID_PAGE_NO)
-        {
-            prev->set_successor(node->page_no());
-        }
-    }
-
-    if(create || modify)
-    {
-        prev->increment_version_no();
-    }
-
-    return node;
-} 
-
 MultiMap::iterator_t::iterator_t(MultiMap &map, bucketid_t bpos)
 : m_map(map), m_bucket(bpos), m_pos(0)
 {
@@ -53,66 +27,6 @@ void MultiMap::iterator_t::clear()
     m_current_nodes.clear();
     m_bucket = NUM_BUCKETS;
     m_shard_id = NUM_SHARDS;
-}
-
-PageHandle<MultiMap::node_t> MultiMap::get_node_internal(const page_no_t page_no, bool create, version_number expected_version, RWHandle &shard_lock)
-{
-    if(page_no == INVALID_PAGE_NO)
-    {
-        if(create)
-        {
-            return m_buffer.new_page<node_t>();
-        }
-        else
-        {
-            return PageHandle<node_t>();
-        }
-    }
-
-    while(true)
-    {
-        auto node = m_buffer.get_page<node_t>(page_no);
-
-        if(node->version_no() != expected_version)
-        {
-            if(m_buffer.get_encrypted_io().is_remote())
-            {
-                // The remote party might be in the process of updating it
-                // Notifications are always sent after updating the files on disk, so it safe to wait here
-                
-                node.clear();
-
-                m_bucket_cond.wait(shard_lock);
-            }
-            else
-            {
-                auto msg = "Staleness detected! MultiMap node: " + std::to_string(page_no) +
-                       "  Expected version: " + std::to_string(expected_version) +
-                       "  Read: " + std::to_string(node->version_no());
-              
-                log_error(msg);
-                throw StalenessDetectedException(msg);
-            }
-        }
-        else
-        {
-            return node;
-        }
-    }
-}
-
-PageHandle<MultiMap::node_t> MultiMap::get_node(const bucketid_t bucket_id, bool create, RWHandle &shard_lock, bool modify)
-{
-    auto &bucket = m_buckets[bucket_id];
-    auto node = get_node_internal(bucket.page_no, create, bucket.version, shard_lock);
-
-    if(create || modify)
-    {
-        bucket.page_no = node->page_no();
-        bucket.version.increment();
-    }
-    
-    return node;
 }
 
 void MultiMap::iterator_t::operator++()
@@ -144,7 +58,14 @@ void MultiMap::iterator_t::next_node()
             break;
         }
 
-        auto succ = m_map.get_successor(current, false, m_shard_lock);
+        std::vector<page_no_t> parents;
+
+        for(auto &n : m_current_nodes)
+        {
+            parents.push_back(n->page_no());
+        }
+
+        auto succ = m_map.get_successor(m_bucket, current, parents, false, m_shard_lock);
         m_pos = 0;
 
         if(succ)
@@ -209,7 +130,7 @@ void MultiMap::iterator_t::next_bucket()
             m_shard_lock.clear();
 
             m_shard_id = shard;
-            m_shard_lock = ReadLock(m_map.m_shards[m_shard_id]);
+            m_shard_lock = ReadLock(m_map.get_shard(m_bucket));
         }
 
         auto current = m_map.get_node(m_bucket, false, m_shard_lock);
@@ -232,10 +153,9 @@ void MultiMap::iterator_t::next_bucket()
     }
 }
 
-MultiMap::MultiMap(BufferManager &buffer)
-    : m_buffer(buffer), m_size(0)
+MultiMap::MultiMap(BufferManager &buffer, const std::string &name)
+    : AbstractMap(buffer, name)
 {
-    std::fill_n(m_buckets, NUM_BUCKETS, bucket_t{INVALID_PAGE_NO, 0});
 }
 
 MultiMap::~MultiMap() { clear(); }
@@ -268,6 +188,7 @@ void MultiMap::find_intersect(const KeyType &key, std::unordered_set<ValueType> 
         ReadLock lock(s);
 
         auto node = get_node(b, false, lock);
+        std::vector<page_no_t> parents;
 
         while(node && !found)
         {
@@ -278,7 +199,8 @@ void MultiMap::find_intersect(const KeyType &key, std::unordered_set<ValueType> 
             }
             else
             {
-                node = get_successor(node, false, lock);
+                parents.push_back(node->page_no());
+                node = get_successor(b, node, parents, false, lock);
             }
         }
         
@@ -302,10 +224,13 @@ void MultiMap::find_union(const KeyType &key, std::unordered_set<ValueType> &out
 
     auto node = get_node(b, false, lock);
 
+    std::vector<page_no_t> parents;
+
     while(node)
     {
         node->find_union(key, out);
-        node = get_successor(node, false, lock);
+        parents.push_back(node->page_no());
+        node = get_successor(b, node, parents, false, lock);
     }
 }
 
@@ -320,10 +245,14 @@ size_t MultiMap::estimate_value_count(const KeyType &key)
 
     auto node = get_node(b, false, lock);
 
+    std::vector<page_no_t> parents;
+
     while(node)
     {
+        parents.push_back(node->page_no());
+
         count += node->estimate_value_count(key);
-        node = get_successor(node, false, lock);
+        node = get_successor(b, node, parents, false, lock);
     }
 
     return count;
@@ -332,7 +261,7 @@ size_t MultiMap::estimate_value_count(const KeyType &key)
 bool MultiMap::remove(const KeyType &key, const ValueType &value)
 {
     auto b = to_bucket(key);
-    auto &s = m_shards[b % NUM_SHARDS];
+    auto &s = get_shard(b);
 
     WriteLock lock(s);
 
@@ -340,13 +269,16 @@ bool MultiMap::remove(const KeyType &key, const ValueType &value)
 
     bool removed = false;
 
+    std::vector<page_no_t> parents;
+
     while(node && !removed)
     {
         removed = node->remove(key, value);
 
         if(!removed)
         {
-            node = get_successor(node, false, lock, true);
+            parents.push_back(node->page_no());
+            node = get_successor(b, node, parents, false, lock, true);
         }
     }
 
@@ -368,7 +300,7 @@ MultiMap::iterator_t MultiMap::end() { return { *this, NUM_BUCKETS }; }
 void MultiMap::insert(const KeyType &key, const ValueType &value)
 {
     auto b = to_bucket(key);
-    auto &s = m_shards[b % NUM_SHARDS];
+    auto &s = get_shard(b);
 
     WriteLock lock(s);
 
@@ -376,13 +308,16 @@ void MultiMap::insert(const KeyType &key, const ValueType &value)
 
     bool created = false;
 
+    std::vector<page_no_t> parents;
+
     while(!created)
     {
         created = node->insert(key, value);
 
         if(!created)
         {
-            node = get_successor(node, true, lock);
+            parents.push_back(node->page_no());
+            node = get_successor(b, node, parents, true, lock);
         }
     }
 
@@ -393,32 +328,23 @@ void MultiMap::clear()
 {
     for(bucketid_t i = 0; i < NUM_BUCKETS; ++i)
     {
-        auto &shard = m_shards[i % NUM_SHARDS];
-        ReadLock lock(shard);
+        auto &shard = get_shard(i);
+        WriteLock lock(shard);
 
         auto n = get_node(i, false, lock);
+
+        std::vector<page_no_t> parents;
 
         while(n)
         {
             auto diff = n->clear();
             m_size -= diff;
 
-            n = get_successor(n, false, lock);
+            parents.push_back(n->page_no());
+            n = get_successor(i, n, parents, false, lock);
         }
     }
 }
-
-size_t MultiMap::size() const { return m_size; }
-
-void MultiMap::dump_metadata(bitstream &output) { output << m_buckets << m_size; }
-
-void MultiMap::load_metadata(bitstream &input) { input >> m_buckets >> m_size; }
-
-MultiMap::bucketid_t MultiMap::to_bucket(const KeyType key) const
-{
-    return static_cast<bucketid_t>(hash<KeyType>(key) % NUM_BUCKETS);
-}
-
 
 } // namespace trusted
 } // namespace credb

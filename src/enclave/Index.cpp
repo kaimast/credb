@@ -18,7 +18,7 @@ const std::string &Index::name() const { return m_name; }
 
 
 HashIndex::HashIndex(BufferManager &buffer, const std::string &name, const std::vector<std::string> &paths)
-: Index(name, paths), m_map(buffer)
+: Index(name, paths), m_map(buffer, name)
 {
     if(paths.size() != 1)
     {
@@ -31,7 +31,6 @@ HashIndex::~HashIndex() = default;
 void HashIndex::dump_metadata(bitstream &output)
 {
     output << m_name << m_paths;
-    m_map.dump_metadata(output);
 }
 
 HashIndex *HashIndex::new_from_metadata(BufferManager &buffer, bitstream &input)
@@ -40,7 +39,7 @@ HashIndex *HashIndex::new_from_metadata(BufferManager &buffer, bitstream &input)
     std::vector<std::string> paths;
     input >> name >> paths;
     auto index = new HashIndex(buffer, name, paths);
-    index->m_map.load_metadata(input);
+    //index->m_map.load_metadata(input);
     return index;
 }
 

@@ -15,7 +15,7 @@ namespace trusted
 Collection::Collection(BufferManager &buffer_manager, const std::string &name)
 : m_buffer_manager(buffer_manager), m_name(name)
 {
-    m_primary_index = new HashMap(m_buffer_manager, m_name + "_primary");
+    m_primary_index = new HashMap(m_buffer_manager, m_name + "_primary_index");
 }
 
 Collection::Collection(Collection &&other) noexcept

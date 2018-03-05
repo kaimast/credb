@@ -51,6 +51,7 @@ TEST(PrimitivesTest, version_number)
 
     EXPECT_TRUE(version_number(60000) < version_number(5));
     EXPECT_TRUE(version_number(50) < version_number(1000));
+    EXPECT_FALSE(version_number(5) < version_number(4));
 }
 
 }

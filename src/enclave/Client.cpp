@@ -72,7 +72,7 @@ void Client::handle_message(const uint8_t *data, uint32_t len)
             break;
         }
         default:
-            log_error("Received unknown message type");
+            log_error("Received unexpected message type: " + std::to_string(static_cast<uint8_t>(type)));
         }
     }
     else
@@ -89,7 +89,7 @@ void Client::handle_message(const uint8_t *data, uint32_t len)
             handle_attestation_result(input);
             break;
         default:
-            log_error("Received unknown message type");
+            log_error("Received unexpected message type: " + std::to_string(static_cast<uint8_t>(type)));
             break;
         }
     }

@@ -69,14 +69,14 @@ TEST(MultiMapTest, empty_map)
 {
     LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
-    MultiMap map(buffer);
+    MultiMap map(buffer, "foo");
 }
 
 TEST(MultiMapTest, iterate_one)
 {
     LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
-    MultiMap map(buffer);
+    MultiMap map(buffer, "foo");
 
     map.insert(42, "foobar");
 
@@ -97,7 +97,7 @@ TEST(MultiMapTest, clear)
 {
     LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
-    MultiMap map(buffer);
+    MultiMap map(buffer, "foo");
 
     map.insert(42, "foobar");
     map.clear();
@@ -120,7 +120,7 @@ TEST(MultiMapTest, iterate_many)
 {
     LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
-    MultiMap map(buffer);
+    MultiMap map(buffer, "foo");
 
     for(uint32_t i = 0; i < 1000; ++i)
     {
@@ -146,7 +146,7 @@ TEST(MultiMapTest, remove)
 {
     LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
-    MultiMap map(buffer);
+    MultiMap map(buffer, "foo");
 
     map.insert(42, "foobar");
     bool res = map.remove(42, "foobar");
@@ -164,7 +164,7 @@ TEST(MultiMapTest, find_union)
 {
     LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
-    MultiMap map(buffer);
+    MultiMap map(buffer, "foo");
 
     const uint64_t key = rand();
     for(int i = 0; i < 10; ++i)
@@ -188,7 +188,7 @@ TEST(MultiMapTest, find_intersect)
 {
     LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
-    MultiMap map(buffer);
+    MultiMap map(buffer, "foo");
 
     const uint64_t key = rand();
     for(int i = 0; i < 10; ++i)
@@ -212,7 +212,7 @@ TEST(MultiMapTest, lots_of_data)
 {
     LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
-    MultiMap map(buffer);
+    MultiMap map(buffer, "foo");
 
     for (int i = 0; i < 10000; ++i)
     {
@@ -236,7 +236,7 @@ TEST(MultiMapTest, lots_of_data_random)
 {
     LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
-    MultiMap map(buffer);
+    MultiMap map(buffer, "foo");
 
     std::unordered_map<uint64_t, std::unordered_set<std::string>> data;
     for (int i = 0; i < 10000; ++i)
@@ -268,7 +268,7 @@ TEST(MultiMapTest, large_bucket)
 {
     LocalEncryptedIO encrypted_io;
     BufferManager buffer(&encrypted_io, "test_buffer", 70<<20);
-    MultiMap map(buffer);
+    MultiMap map(buffer, "foo");
 
     std::unordered_map<uint64_t, std::unordered_set<std::string>> data;
     std::unordered_set<std::string> v;
