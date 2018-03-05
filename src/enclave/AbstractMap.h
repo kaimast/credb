@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include "version_number.h"
 #include "BufferManager.h"
 #include "RWLockable.h"
