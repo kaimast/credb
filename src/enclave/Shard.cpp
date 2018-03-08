@@ -6,7 +6,8 @@ namespace trusted
 {
 
 Shard::Shard(BufferManager &buffer) : m_buffer(buffer)
-    {}
+{
+}
 
 shard_id_t Shard::identifier() const { return m_identifier; }
 

@@ -11,6 +11,7 @@ parser.add_argument("--num_puts", type=int, default=100*1000)
 parser.add_argument("--server", type=str, default="localhost")
 parser.add_argument("--server_port", type=int, default=52424)
 parser.add_argument("--no_server", action="store_true")
+parser.add_argument("--verbose", action="store_true")
 
 COLLECTION = "testcol"
 PAYLOAD = "foobar"
@@ -30,7 +31,7 @@ count = 0
 server = Testserver()
 
 if not args.no_server:
-    server.start(args.server_port)
+    server.start(args.server_port, quiet=(not args.verbose))
 
 for _ in range(args.num_clients):
    p = Process(target=run_puts)

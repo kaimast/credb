@@ -166,7 +166,7 @@ void Enclave::set_upstream(remote_party_id upstream_id)
         std::string col;
         bstream >> col;
 
-        log_debug("Reload StringIndex root of collection [" + col + "]");
+        log_debug("Reloading index root of collection [" + col + "]");
         m_ledger.get_collection(col, true).primary_index().load_root(bstream);
     }
 #endif

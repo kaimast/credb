@@ -36,14 +36,14 @@ public:
     {
         for(auto &shard: m_shards)
         {
-            shard.read_lock();
+            shard.mutex.read_lock();
         }
 
         out << m_buckets;
 
         for(auto &shard: m_shards)
         {
-            shard.read_unlock();
+            shard.mutex.read_unlock();
         }
     }
 
@@ -51,14 +51,14 @@ public:
     {
         for(auto &shard : m_shards)
         {
-            shard.write_lock();
+            shard.mutex.write_lock();
         }
 
         in >> m_buckets;
 
         for(auto &shard : m_shards)
         {
-            shard.write_unlock();
+            shard.mutex.write_unlock();
         }
     }
 
@@ -69,7 +69,7 @@ public:
         changes >> bid >> new_val;
 
         auto &s = get_shard(bid);
-        WriteLock lock(s);
+        WriteLock lock(s.mutex);
 
         auto &bucket = m_buckets[bid];
 
@@ -103,7 +103,7 @@ public:
 
         bucket = new_val;
 
-        m_bucket_cond.notify_all();
+        s.condition_var.notify_all();
     }
 
 protected:
@@ -113,21 +113,34 @@ protected:
         version_number version;
     };
 
+    struct shard_t
+    {
+        RWLockable mutex;
+        std::condition_variable_any condition_var;
+    };
+
     PageHandle<node_type> get_successor(bucketid_t bid, PageHandle<node_type> &prev, const std::vector<page_no_t> &parents, bool create, RWHandle &shard_lock, bool modify = false)
     {
         auto succ = prev->successor();
+        const bool will_modify = create || (modify && succ != INVALID_PAGE_NO);
 
-        if(create || modify)
+        if(will_modify)
         {
             prev->increment_version_no();
         }
 
         auto node = get_node_internal(bid, succ, parents, create, shard_lock);
 
-        if(create || modify)
+        if(will_modify)
         {
+            if(!node)
+            {
+                throw std::runtime_error("Invalid state!");
+            }
+
             prev->set_successor(node->page_no());
             prev->increment_successor_version();
+            prev->flush_page();
         }
 
         return node;
@@ -138,14 +151,19 @@ protected:
         auto &bucket = m_buckets[bid];
         std::vector<page_no_t> parents;
 
-        auto node = get_node_internal(bid, bucket.page_no, parents, create, shard_lock);
+        const auto page_no = bucket.page_no;
+        const bool will_modify = create || (modify && page_no != INVALID_PAGE_NO);
 
-        if(create || modify)
+        auto node = get_node_internal(bid, page_no, parents, create, shard_lock);
+
+        if(will_modify)
         {
             bucket.page_no = node->page_no();
             bucket.version.increment();
+
+            node->flush_page();
         }
-        
+
         return node;
     }
 
@@ -159,11 +177,10 @@ protected:
         return m_buckets[id];
     }
 
-    RWLockable& get_shard(bucketid_t id) 
+    shard_t& get_shard(bucketid_t id) 
     {
         return m_shards[id % NUM_SHARDS];
     }
-
 
     std::atomic<size_t> m_size;
 
@@ -171,7 +188,8 @@ protected:
         : m_size(0), m_buffer(buffer)
     {
         (void)name;
-        m_buckets.fill(bucket_t{INVALID_PAGE_NO, 0});
+        bucket_t default_bucket = { .page_no = INVALID_PAGE_NO, .version = 0};
+        m_buckets.fill(default_bucket);
     }
 
 private:
@@ -191,7 +209,20 @@ private:
 
         while(true)
         {
-            auto node = m_buffer.get_page<node_type>(page_no);
+            PageHandle<node_type> node;
+
+            if(m_buffer.get_encrypted_io().is_remote())
+            {
+                // This might wait on upstream to update the data
+                // So we have to unlock before we wait
+                shard_lock.unlock();
+                node = m_buffer.get_page<node_type>(page_no);
+                shard_lock.lock(); 
+            }
+            else
+            {
+                node = m_buffer.get_page<node_type>(page_no);
+            }
 
             version_number expected_version;
 
@@ -208,19 +239,33 @@ private:
                 auto parent = get_node_internal(bid, pid, pparents, create, shard_lock);
 
                 expected_version = parent->successor_version();
-            }   
+            }
+
+            if(!node)
+            {
+                throw std::runtime_error("Invalid state: No such node");
+            }
 
             if(node->version_no() != expected_version)
             {
-                log_debug(std::to_string(node->version_no()) + " != " + std::to_string(expected_version));
+                log_debug(std::to_string(page_no) + ": " + std::to_string(node->version_no()) + " != " + std::to_string(expected_version));
 
                 if(m_buffer.get_encrypted_io().is_remote())
                 {
+                    if(node->version_no() < expected_version)
+                    {
+                        // If we end up here the upstream probably didn't flush it's state to disk before pushing the index update
+                        log_error("Invalid state: Index more recent than file");
+                        abort();
+                    }
+
                     // The remote party might be in the process of updating it
                     // Notifications are always sent after updating the files on disk, so it safe to wait here
 
-                    m_bucket_cond.wait(shard_lock);
                     node.clear();
+
+                    auto &s = get_shard(bid);
+                    s.condition_var.wait(shard_lock);
                 }
                 else
                 {
@@ -241,10 +286,8 @@ private:
 
     BufferManager &m_buffer;
 
-   
-    std::condition_variable_any m_bucket_cond;
     std::array<bucket_t, NUM_BUCKETS> m_buckets;
-    std::array<RWLockable, NUM_SHARDS> m_shards;
+    std::array<shard_t, NUM_SHARDS> m_shards;
 };
 
 }

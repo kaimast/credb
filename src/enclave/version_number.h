@@ -14,17 +14,19 @@ namespace trusted
 class version_number
 {
 public:
-    static constexpr uint16_t MAX_VALUE   = UINT_LEAST16_MAX;
-    static constexpr uint16_t WINDOW_SIZE = MAX_VALUE / 2;
+    using int_type = uint32_t;
 
-    version_number(uint16_t val)
+    static constexpr int_type MAX_VALUE   = UINT_LEAST32_MAX;
+    static constexpr int_type WINDOW_SIZE = MAX_VALUE / 2;
+
+    version_number(int_type val)
         : m_value(val)
     {
     }
 
     version_number() = default;
 
-    uint16_t operator() () const
+    int_type operator() () const
     {
         return m_value;
     }
@@ -35,7 +37,7 @@ public:
     }
 
 private:
-    uint16_t m_value;
+    int_type m_value;
 };
 
 inline bool operator==(const version_number &first, const version_number &second)

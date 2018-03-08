@@ -119,6 +119,7 @@ class BufferManager
             m_lock.write_to_read_lock();
             auto handle = get_page_internal<T>(page_no, true);
             m_lock.read_unlock();
+
             return handle;
         }
 

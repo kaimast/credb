@@ -130,7 +130,7 @@ void MultiMap::iterator_t::next_bucket()
             m_shard_lock.clear();
 
             m_shard_id = shard;
-            m_shard_lock = ReadLock(m_map.get_shard(m_bucket));
+            m_shard_lock = ReadLock(m_map.get_shard(m_bucket).mutex);
         }
 
         auto current = m_map.get_node(m_bucket, false, m_shard_lock);
@@ -185,7 +185,7 @@ void MultiMap::find_intersect(const KeyType &key, std::unordered_set<ValueType> 
         auto b = to_bucket(key);
         auto &s = get_shard(b);
 
-        ReadLock lock(s);
+        ReadLock lock(s.mutex);
 
         auto node = get_node(b, false, lock);
         std::vector<page_no_t> parents;
@@ -220,7 +220,7 @@ void MultiMap::find_union(const KeyType &key, std::unordered_set<ValueType> &out
     auto b = to_bucket(key);
     auto &s = get_shard(b);
 
-    ReadLock lock(s);
+    ReadLock lock(s.mutex);
 
     auto node = get_node(b, false, lock);
 
@@ -241,7 +241,7 @@ size_t MultiMap::estimate_value_count(const KeyType &key)
     auto b = to_bucket(key);
     auto &shard = get_shard(b);
     
-    ReadLock lock(shard);
+    ReadLock lock(shard.mutex);
 
     auto node = get_node(b, false, lock);
 
@@ -263,7 +263,7 @@ bool MultiMap::remove(const KeyType &key, const ValueType &value)
     auto b = to_bucket(key);
     auto &s = get_shard(b);
 
-    WriteLock lock(s);
+    WriteLock lock(s.mutex);
 
     auto node = get_node(b, false, lock, true);
 
@@ -302,7 +302,7 @@ void MultiMap::insert(const KeyType &key, const ValueType &value)
     auto b = to_bucket(key);
     auto &s = get_shard(b);
 
-    WriteLock lock(s);
+    WriteLock lock(s.mutex);
 
     auto node = get_node(b, true, lock);
 
@@ -329,7 +329,7 @@ void MultiMap::clear()
     for(bucketid_t i = 0; i < NUM_BUCKETS; ++i)
     {
         auto &shard = get_shard(i);
-        WriteLock lock(shard);
+        WriteLock lock(shard.mutex);
 
         auto n = get_node(i, false, lock);
 

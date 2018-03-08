@@ -18,7 +18,11 @@ public:
     HashMapNode(BufferManager &buffer, page_no_t page_no)
         : Page(buffer, page_no)
     {
-        header_t header = {0, INVALID_PAGE_NO, 0, 0};
+        header_t header = {.version = 0,
+                           .successor = INVALID_PAGE_NO,
+                           .successor_version = 0,
+                           .size = 0};
+
         m_data << header;
     }
 
@@ -165,7 +169,6 @@ public:
 
         mark_page_dirty();
     }
-
 
     /**
      *  Get the number of elements in this node

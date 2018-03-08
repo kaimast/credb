@@ -63,8 +63,9 @@ Ledger::~Ledger()
 
 void Ledger::clear_cached_blocks()
 {
-    for(auto &shard : m_shards)
+    for(auto shard : m_shards)
     {
+        WriteLock lock(*shard);
         shard->reload_pending_block();
     }
 }
@@ -790,9 +791,8 @@ void Ledger::put_object_index_from_upstream(bitstream &changes, shard_id_t shard
     if(block_page_no != INVALID_PAGE_NO)
     {
         auto &shard = *m_shards[shard_id];
-        shard.write_lock();
+    //    WriteLock lock(shard); TODO we should probably lock here but it can create a deadlock
         shard.discard_cached_block(block_page_no);
-        shard.write_unlock();
     }
 }
 
@@ -860,22 +860,20 @@ bool Ledger::clear(const OpContext &op_context, const std::string &collection)
 void Ledger::organize_ledger(shard_id_t shard_no)
 {
     auto &shard = *m_shards[shard_no];
-    shard.write_lock();
+    WriteLock lock(shard);
 
     auto pending = shard.get_block(shard.pending_block_id());
 
     // Wait until we have reached at least min block size
     if(pending->get_data_size() < MIN_BLOCK_SIZE)
     {
-        shard.write_unlock();
         return;
     }
+
     pending->seal();
 
     auto newb = shard.generate_block();
     newb->flush_page();
-
-    shard.write_unlock();
 }
 
 ObjectEventHandle Ledger::get_latest_version(const OpContext &op_context,

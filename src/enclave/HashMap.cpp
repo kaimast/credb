@@ -66,7 +66,7 @@ HashMap::iterator_t::iterator_t(HashMap &map, bucketid_t bpos)
 HashMap::iterator_t::iterator_t(HashMap &map, bucketid_t bpos, std::vector<PageHandle<node_t>> &current_nodes, uint32_t pos)
     : m_map(map), m_shard_id(bpos % NUM_SHARDS), m_bucket(bpos), m_pos(pos)
 {
-    m_shard_lock = ReadLock(m_map.get_shard(m_bucket));
+    m_shard_lock = ReadLock(m_map.get_shard(m_bucket).mutex);
 
     for(auto &it: current_nodes)
     {
@@ -210,7 +210,7 @@ void HashMap::iterator_t::next_bucket()
             m_shard_lock.clear();
 
             m_shard_id = shard;
-            m_shard_lock = ReadLock(m_map.get_shard(m_bucket));
+            m_shard_lock = ReadLock(m_map.get_shard(m_bucket).mutex);
         }
 
         auto current = m_map.get_node(m_bucket, false, m_shard_lock);
@@ -249,7 +249,7 @@ void HashMap::insert(const KeyType &key, const ValueType &value, bitstream *out_
     auto bid = to_bucket(key);
     auto &s = get_shard(bid);
 
-    WriteLock lock(s);
+    WriteLock lock(s.mutex);
     auto &bucket = get_bucket(bid);
 
     auto node = get_node(bid, true, lock);
@@ -260,13 +260,14 @@ void HashMap::insert(const KeyType &key, const ValueType &value, bitstream *out_
     while(!done)
     {
         done = node->insert(key, value);
-        node->flush_page();
 
         if(!done)
         {
             parents.push_back(node->page_no());
             node = get_successor(bid, node, parents, true, lock);
         }
+
+        node->flush_page();
     }
 
     if(out_changes)
@@ -282,7 +283,7 @@ bool HashMap::get(const KeyType& key, ValueType &value_out)
     auto bid = to_bucket(key);
     auto &s = get_shard(bid);
     
-    ReadLock lock(s);
+    ReadLock lock(s.mutex);
 
     auto node = get_node(bid, false, lock);
 

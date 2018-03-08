@@ -210,3 +210,23 @@ TEST(HashMapTest, bug)
     ASSERT_NO_THROW(index.insert("key1", eid));
     ASSERT_NO_THROW(index.insert("key1000", eid));
 }
+
+TEST(HashMapTest, serialize_node)
+{
+    LocalEncryptedIO encrypted_io;
+    BufferManager buffer(&encrypted_io, "test_buffer", 1<<20);
+
+    auto node1 = buffer.new_page<HashMap::node_t>();
+    node1->increment_version_no();
+    node1->increment_version_no();
+    node1->increment_version_no();
+
+    auto no = node1->page_no();
+    node1.clear();
+
+    buffer.clear_cache();
+
+    auto node2 = buffer.get_page<HashMap::node_t>(no);
+
+    EXPECT_EQ(3, node2->version_no());
+}
