@@ -14,9 +14,9 @@ namespace trusted
 class version_number
 {
 public:
-    using int_type = uint32_t;
+    using int_type = uint16_t;
 
-    static constexpr int_type MAX_VALUE   = UINT_LEAST32_MAX;
+    static constexpr int_type MAX_VALUE   = UINT_LEAST16_MAX;
     static constexpr int_type WINDOW_SIZE = MAX_VALUE / 2;
 
     version_number(int_type val)

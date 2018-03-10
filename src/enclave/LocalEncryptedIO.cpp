@@ -8,8 +8,6 @@
 #include "Enclave_t.h"
 #endif
 
-#define ENCRYPT_FILES
-
 namespace credb
 {
 namespace trusted

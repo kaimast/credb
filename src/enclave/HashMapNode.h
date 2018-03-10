@@ -36,6 +36,8 @@ public:
         m_data.move_to(m_data.size());
     }
 
+    HashMapNode(HashMapNode &other) = delete;
+
     bitstream serialize() const override
     {
         bitstream bstream;

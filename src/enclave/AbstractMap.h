@@ -80,29 +80,7 @@ public:
             return;
         }
 
-        // Discard all cached pages of that bucket
-        auto current = m_buffer.get_page_if_cached<node_type>(bucket.page_no);
-
-        std::vector<page_no_t> nodes;
-        if(current)
-        {
-            nodes.push_back(current->page_no());
-        }
-
-        while(current)
-        {
-            auto succ = current->successor();
-            nodes.push_back(current->page_no());
-            current = m_buffer.get_page_if_cached<node_type>(succ);
-        }
-
-        for(auto node: nodes)
-        {
-            m_buffer.discard_cache(node);
-        }
-
         bucket = new_val;
-
         s.condition_var.notify_all();
     }
 
@@ -119,6 +97,11 @@ protected:
         std::condition_variable_any condition_var;
     };
 
+    /**
+     * Get the successor a specific node
+     *
+     * If executed as downstream, this might wait on upstream to send index updates
+     */
     PageHandle<node_type> get_successor(bucketid_t bid, PageHandle<node_type> &prev, const std::vector<page_no_t> &parents, bool create, RWHandle &shard_lock, bool modify = false)
     {
         auto succ = prev->successor();
@@ -167,11 +150,17 @@ protected:
         return node;
     }
 
+    /**
+     * Find a key's corresponding bucket id
+     */
     bucketid_t to_bucket(KeyType key) const
     {
         return static_cast<bucketid_t>(hash<KeyType>(key) % NUM_BUCKETS);
     }
 
+    /**
+     * Retrieve the bucket datastructure from the bucket id
+     */
     bucket_t& get_bucket(bucketid_t id) 
     {
         return m_buckets[id];
@@ -248,24 +237,19 @@ private:
 
             if(node->version_no() != expected_version)
             {
-                log_debug(std::to_string(page_no) + ": " + std::to_string(node->version_no()) + " != " + std::to_string(expected_version));
-
                 if(m_buffer.get_encrypted_io().is_remote())
                 {
                     if(node->version_no() < expected_version)
                     {
-                        // If we end up here the upstream probably didn't flush it's state to disk before pushing the index update
-                        log_error("Invalid state: Index more recent than file");
-                        abort();
+                        m_buffer.reload_page<node_type>(page_no);
                     }
-
-                    // The remote party might be in the process of updating it
-                    // Notifications are always sent after updating the files on disk, so it safe to wait here
-
-                    node.clear();
-
-                    auto &s = get_shard(bid);
-                    s.condition_var.wait(shard_lock);
+                    else
+                    {
+                        // The remote party might be in the process of updating it
+                        // Notifications are always sent after updating the files on disk, so it safe to wait here
+                        auto &s = get_shard(bid);
+                        s.condition_var.wait(shard_lock);
+                    }
                 }
                 else
                 {

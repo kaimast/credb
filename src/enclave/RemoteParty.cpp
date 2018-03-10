@@ -833,7 +833,7 @@ void RemoteParty::handle_request_upstream_mode(bitstream &input,
         input >> peer_type;
         log_debug("OperationType::TellPeerType: local_identifier()=" + std::to_string(local_identifier()) +
                   " peer_type=" + std::to_string(peer_type));
-        auto *self = dynamic_cast<Peer *>(this);
+        auto *self = dynamic_cast<Peer*>(this);
         self->set_peer_type(peer_type);
         bitstream bstream;
 

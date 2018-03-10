@@ -48,6 +48,10 @@ if get_option('debug_mutex') == true
     compile_args = compile_args + ['-DDEBUG_MUTEX']
 endif
 
+if get_option('encrypt_files') == true
+    compile_args = compile_args + ['-DENCRYPT_FILES']
+endif
+
 if get_option('buildtype') == 'release'
     if get_option('sgx_mode') == 'release' or get_option('sgx_mode') == 'simulation' or get_option('sgx_mode') == 'fake_enclave'
         compile_args = compile_args + ['-DNDEBUG', '-UDEBUG']

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Page.h"
+
 namespace credb
 {
 namespace trusted
@@ -8,19 +10,23 @@ namespace trusted
 template <class T> class PageHandle
 {
 private:
-    T *m_page;
+    internal_page_meta_t *m_meta;
 
 public:
     PageHandle(const PageHandle<T> &other) = delete;
-    PageHandle<T> &operator=(const PageHandle<T> &other) = delete;
-    PageHandle() : m_page(nullptr) {}
+    PageHandle<T>& operator=(const PageHandle<T> &other) = delete;
 
-    explicit PageHandle(T &page)
-        : m_page(&page) {}
+    PageHandle() : m_meta(nullptr) {}
 
-    PageHandle(PageHandle<T> &&other) : m_page(other.m_page) { other.m_page = nullptr; }
+    explicit PageHandle(internal_page_meta_t *meta)
+        : m_meta(meta)
+    {}
 
-    explicit operator bool() const { return m_page != nullptr; }
+    PageHandle(PageHandle<T> &&other)
+       : m_meta(other.m_meta)
+    { other.m_meta = nullptr; }
+
+    explicit operator bool() const { return m_meta != nullptr; }
 
     PageHandle<T> &operator=(PageHandle<T> &&other)
     {
@@ -28,28 +34,23 @@ public:
         {
             throw std::runtime_error("Cannot move to myself");
         }
-        
+
         clear();
-        m_page = other.m_page;
-        other.m_page = nullptr;
+        
+        m_meta = other.m_meta;
+        other.m_meta = nullptr;
         return *this;
     }
 
-    ~PageHandle() { clear(); }
-
-    void clear()
+    ~PageHandle()
     {
-        if(m_page)
-        {
-            auto &buffer = m_page->buffer_manager();
-            auto page_no = m_page->page_no();
-            buffer.unpin_page(page_no);
-            m_page = nullptr;
-        }
+        clear();
     }
 
-    T *operator->() const { return m_page; }
-    T &operator*() const { return *m_page; }
+    void clear();
+
+    T *operator->() const { return dynamic_cast<T*>(m_meta->page()); }
+    T &operator*() const { return dynamic_cast<T&>(*m_meta->page()); }
 };
 
 } // namespace trusted

@@ -43,6 +43,8 @@ if not args.no_upstream:
     server = Testserver()
     server.start(args.server_port, args.listen_port)
 
+print("Started upstream. Creating " + str(args.num_objs) + " objects...")
+
 # load data
 processes = []
 NUM_WORKER_LOAD_DATA = args.num_load_workers

@@ -176,7 +176,6 @@ void Enclave::set_upstream(remote_party_id upstream_id)
 
 bool Enclave::is_downstream_mode() const { return m_downstream_mode; }
 
-
 bool Enclave::read_from_disk(const std::string &filename, bitstream &data)
 {
     if(m_downstream_mode)

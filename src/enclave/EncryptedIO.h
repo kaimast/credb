@@ -17,9 +17,9 @@ namespace trusted
 class EncryptedIO
 {
 public:
+    EncryptedIO() = default;
     virtual ~EncryptedIO() = default;
-
-    const sgx_aes_gcm_128bit_key_t &disk_key() const { return m_disk_key; }
+    EncryptedIO(const EncryptedIO &other) = delete;
 
     void set_disk_key(const sgx_aes_gcm_128bit_key_t &key)
     {
@@ -64,6 +64,8 @@ public:
         return m_disk_key;
     }
  
+    const sgx_aes_gcm_128bit_key_t &disk_key() const { return m_disk_key; }
+
 private:
     sgx_aes_gcm_128bit_key_t m_disk_key;
 };

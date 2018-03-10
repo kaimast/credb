@@ -66,7 +66,7 @@ void Ledger::clear_cached_blocks()
     for(auto shard : m_shards)
     {
         WriteLock lock(*shard);
-        shard->reload_pending_block();
+        shard->discard_pending_block();
     }
 }
 
@@ -791,7 +791,9 @@ void Ledger::put_object_index_from_upstream(bitstream &changes, shard_id_t shard
     if(block_page_no != INVALID_PAGE_NO)
     {
         auto &shard = *m_shards[shard_id];
-    //    WriteLock lock(shard); TODO we should probably lock here but it can create a deadlock
+        WriteLock lock(shard);
+
+        shard.set_pending_block(block_page_no);
         shard.discard_cached_block(block_page_no);
     }
 }
@@ -1102,6 +1104,7 @@ void Ledger::dump_metadata(bitstream &output)
         it.second.dump_metadata(output);
     }
 
+    log_info("Ledger metadata dumped");
     log_info("Ledger metadata dumped");
 }
 

@@ -15,6 +15,7 @@ parser.add_argument("--num_ops", type=int, default=100)
 parser.add_argument("--server", type=str, default="localhost")
 parser.add_argument("--server_port", type=int, default=5042)
 parser.add_argument("--no_server", action="store_true")
+parser.add_argument("--verbose", action="store_true")
 
 args = parser.parse_args()
 
@@ -33,15 +34,18 @@ def run_adds():
 
             success, res = tx.commit(False)
 
+    conn.close()
+
 def load_data():
     conn = create_test_client(server=args.server, port=args.server_port)
     c = conn.get_collection(COLLECTION)
     c.put("foo", 0)
+    conn.close()
 
 server = Testserver()
 
 if not args.no_server:
-    server.start(args.server_port)
+    server.start(args.server_port, quiet=(not args.verbose))
 
 print("Loading data...")
 p = Process(target=load_data)
@@ -69,6 +73,8 @@ conn = create_test_client(server=args.server, port=args.server_port)
 c = conn.get_collection(COLLECTION)
 
 assert_equals(c.get("foo"), args.num_clients * args.num_ops)
+
+conn.close()
 
 server.stop()
 exit(exitcode)

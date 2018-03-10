@@ -1,4 +1,13 @@
 #include "EncryptedIO.h"
+#include "logging.h"
+#include "util/defines.h"
+#include "util/error.h"
+
+#ifdef FAKE_ENCLAVE
+#include "../src/server/FakeEnclave.h"
+#else
+#include "Enclave_t.h"
+#endif
 
 namespace credb
 {

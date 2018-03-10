@@ -22,34 +22,6 @@ class BufferManager
 {
     static constexpr size_t NUM_SHARDS = 32;
 
-    struct internal_page_meta_t : public credb::Mutex
-    {
-    private:
-        page_no_t m_page_no;
-        Page *m_page;
-        bool m_dirty;
-        size_t m_size;
-
-    public:
-        page_no_t page_no() { return m_page_no; }
-        Page* page() { return m_page; }
-
-        bool dirty() const { return m_dirty; } 
-        void mark_dirty() { m_dirty = true; }
-        void unmark_dirty() { m_dirty = false; }
-        
-        size_t size() const { return sizeof(*this) + m_size; }
-        void set_size(size_t new_size) { m_size = new_size; }
-
-        size_t cnt_pin;
-        std::list<internal_page_meta_t *>::iterator evict_list_iter;
-
-        internal_page_meta_t(page_no_t _page_no, Page *page_)
-        : m_page_no(_page_no), m_page(page_), m_dirty(false), m_size(page()->byte_size()), cnt_pin(0) 
-        {
-        }
-    };
-
     using metas_map_t = std::unordered_map<page_no_t, internal_page_meta_t *>;
 
     class shard_t
@@ -64,7 +36,7 @@ class BufferManager
 
         // Before calling: no lock requirement
         void mark_page_dirty(page_no_t page_no);
-
+    
         /**
          * @brief Write page to disk, if dirty
          *
@@ -103,83 +75,13 @@ class BufferManager
         }
 
         // Before calling: no lock requirement
-        template <class T, class... Args> PageHandle<T> new_page(page_no_t page_no, Args &&... args)
-        {
-            m_lock.write_lock();
-
-            check_evict();
-
-            auto page = new T(m_buffer, page_no, std::forward<Args>(args)...);
-            auto meta = new internal_page_meta_t(page_no, page);
-            m_loaded_size += meta->size();
-            meta->evict_list_iter = m_evict_list.end();
-            meta->mark_dirty();
-            m_metas[page_no] = meta;
-
-            m_lock.write_to_read_lock();
-            auto handle = get_page_internal<T>(page_no, true);
-            m_lock.read_unlock();
-
-            return handle;
-        }
+        template <class T, class... Args> PageHandle<T> new_page(page_no_t page_no, Args &&... args);
 
         // Before calling: RLock shard_t
-        template <class T> PageHandle<T> get_page_internal(page_no_t page_no, bool load)
-        {
-            if(page_no == INVALID_PAGE_NO)
-            {
-                return PageHandle<T>();
-            }
+        template <class T> PageHandle<T> get_page_internal(page_no_t page_no, bool load);
 
-            auto it = m_metas.find(page_no);
-            internal_page_meta_t *meta = nullptr;
-            T *page = nullptr;
-
-            if(it != m_metas.end())
-            {
-                meta = it->second;
-                page = static_cast<T*>(meta->page());
-            }
-            else
-            {
-                if(!load)
-                {
-                    // not loaded
-                    return PageHandle<T>();
-                }
-
-                m_lock.read_to_write_lock();
-
-                check_evict();
-
-                bitstream bstream = m_buffer.read_from_disk(page_no);
-                page = new T(m_buffer, page_no, bstream);
-                meta = new internal_page_meta_t(page_no, page);
-                meta->evict_list_iter = m_evict_list.end();
-
-                // double check, in case of another thread has loaded it just now
-                it = m_metas.find(page_no);
-                if(it != m_metas.end())
-                {
-                    delete meta;
-                    delete page;
-                    meta = it->second;
-                    page = static_cast<T*>(meta->page());
-                }
-                else
-                {
-                    m_loaded_size += meta->size();
-                    m_metas[page_no] = meta;
-                }
-                m_lock.write_to_read_lock();
-            }
-
-            meta->lock();
-            pin_page(*meta);
-            meta->unlock();
-
-            return PageHandle<T>(*page);
-        }
+        template<typename T> 
+        void reload_page(page_no_t page_no);
 
         // Before calling: Lock internal_page_meta_t
         void pin_page(internal_page_meta_t &meta);
@@ -225,6 +127,9 @@ public:
      * Before calling: no lock requirement
      */
     void mark_page_dirty(page_no_t page_no);
+
+    template<typename T> 
+    void reload_page(page_no_t page_no);
 
     /**
      * Write page to disk, if dirty
@@ -295,9 +200,8 @@ private:
     shard_t *m_shards[NUM_SHARDS];
 };
 
-inline void Page::flush_page() { m_buffer.flush_page(m_page_no); }
-
-inline void Page::mark_page_dirty() { m_buffer.mark_page_dirty(m_page_no); }
-
 } // namespace trusted
 } // namespace credb
+
+#include "BufferManager.inl"
+#include "Page.inl"
