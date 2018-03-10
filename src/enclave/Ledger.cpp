@@ -739,20 +739,24 @@ event_id_t Ledger::put_next_version(const OpContext &op_context,
 
     ObjectEventHandle version(std::move(new_version));
 
-    lock_handle.release_block(shard_no, pending->identifier(), LockType::Write);
+    auto pending_id = pending->identifier();
+    auto pending_size = pending->num_events();
+
+    lock_handle.release_block(shard_no, pending_id, LockType::Write);
 
     // forward only the index to downstream servers
-    send_index_updates_to_downstream(index_changes, shard_no, pending->page_no());
+    send_index_updates_to_downstream(index_changes, shard_no, pending_id, pending_size);
 
     return event_id;
 }
 
-void Ledger::send_index_updates_to_downstream(const bitstream &index_changes, shard_id_t shard, page_no_t invalidated_page)
+void Ledger::send_index_updates_to_downstream(const bitstream &index_changes, shard_id_t shard, page_no_t invalidated_page, Block::int_type block_size)
 {
 #ifdef TEST
     (void)index_changes;
     (void)shard;
     (void)invalidated_page;
+    (void)block_size;
 #else
     for(auto downstream_id : m_enclave.peers().get_downstream_set())
     {
@@ -772,30 +776,27 @@ void Ledger::send_index_updates_to_downstream(const bitstream &index_changes, sh
         update_msg << index_changes;
         update_msg << shard;
         update_msg << invalidated_page;
+        update_msg << block_size;
         update_msg << index_name;
+
         peer->send(update_msg);
         peer->unlock();
     }
 #endif
 }
 
-void Ledger::put_object_index_from_upstream(bitstream &changes, shard_id_t shard_id, page_no_t block_page_no)
+void Ledger::put_object_index_from_upstream(bitstream &changes, shard_id_t shard_id, page_no_t block_page_no, Block::int_type block_size)
 {
+    auto &shard = *m_shards[shard_id];
+    WriteLock lock(shard);
+
     std::string collection, index;
     changes >> collection >> index;
  
+    shard.set_pending_block(block_page_no, block_size);
+
     auto &col = get_collection(collection, true);
     col.update_index(index, changes);
-
-    // invalidate data block cache
-    if(block_page_no != INVALID_PAGE_NO)
-    {
-        auto &shard = *m_shards[shard_id];
-        WriteLock lock(shard);
-
-        shard.set_pending_block(block_page_no);
-        shard.discard_cached_block(block_page_no);
-    }
 }
 
 bool Ledger::create_index(const std::string &collection, const std::string &name, const std::vector<std::string> &paths)
@@ -845,7 +846,7 @@ bool Ledger::clear(const OpContext &op_context, const std::string &collection)
             m_object_count--;
            
             // tell downstream
-            send_index_updates_to_downstream(index_changes, shard, pending->identifier());
+            send_index_updates_to_downstream(index_changes, shard, pending->identifier(), pending->num_events());
         }
 
         ++it;
@@ -876,6 +877,7 @@ void Ledger::organize_ledger(shard_id_t shard_no)
 
     auto newb = shard.generate_block();
     newb->flush_page();
+    pending->flush_page();
 }
 
 ObjectEventHandle Ledger::get_latest_version(const OpContext &op_context,
@@ -1104,7 +1106,6 @@ void Ledger::dump_metadata(bitstream &output)
         it.second.dump_metadata(output);
     }
 
-    log_info("Ledger metadata dumped");
     log_info("Ledger metadata dumped");
 }
 

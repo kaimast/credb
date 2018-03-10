@@ -9,25 +9,25 @@ namespace trusted
 {
 
 Block::Block(BufferManager &buffer, page_no_t page_no, bool init)
-: Page(buffer, page_no), m_sealed(false), m_file_pos(0)
+: Page(buffer, page_no), m_file_pos(0)
 {
     if(!init)
     {
         return;
     }
 
-    // Avoid unneccesary allocs
+    // Avoid unnecessary allocs
     // Block size will be at least MIN_BLOCK_SIZE
     m_data.pre_alloc(MIN_BLOCK_SIZE);
 
-    uint32_t n_files = 50;
-    m_data << n_files;
-    memset(m_data.current(), 0, sizeof(uint32_t) * n_files);
-    m_data.move_by(n_files * sizeof(uint32_t), true);
+    header_t h = { .sealed = false, .num_files = 50};
+    m_data << h;
+    memset(m_data.current(), 0, sizeof(int_type) * h.num_files);
+    m_data.move_by(h.num_files * sizeof(int_type), true);
 }
 
 Block::Block(BufferManager &buffer, page_no_t page_no, bitstream &bstream)
-: Page(buffer, page_no), m_sealed(false), m_file_pos(0)
+    : Page(buffer, page_no), m_file_pos(0)
 {
     uint8_t *buf;
     uint32_t len;
@@ -35,20 +35,18 @@ Block::Block(BufferManager &buffer, page_no_t page_no, bitstream &bstream)
     m_data.assign(buf, len, false);
     m_data.move_to(m_data.size());
 
-    auto index = reinterpret_cast<const uint32_t *>(m_data.data());
-    auto nfiles = index[0];
+    auto &h = header();
+    auto idx = index(); 
 
-    for(uint32_t i = 1; i <= nfiles; ++i)
+    for(uint16_t i = 0; i < h.num_files; ++i)
     {
-        if(index[i] == 0)
+        if(idx[i] == 0)
         {
             break;
         }
 
         m_file_pos += 1;
     }
-
-    seal();
 }
 
 bitstream Block::serialize() const
@@ -58,32 +56,32 @@ bitstream Block::serialize() const
     return bstream;
 }
 
-bool Block::is_pending() const { return !m_sealed; }
+bool Block::is_pending() const { return !header().sealed; }
 
-uint32_t Block::index_size() const
+size_t Block::index_size() const
 {
-    auto idx = reinterpret_cast<const uint32_t *>(m_data.data());
-    auto n_files = idx[0];
-    return n_files * sizeof(uint32_t);
+    return header().num_files * sizeof(int_type);
 }
 
-ObjectEventHandle Block::get_event(event_index_t idx) const
+ObjectEventHandle Block::get_event(event_index_t pos) const
 {
-    auto index = reinterpret_cast<const uint32_t *>(m_data.data());
-    if(idx >= index[0])
+    auto &h = header();
+
+    if(pos >= h.num_files)
     {
         throw std::runtime_error("Block::get_event_failed: out of bounds");
     }
 
-    auto offset = index[idx + 1];
-    auto idx_size = index[0] * sizeof(uint32_t);
+    auto idx = index();
+    auto offset = idx[pos];
+    auto idx_size = h.num_files * sizeof(int_type);
 
     if(offset == 0)
     {
         throw std::runtime_error("Block::get_event failed: no such entry");
     }
 
-    auto next = index[idx + 2];
+    auto next = idx[pos + 1];
     if(next == 0)
     {
         next = m_data.pos();
@@ -100,56 +98,57 @@ ObjectEventHandle Block::get_event(event_index_t idx) const
     return ObjectEventHandle(std::move(view));
 }
 
-uint32_t Block::num_events() const { return m_file_pos; }
-
 size_t Block::byte_size() const { return m_data.allocated_size() + sizeof(*this); }
 
 block_id_t Block::identifier() const { return page_no(); }
 
 void Block::seal()
 {
-    if(m_sealed)
+    auto &h = header();
+
+    if(h.sealed)
     {
         throw std::runtime_error("Block is already sealed");
     }
 
-    m_sealed = true;
+    h.sealed = true;
+    mark_page_dirty();
 }
 
 void Block::unseal()
 {
-    if(!m_sealed)
+    auto &h = header();
+
+    if(!h.sealed)
     {
         throw std::runtime_error("Block is not sealed");
     }
 
-    m_sealed = false;
-    m_data.move_to(m_data.size());
+    h.sealed = false;
 }
 
 event_index_t Block::insert(json::Document &event)
 {
-    if(m_sealed)
+    if(header().sealed)
     {
         throw std::runtime_error("cannot insert. block is already sealed");
     }
 
-    auto index = reinterpret_cast<uint32_t *>(m_data.data());
-    auto &n_files = index[0];
-
+    auto &h = header();
+    auto idx = index();
     auto idx_size = index_size();
     auto pos = m_data.pos();
 
-    if(m_file_pos + 1 >= n_files)
+    if(num_events() >= h.num_files)
     {
         constexpr uint32_t FILE_INCREASE = 50;
 
-        n_files += FILE_INCREASE;
-        m_data.move_to(idx_size);
+        h.num_files += FILE_INCREASE;
+        m_data.move_to(idx_size + sizeof(h));
 
-        auto increase = FILE_INCREASE * sizeof(uint32_t);
+        auto increase = FILE_INCREASE * sizeof(int_type);
         m_data.make_space(increase);
-        index = reinterpret_cast<uint32_t *>(m_data.data());
+        idx = index();
 
         memset(m_data.current(), 0, increase);
 
@@ -159,7 +158,7 @@ event_index_t Block::insert(json::Document &event)
         m_data.move_to(pos);
     }
 
-    index[m_file_pos + 1] = pos - idx_size;
+    idx[m_file_pos] = pos - idx_size;
     m_file_pos += 1;
 
     m_data.write_raw_data(event.data().data(), event.data().size());

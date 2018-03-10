@@ -12,7 +12,41 @@ Shard::Shard(BufferManager &buffer) : m_buffer(buffer)
 PageHandle<Block> Shard::get_block(block_id_t block)
 {
     page_no_t page_no = block;
-    return m_buffer.get_page<Block>(page_no);
+    auto hdl = m_buffer.get_page<Block>(page_no);
+
+    if((page_no == m_pending_block_id))
+    {
+        if(m_buffer.get_encrypted_io().is_remote())
+        {
+            // Make sure we have the most recent version
+            while(hdl->num_events() < m_num_pending_events)
+            {
+                m_buffer.reload_page<Block>(page_no);
+            }
+        }
+    }
+    else if(page_no < m_pending_block_id)
+    {
+        if(hdl->is_pending())
+        {
+            // Make sure we have the most recent version
+            if(m_buffer.get_encrypted_io().is_remote())
+            {
+                m_buffer.reload_page<Block>(page_no);
+            }
+            
+            if(hdl->is_pending())
+            {
+                throw StalenessDetectedException("Old data block was loaded!");
+            }
+        }
+    }
+    else
+    {
+        throw std::runtime_error("Shard::get_block failed: invalid state");
+    }
+
+    return hdl;
 }
 
 PageHandle<Block> Shard::generate_block()

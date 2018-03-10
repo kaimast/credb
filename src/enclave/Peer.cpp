@@ -573,10 +573,11 @@ void Peer::handle_message(const uint8_t *data, uint32_t len)
             bitstream changes;
             shard_id_t shard;
             page_no_t block_page_no;
+            uint16_t block_size;
 
-            input >> changes >> shard >> block_page_no;
+            input >> changes >> shard >> block_page_no >> block_size;
             
-            m_ledger.put_object_index_from_upstream(changes, shard, block_page_no);
+            m_ledger.put_object_index_from_upstream(changes, shard, block_page_no, block_size);
             lock();
             break;
         }

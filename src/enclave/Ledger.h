@@ -186,7 +186,7 @@ public:
 
     void clear_cached_blocks();
 
-    void put_object_index_from_upstream(bitstream &changes, shard_id_t shard_id, page_no_t block_page_no);
+    void put_object_index_from_upstream(bitstream &changes, shard_id_t shard_id, page_no_t block_page_no, Block::int_type block_size);
 
     void unload_everything(); // for debug purpose
     void dump_metadata(bitstream &output); // for debug purpose
@@ -281,7 +281,7 @@ private:
 
     void organize_ledger(uint16_t shard_no);
 
-    void send_index_updates_to_downstream(const bitstream &index_changes, shard_id_t shard, page_no_t invalidated_page);
+    void send_index_updates_to_downstream(const bitstream &index_changes, shard_id_t shard, page_no_t invalidated_page, Block::int_type block_size);
 
     Shard *m_shards[NUM_SHARDS];
 

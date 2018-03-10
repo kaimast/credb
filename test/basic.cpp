@@ -24,7 +24,6 @@ TEST(Basic, nop)
 
     const size_t NUM_OBJECTS = 10*1000;
 
-    size_t start_size = c->size();
     std::string objs[NUM_OBJECTS];
 
     for(size_t i = 0; i < NUM_OBJECTS; ++i)
@@ -38,7 +37,7 @@ TEST(Basic, nop)
         EXPECT_TRUE(conn->nop(value(i).str()));
     }
 
-    ASSERT_EQ(c->size(), NUM_OBJECTS + start_size);
+    ASSERT_EQ(c->size(), NUM_OBJECTS);
 
     c->clear();
 }
@@ -285,7 +284,8 @@ TEST(Basic, insert_huge_document)
 
     writer.start_array("");
 
-    for(uint32_t i = 0; i < 10000; ++i) {
+    for(uint32_t i = 0; i < 10000; ++i)
+    {
         writer.write_string("", std::to_string(i));
     }
 

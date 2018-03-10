@@ -22,10 +22,40 @@ class ObjectEventHandle;
  */
 class Block : public Page
 {
+public:
+    using int_type = uint32_t;
+
 private:
     bitstream m_data;
-    bool m_sealed;
-    uint32_t m_file_pos;
+    int_type m_file_pos;
+
+    struct header_t
+    {
+        bool sealed;
+        int_type num_files;
+    };
+
+    header_t& header()
+    {
+        return *reinterpret_cast<header_t*>(m_data.data());
+    }
+
+    const header_t& header() const
+    {
+        return *reinterpret_cast<const header_t*>(m_data.data());
+    }
+
+    size_t index_size() const;
+
+    const int_type* index() const
+    {
+        return reinterpret_cast<const int_type*>(m_data.data()+sizeof(header_t));
+    }
+
+    int_type* index()
+    {
+        return reinterpret_cast<int_type*>(m_data.data()+sizeof(header_t));
+    }
 
 public:
     Block(BufferManager &buffer, page_no_t page_no, bool init);
@@ -47,13 +77,20 @@ public:
     size_t get_data_size() const { return m_data.size(); }
 
     bool is_pending() const;
-    uint32_t index_size() const;
     event_index_t insert(json::Document &event);
-    ObjectEventHandle get_event(event_index_t idx) const;
-    uint32_t num_events() const;
+    ObjectEventHandle get_event(event_index_t pos) const;
     block_id_t identifier() const;
     void seal();
     void unseal(); // for debug purpose
+
+    /**
+     * How many entries are stored in this block? 
+     */
+    int_type num_events() const
+    {
+        return m_file_pos+1;
+    }
+
 };
 
 

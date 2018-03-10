@@ -75,6 +75,7 @@ c = conn.get_collection(COLLECTION)
 assert_equals(c.get("foo"), args.num_clients * args.num_ops)
 
 conn.close()
+sleep(1)
 
 server.stop()
 exit(exitcode)
