@@ -914,7 +914,6 @@ void RemoteParty::handle_request_get_object(bitstream &input, const OpContext &o
 
     auto it = m_ledger.iterate(op_context, collection, key, path);
     auto [eid, value] = it.next();
-    it.clear();
 
     bitstream bstream;
     bitstream &out = generate_witness ? bstream : output;
@@ -948,7 +947,6 @@ void RemoteParty::handle_request_get_object(bitstream &input, const OpContext &o
         output << bstream;
     }
 }
-
 
 } // namespace trusted
 } // namespace credb

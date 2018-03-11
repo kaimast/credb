@@ -61,6 +61,9 @@ public:
 
     void release_block(shard_id_t shard_no, block_id_t block, LockType lock_type);
 
+    /**
+     * Acquire lock and return a handle to a shard
+     */
     Shard &get_shard(shard_id_t shard_no, LockType lock_type);
 
     void release_shard(shard_id_t shard_no,LockType lock_type);

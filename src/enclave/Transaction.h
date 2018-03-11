@@ -24,6 +24,12 @@ class Transaction
 private:
     IsolationLevel m_isolation;
 
+    /**
+     * Keep a list of all locks that need to be acquired
+     * @note this needs to be ordered so we don't deadlock
+     */
+    std::map<shard_id_t, LockType> m_shard_lock_types;
+
 public:
     IsolationLevel isolation_level() const
     {
@@ -34,12 +40,6 @@ public:
     const OpContext &op_context;
     bool generate_witness;
     LockHandle lock_handle;
-
-    /**
-     * Keep a list of all locks that need to be aquired
-     * @note this needs to be ordered so we don't deadlock
-     */
-    std::map<shard_id_t, LockType> shards_lock_type;
 
     std::string error;
 
@@ -61,7 +61,15 @@ public:
 
     void get_output(bitstream &output);
 
-    void set_read_lock_if_not_present(shard_id_t sid);
+    /**
+     * Sets a read lock for a shard to read if no lock for it has been set yet
+     */ 
+    void set_read_lock(shard_id_t sid);
+
+    /**
+     * Sets a write lock for a shard
+     */
+    void set_write_lock(shard_id_t sid);
 
     bool check_repeatable_read(ObjectEventHandle &obj,
                            const std::string &collection,

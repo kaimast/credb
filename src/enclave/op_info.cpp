@@ -31,7 +31,7 @@ check_obj_info_t::check_obj_info_t(Transaction &tx, const std::string &collectio
 
 void check_obj_info_t::collect_shard_lock_type()
 {
-    transaction().set_read_lock_if_not_present(m_sid);
+    transaction().set_read_lock(m_sid);
 }
 
 void check_obj_info_t::extract_reads(std::unordered_set<event_id_t> &read_set)
@@ -86,7 +86,7 @@ void has_obj_info_t::extract_reads(std::unordered_set<event_id_t> &read_set)
 
 void has_obj_info_t::collect_shard_lock_type()
 {
-    transaction().set_read_lock_if_not_present(m_sid);
+    transaction().set_read_lock(m_sid);
 }
 
 bool has_obj_info_t::validate()
@@ -134,7 +134,7 @@ void get_info_t::extract_reads(std::unordered_set<event_id_t> &read_set)
 
 void get_info_t::collect_shard_lock_type()
 {
-    transaction().set_read_lock_if_not_present(m_sid);
+    transaction().set_read_lock(m_sid);
 }
 
 bool get_info_t::validate()
@@ -149,10 +149,9 @@ bool get_info_t::validate()
     }
     else
     {
-        const LockType lock_type = transaction().shards_lock_type[m_sid];
         event_id_t latest_eid;
        
-        obj = transaction().ledger.get_latest_version(transaction().op_context, m_collection, m_key, "", latest_eid, transaction().lock_handle, lock_type);
+        obj = transaction().ledger.get_latest_version(transaction().op_context, m_collection, m_key, "", latest_eid, transaction().lock_handle, LockType::Read);
 
         if(!obj.valid())
         {
@@ -196,7 +195,7 @@ void put_info_t::extract_writes(std::array<uint16_t, NUM_SHARDS> &write_set)
 
 void put_info_t::collect_shard_lock_type()
 {
-    transaction().shards_lock_type[m_sid] = LockType::Write;
+    transaction().set_write_lock(m_sid);
 }
 
 bool put_info_t::validate()
@@ -258,7 +257,7 @@ void add_info_t::extract_writes(std::array<uint16_t, NUM_SHARDS> &write_set)
 
 void add_info_t::collect_shard_lock_type()
 {
-    transaction().shards_lock_type[m_sid] = LockType::Write;
+    transaction().set_write_lock(m_sid);
 }
 
 bool add_info_t::do_write(std::unordered_set<event_id_t> &read_set,
@@ -304,7 +303,7 @@ void remove_info_t::extract_writes(std::array<uint16_t, NUM_SHARDS> &write_set)
 
 void remove_info_t::collect_shard_lock_type()
 {
-    transaction().shards_lock_type[m_sid] = LockType::Write;
+    transaction().set_write_lock(m_sid);
 }
 
 bool remove_info_t::do_write(std::unordered_set<event_id_t> &read_set,
@@ -362,7 +361,7 @@ void find_info_t::collect_shard_lock_type()
         // Lock all shards to avoid phantom reads
         for(shard_id_t i = 0; i < NUM_SHARDS; ++i)
         {
-            transaction().set_read_lock_if_not_present(i);
+            transaction().set_read_lock(i);
         }
     }
     else
@@ -370,7 +369,7 @@ void find_info_t::collect_shard_lock_type()
         // Only lock what we read
         for(const auto &it : res)
         {
-            transaction().set_read_lock_if_not_present(std::get<1>(it));
+            transaction().set_read_lock(std::get<1>(it));
         }
     }
 }
@@ -393,12 +392,12 @@ void find_info_t::write_witness(
 
 bool find_info_t::validate_no_dirty_read()
 {
-    for(const auto & [key, sid, eid] : res)
+    for(const auto &[key, sid, eid] : res)
     {
-        const LockType lock_type = transaction().shards_lock_type[sid];
+        (void)sid;
         event_id_t latest_eid;
 
-        auto hdl = transaction().ledger.get_latest_version(transaction().op_context, collection, key, "", latest_eid, transaction().lock_handle, lock_type);
+        auto hdl = transaction().ledger.get_latest_version(transaction().op_context, collection, key, "", latest_eid, transaction().lock_handle, LockType::Read);
         
         if(!hdl.valid())
         {
