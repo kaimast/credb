@@ -1,0 +1,27 @@
+DOXYFILE_ENCODING      = UTF-8
+PROJECT_NAME           = "CreDB"
+
+INPUT = "@TOP_SRCDIR@/doc/python/" \
+        "@TOP_BUILDDIR@/doc/python"
+
+# THEME
+GENERATE_HTML=YES
+HTML_EXTRA_STYLESHEET="@TOP_SRCDIR@/doc/theme/style.css"
+
+OPTIMIZE_OUTPUT_JAVA = TRUE
+
+OUTPUT_DIRECTORY="python-doc"
+
+# Label is only used for our custom scripts
+ALIASES += label{1}=""
+
+ENABLE_PREPROCESSING = YES
+MACRO_EXPANSION      = YES 
+PREDEFINED           = __attribute__((x))=
+
+FULL_PATH_NAMES = NO
+PROJECT_NUMBER = @VERSION@
+QUIET = YES
+WARN_AS_ERROR = YES
+
+USE_MDFILE_AS_MAINPAGE = main.md

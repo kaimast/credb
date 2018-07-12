@@ -1,0 +1,26 @@
+#! /usr/bin/python3 
+
+import credb
+from sys import argv
+
+ID = int(argv[1])
+NUM_BANKS = int(argv[2])
+NUM_CLIENTS = int(argv[3])
+
+bank_name = "bank" + str(ID)
+bank_port = 9000 + ID
+
+admin_conn = credb.create_client("admin", bank_name, "localhost", port=bank_port)
+assets = admin_conn.get_collection('assets')
+liabilities = admin_conn.get_collection('liabilities')
+programs = admin_conn.get_collection('programs')
+
+for i in range(NUM_BANKS):
+    other = "bank" + str(i)
+
+    if i != ID:
+        programs.call("link_account", [other, bank_name])
+
+assets.put_code_from_file("policy", "../test/bank-test/accounts-policy.py")
+liabilities.put_code_from_file("policy", "../test/bank-test/accounts-policy.py")
+

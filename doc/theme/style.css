@@ -1,0 +1,108 @@
+body {
+    background-color: #EEEEEE;
+    color: black;
+    margin: 0;
+    font: 400 16px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-feature-settings: "kern" 1;
+    font-kerning: normal;
+}
+
+#top, div.header, div.contents {
+    max-width: 60em;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#top, div.header {
+    background-color: white;
+    background-image: none;
+    padding-left:  1em;
+    padding-right: 1em;
+}
+
+div#titlearea {
+    border: none;
+}
+
+#nav-path {
+    display: none;
+}
+
+#main-menu li {
+    border-color: #e7e7e7;
+    border-style: solid;
+    border-left-width: 0;
+    border-right-width: 0.2em;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+#nav-path ul {
+    margin-top: 0.5em;
+    border-radius: 0.5em;
+    background-color: #e7e7e7;
+}
+
+.sm-dox {
+    border-style: solid;
+    border-left-width: 0em;
+    border-right-width: 0em;
+    border-bottom-width: 0.2em;
+    border-top-width: 0.2em;
+    border-color: #e7e7e7;
+    background-image: none;
+    margin-left: -1em;
+    margin-right: -1em;
+}
+
+div.header {
+   margin-top: 1em;
+   margin-bottom: 0em;
+
+   border-top-left-radius: 0.5em;
+   border-top-right-radius: 0.5em;
+
+   padding-bottom: none;
+   border: none;
+}
+
+div.contents {
+    margin-top: 0em;
+    margin-bottom: 10px;
+    padding: 1em;
+    padding-top: none;
+    background-color: white;
+    border-bottom-left-radius: 0.5em;
+    border-bottom-right-radius: 0.5em;
+ 
+}
+
+#titlearea {
+    background-color: white;
+}
+
+hr.footer {
+    display: none;
+}
+
+.footer {
+    background-color: #AAA;
+}
+
+.memtitle {
+    background-image: none;
+    background-color: #DFE5F1;
+}
+
+.memproto {
+    box-shadow: none;
+}
+
+.memdoc {
+    background-image: none;
+    box-shadow: none;
+}
+
+address.footer {
+    display: none;
+}

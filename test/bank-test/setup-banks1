@@ -1,0 +1,32 @@
+#! /usr/bin/python3 
+
+import credb
+from sys import argv
+
+ID = int(argv[1])
+NUM_BANKS = int(argv[2])
+NUM_CLIENTS = int(argv[3])
+
+bank_name = "bank" + str(ID)
+bank_port = 9000 + ID
+
+admin_conn = credb.create_client("admin", bank_name, "localhost", port=bank_port)
+
+programs = admin_conn.get_collection('programs')
+programs.put_code_from_file("create_account", "../test/bank-test/create_account.py")
+programs.put_code_from_file("move_money_locally", "../test/bank-test/move_money_locally.py")
+programs.put_code_from_file("move_money_remotely", "../test/bank-test/move_money_remotely.py")
+programs.put_code_from_file("link_account", "../test/bank-test/link_account.py")
+programs.put_code_from_file("credit",  "../test/bank-test/credit.py")
+programs.put_code_from_file("balance", "../test/bank-test/balance.py")
+
+for i in range(NUM_CLIENTS):
+    bank = i % NUM_BANKS
+
+    if bank == ID:
+        programs.call("create_account", ["client" + str(i)])
+        programs.call("credit", ["client" + str(i), str(100000)])
+
+for i in range(0, NUM_BANKS):
+    programs.call("create_account", ["bank" + str(i)])
+
