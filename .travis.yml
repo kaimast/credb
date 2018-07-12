@@ -99,8 +99,7 @@ jobs:
       ../docker/run-test.sh
     - docker run --rm -it -e sgx_mode -e run_test=call_program              credb
       ../docker/run-test.sh
-    #TODO    - docker run --rm -it -e sgx_mode -e run_test=bank_test                 credb
-      ../docker/run-test.sh
+    #TODO    - docker run --rm -it -e sgx_mode -e run_test=bank_test                 credb ../docker/run-test.sh
     - docker run --rm -it -e sgx_mode -e run_test=concurrent_transactions   credb
       ../docker/run-test.sh
   - stage: test
