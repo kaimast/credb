@@ -42,7 +42,7 @@ TEST_F(ProgramsTest, call_simple_program)
     const std::string program_name = "foo";
     const std::string code = "return True";
 
-    bitstream data = cow::compile_code(code);
+    bitstream data = cow::compile_string(code);
     json::Binary binary(data);
 
     ledger->put(TESTSRC, COLLECTION, program_name, binary);
@@ -66,7 +66,7 @@ TEST_F(ProgramsTest, read_write_python)
                              "else:\n"
                              "    return True";
 
-    bitstream data = cow::compile_code(code);
+    bitstream data = cow::compile_string(code);
     json::Binary binary(data);
 
     ledger->put(TESTSRC, COLLECTION, "code", binary);
@@ -93,7 +93,7 @@ TEST_F(ProgramsTest, self_put)
     std::string code = "import self\n"
                        "return self.put(\"foo\", \"bar\")";
 
-    bitstream data = cow::compile_code(code);
+    bitstream data = cow::compile_string(code);
     json::Binary binary(data);
 
     json::Writer writer;
@@ -141,7 +141,7 @@ TEST_F(ProgramsTest, security_policy3)
                        "else:\n"
                        "    return True";
 
-    bitstream data = cow::compile_code(code);
+    bitstream data = cow::compile_string(code);
     json::Binary binary(data);
 
     json::Writer writer;
@@ -181,7 +181,7 @@ TEST_F(ProgramsTest, collection_policy)
     const std::string code = "import op_info\n"
                              "return not op_info.is_modification";
 
-    bitstream data = cow::compile_code(code);
+    bitstream data = cow::compile_string(code);
     json::Binary binary(data);
     json::String val1("foo");
     json::String val2("bar");
@@ -202,7 +202,7 @@ TEST_F(ProgramsTest, get_path_policy)
                        "else:\n"
                        "    return False";
 
-    bitstream data = cow::compile_code(code);
+    bitstream data = cow::compile_string(code);
     json::Binary binary(data);
 
     json::Writer writer;
@@ -246,7 +246,7 @@ TEST_F(ProgramsTest, security_policy)
                        "else:\n"
                        "    return True";
 
-    bitstream data = cow::compile_code(code);
+    bitstream data = cow::compile_string(code);
     json::Binary binary(data);
 
     json::Writer writer;
@@ -282,7 +282,7 @@ TEST_F(ProgramsTest, run_buggy_security_policy)
                        "else:\n"
                        "    return True";
 
-    bitstream data = cow::compile_code(code);
+    bitstream data = cow::compile_string(code);
     json::Binary binary(data);
 
     json::String val2("xyz");
@@ -312,7 +312,7 @@ TEST_F(ProgramsTest, security_policy2)
                        "else:\n"
                        "    return True";
 
-    bitstream data = cow::compile_code(code);
+    bitstream data = cow::compile_string(code);
     json::Binary binary(data);
 
     json::String val2("xyz");
@@ -361,7 +361,7 @@ TEST_F(ProgramsTest, limit_writes_security_policy)
                        "else:\n"
                        "    return True";
 
-    auto bin = cow::compile_code(code);
+    auto bin = cow::compile_string(code);
 
     json::Writer writer;
     writer.start_map("");
@@ -401,7 +401,7 @@ TEST_F(ProgramsTest, call_simple_program_nested)
     const std::string program_name = "foo";
     const std::string code = "return True";
 
-    bitstream data = cow::compile_code(code);
+    bitstream data = cow::compile_string(code);
 
     json::Writer writer;
     writer.start_map("");
@@ -435,7 +435,7 @@ TEST_F(ProgramsTest, run_program_with_get)
                        "   sum += c.get(s)\n"
                        "return sum > 5";
 
-    bitstream data = cow::compile_code(code);
+    bitstream data = cow::compile_string(code);
     json::Binary bin1(data);
     json::Binary bin2(data);
 
@@ -475,7 +475,7 @@ TEST_F(ProgramsTest, run_buggy_program)
     const std::string code = "import invalid_module\n"
                        "return sum == 7";
 
-    bitstream data = cow::compile_code(code);
+    bitstream data = cow::compile_string(code);
     json::Binary binary(data);
 
     json::Document i1("{\"val\":3}");
@@ -501,7 +501,7 @@ TEST_F(ProgramsTest, run_buggy_program2)
                        "unknown_object.call_me()\n"
                        "return sum == 7";
 
-    bitstream data = cow::compile_code(code);
+    bitstream data = cow::compile_string(code);
     json::Binary binary(data);
 
     json::Document i1("{\"val\":3}");
@@ -528,7 +528,7 @@ TEST_F(ProgramsTest, run_program_with_find)
                        "    sum += v['val']\n"
                        "return sum == 7";
 
-    bitstream data = cow::compile_code(code);
+    bitstream data = cow::compile_string(code);
     json::Binary binary(data);
 
     json::Document i1("{\"val\":3}");
@@ -557,7 +557,7 @@ TEST_F(ProgramsTest, run_program_with_put)
                        "res = c.put('foo', val)\n"
                        "return res";
 
-    bitstream data = cow::compile_code(code);
+    bitstream data = cow::compile_string(code);
     json::Binary binary(data);
 
     std::vector<std::string> args = {};
@@ -601,7 +601,7 @@ TEST_F(ProgramsTest, confidential_chat)
                        "else:\n"
                        "    return True";
 
-    const auto bin = cow::compile_code(code);
+    const auto bin = cow::compile_string(code);
         
     json::Writer writer;
     writer.start_map();

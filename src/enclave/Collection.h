@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <mutex>
+#include <vector>
 
 #include <bitstream.h>
 #include "util/defines.h"

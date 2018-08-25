@@ -244,7 +244,7 @@ cow::ValuePtr CollectionImpl::call(const std::string &program_name, const std::v
 
 event_id_t CollectionImpl::put_code(const std::string &key, const std::string &code)
 {
-    bitstream bstream = cow::compile_code(code);
+    bitstream bstream = cow::compile_string(code);
     json::Binary bin(bstream);
     return put(key, bin);
 }

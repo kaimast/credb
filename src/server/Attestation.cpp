@@ -3,6 +3,7 @@
 #include <glog/logging.h>
 #include <sgx_uae_service.h>
 #include <sgx_ukey_exchange.h>
+#include <stdbitstream.h>
 
 #ifdef FAKE_ENCLAVE
 #include "FakeEnclave.h"

@@ -52,7 +52,7 @@ struct obj_grammar : qi::grammar<Iterator, qi::unused_type(), qi::space_type>
                     [&](const std::string &c) {
                         try
                         {
-                            auto bin = cow::compile_code(c);
+                            auto bin = cow::compile_string(c);
                             writer.write_binary(current_key, bin);
                         }
                         catch(std::runtime_error &e)

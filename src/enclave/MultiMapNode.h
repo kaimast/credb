@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HashMapNode.h"
+#include <stdbitstream.h>
 #include <unordered_set>
 
 namespace credb

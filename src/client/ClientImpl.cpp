@@ -197,7 +197,7 @@ cow::ValuePtr ClientImpl::execute(const std::string &code, const std::vector<std
     auto op_id = get_next_operation_id();
     auto req = generate_op_request(op_id, OperationType::ExecuteCode);
 
-    bitstream bstream = cow::compile_code(code);
+    bitstream bstream = cow::compile_string(code);
     json::Binary binary(bstream);
 
     binary.compress(req);
