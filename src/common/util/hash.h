@@ -13,7 +13,7 @@
 // Currently, using a fixed seed generated from random.org.
 // MurmurHash is a widely hash function series. GCC also use it.
 // see: https://github.com/gcc-mirror/gcc/blob/master/libstdc++-v3/libsupc++/hash_bytes.cc
-// If C++17 suuport comes to SGX, maybe consider using std::hash on std::string_view.
+// If C++17 support comes to SGX, maybe consider using std::hash on std::string_view.
 
 typedef uint64_t hashval_t;
 

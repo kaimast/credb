@@ -3,7 +3,6 @@
 from test import *
 from test_skeleton import *
 
-import argparse
 import credb
 
 conn, server = single_server_setup()

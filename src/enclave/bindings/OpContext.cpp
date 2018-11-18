@@ -35,8 +35,6 @@ ValuePtr OpContext::get_member(const std::string &name)
         {
             return mem.create_string("CLIENT");
         }
-        // else if(type == IdentityType::Program)
-        //  return mem.create_string("PROGRAM");
         else
         {
             throw std::runtime_error("Unknown actor type!");
