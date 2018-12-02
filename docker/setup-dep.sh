@@ -46,6 +46,16 @@ make install > /dev/null 2>&1
 cd ..
 rm -rf libpypa
 
+# pybind11
+git clone https://github.com/pybind/pybind11.git
+cd pybind11
+git checkout v2.2
+cmake -DPYBIND11_TEST=OFF -DPYBIND11_PYTHON_VERSION=3.5 -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR
+make
+make install
+cd ..
+rm -rf pybind11
+
 # bitstream
 git clone https://github.com/kaimast/bitstream.git
 cd bitstream
@@ -78,7 +88,7 @@ ninja install
 cd ../..
 rm -rf libdocument
 
-# Cow lang
+# cowlang
 git clone https://github.com/kaimast/cowlang.git
 cd cowlang
 meson build --prefix=$HOME/local/
