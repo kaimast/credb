@@ -1,5 +1,7 @@
 sudo: required
 language: cpp
+dist: xenial
+
 services:
 - docker
 cache:
