@@ -84,13 +84,12 @@ endif
 
 py3_ext = import('python3')
 py3_dep = dependency('python3')
+boost_py3_dep = cpp.find_library('boost_python3')
 
 if py3_ext.language_version() == '3.5'
     python_dir = 'lib/python3.5/dist-packages'
-    boost_py3_dep = cpp.find_library('boost_python35')
 elif py3_ext.language_version() == '3.6'
     python_dir = 'lib/python3.6/dist-packages'
-    boost_py3_dep = cpp.find_library('boost_python36')
 else
     error('Unknown python version')
 endif
