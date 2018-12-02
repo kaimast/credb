@@ -35,9 +35,9 @@ public:
 
     void handle_peer_plain_text_message(const uint8_t *data, uint32_t len);
 
-    std::string hostname() const { return socket().get_client_address().IP; }
+    std::string hostname() const { return socket().get_remote_address().IP; }
 
-    uint16_t port() const { return socket().get_client_address().PortNumber; }
+    uint16_t port() const { return socket().get_remote_address().PortNumber; }
 
 protected:
     void on_network_message(yael::network::Socket::message_in_t &msg) override;

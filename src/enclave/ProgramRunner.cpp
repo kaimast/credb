@@ -23,7 +23,7 @@ ProgramRunner::ProgramRunner(Enclave &enclave,
                              identity_uid_t transaction_root,
                              transaction_id_t transaction_id)
 : Task(enclave), m_op_context(enclave.identity(), collection + "/" + program_name),
-  m_lock_handle(enclave.ledger()), m_data(std::move(data)), m_interpreter(m_data, true)
+  m_lock_handle(enclave.ledger()), m_data(std::move(data)), m_interpreter(m_data, m_mem)
 {
     auto &ledger = enclave.ledger();
     const bool is_transaction = (transaction_id != INVALID_TRANSACTION_ID);

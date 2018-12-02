@@ -415,13 +415,15 @@ bool Ledger::check_collection_policy(const OpContext &op_context,
 
     bitstream bs = value.as_bitstream();
 
-    cow::Interpreter pyint(bs, true);
-    auto object_hook = cow::make_value<bindings::Object>(pyint.memory_manager(), empty_context,
+    cow::DummyMemoryManager mem;
+    cow::Interpreter pyint(bs, mem);
+    
+    auto object_hook = cow::make_value<bindings::Object>(mem, empty_context,
                                                          *this, collection, key, lock_handle);
-    auto db_hook = cow::make_value<bindings::Database>(pyint.memory_manager(), empty_context, *this,
+    auto db_hook = cow::make_value<bindings::Database>(mem, empty_context, *this,
                                                        m_enclave, nullptr, lock_handle);
-    auto op_ctx_hook = cow::make_value<bindings::OpContext>(pyint.memory_manager(), op_context);
-    auto op_info_hook = cow::make_value<bindings::OpInfo>(pyint.memory_manager(), type, path);
+    auto op_ctx_hook = cow::make_value<bindings::OpContext>(mem, op_context);
+    auto op_info_hook = cow::make_value<bindings::OpInfo>(mem, type, path);
 
     
     pyint.set_module("db", db_hook);
@@ -454,17 +456,18 @@ bool Ledger::check_object_policy(const json::Document &policy,
 
     bitstream bs = policy.as_bitstream();
 
-    cow::Interpreter pyint(bs, true);
+    cow::DummyMemoryManager mem;
+    cow::Interpreter pyint(bs, mem);
 
     // Needed so we don't call the security policy recursively
     OpContext empty_context(INVALID_IDENTITY);
 
-    auto object_hook = cow::make_value<bindings::Object>(pyint.memory_manager(), empty_context,
+    auto object_hook = cow::make_value<bindings::Object>(mem, empty_context,
                                                          *this, collection, key, lock_handle);
-    auto db_hook = cow::make_value<bindings::Database>(pyint.memory_manager(), empty_context, *this,
+    auto db_hook = cow::make_value<bindings::Database>(mem, empty_context, *this,
                                                        m_enclave, nullptr, lock_handle);
-    auto op_ctx_hook = cow::make_value<bindings::OpContext>(pyint.memory_manager(), op_context);
-    auto op_info_hook = cow::make_value<bindings::OpInfo>(pyint.memory_manager(), type, path);
+    auto op_ctx_hook = cow::make_value<bindings::OpContext>(mem, op_context);
+    auto op_info_hook = cow::make_value<bindings::OpInfo>(mem, type, path);
 
     pyint.set_module("db", db_hook);
     pyint.set_module("self", object_hook);

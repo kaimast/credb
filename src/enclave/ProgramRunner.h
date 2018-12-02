@@ -63,6 +63,7 @@ private:
 
     bitstream m_data;
 
+    cow::DummyMemoryManager m_mem;
     cow::Interpreter m_interpreter;
     cow::ValuePtr m_result = nullptr;
 };
