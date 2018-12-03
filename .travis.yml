@@ -64,7 +64,7 @@ jobs:
     - docker tag $DOCKER_USERNAME/credb-${sgx_mode} credb
     - docker run --rm -it -e sgx_mode -e run_test=unit_test -e downstream=0 credb
       ../docker/run-test.sh
-    - docker run --rm -it -e sgx_mode -e run_test=unit_test -e downstream=1 credb
+      #    - docker run --rm -it -e sgx_mode -e run_test=unit_test -e downstream=1 credb
       ../docker/run-test.sh
   - stage: test
     env: sgx_mode=fake_enclave
@@ -73,7 +73,7 @@ jobs:
     - docker tag $DOCKER_USERNAME/credb-${sgx_mode} credb
     - docker run --rm -it -e sgx_mode -e run_test=unit_test -e downstream=0 credb
       ../docker/run-test.sh
-    - docker run --rm -it -e sgx_mode -e run_test=unit_test -e downstream=1 credb
+      #- docker run --rm -it -e sgx_mode -e run_test=unit_test -e downstream=1 credb
       ../docker/run-test.sh
   - stage: test
     env: sgx_mode=simulation
