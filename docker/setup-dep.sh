@@ -15,7 +15,7 @@ apt-get install -y --no-install-recommends \
     build-essential ocaml automake autoconf libtool wget python ocamlbuild libssl-dev \
     libgmp3-dev libgflags-dev libgoogle-glog-dev google-mock googletest libgtest-dev \
     pkg-config libboost-program-options-dev libboost-python-dev unzip ninja-build \
-    clang-6.0 clang-tidy-6.0 clang-format \
+    clang-7.0 clang-tidy-7.0 clang-format \
     python3-pip python3-dev python3 meson python3-setuptools python3-wheel psmisc doxygen graphviz libbotan-2-dev cmake > /dev/null 2>&1
 
 #SGX SDK doesn't support clang yet
@@ -25,16 +25,15 @@ export CXX=g++-8
 # sgxsdk
 git clone https://github.com/01org/linux-sgx.git > /dev/null 2>&1
 cd linux-sgx
-git checkout sgx_2.1.3
+git checkout sgx_2.3.1
 ./download_prebuilt.sh > /dev/null 2>&1
-# /dep/download_prebuilt.sh > /dev/null 2>&1
 make sdk_install_pkg > /dev/null 2>&1
 printf "no\n/opt/intel\n" | sudo $(ls linux/installer/bin/sgx_linux_x64_sdk_*.bin) > /dev/null 2>&1
 cd ..
 rm -rf linux-sgx
 
-export CC=clang-6.0
-export CXX=clang++-6.0
+export CC=clang-7
+export CXX=clang++-7
 
 # libpypa
 git clone https://github.com/vinzenz/libpypa.git > /dev/null 2>&1
