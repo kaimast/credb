@@ -1,3 +1,6 @@
+/// (c) 2018 Cornell University
+/// This file is part of the CreDB Project. See LICENSE for more information.
+
 /*
  * Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
  *

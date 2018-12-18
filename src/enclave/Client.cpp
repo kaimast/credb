@@ -1,4 +1,7 @@
-﻿#include "Client.h"
+/// (c) 2018 Cornell University
+/// This file is part of the CreDB Project. See LICENSE for more information.
+
+#include "Client.h"
 
 #include "Enclave.h"
 #include "PendingBitstreamResponse.h"

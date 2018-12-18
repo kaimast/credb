@@ -1,6 +1,6 @@
 # CreDB Python Documentation
 
-As you probably know by know, CreDB is a high-integrity datastore with an API that is similar to MongoDB.
+As you probably know by now, CreDB is a high-integrity datastore with an API that is similar to MongoDB.
 
 This detailed documentation wants to cover, in particular, the four main features not found in other datastores:
 policy enforcement, timeline inspection, witness generation, and protected function evaluation.
@@ -51,7 +51,7 @@ We can then query them not only by their primary keys `jane` and `jon` but also 
 jane = c.find_one({"full name": "Jane Doe"})
 
 # Find everybody from Ithaca and Trumansburg
-auto result = c.find({"hometown": {"$in": ["Ithaca", "Trumansburg"]}});
+result = c.find({"hometown": {"$in": ["Ithaca", "Trumansburg"]}});
 
 # Iterate results
 for key, value in result:

@@ -1,3 +1,6 @@
+/// (c) 2018 Cornell University
+/// This file is part of the CreDB Project. See LICENSE for more information
+
 #include "DocParser.h"
 
 #define BOOST_RESULT_OF_USE_DECLTYPE
