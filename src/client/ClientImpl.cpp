@@ -5,7 +5,7 @@
 
 #include <cstddef>
 #include <sgx_uae_service.h>
-
+#include <stdbitstream.h>
 #include <fstream>
 #include <experimental/filesystem>
 #include <iostream>
