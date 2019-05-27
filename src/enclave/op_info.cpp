@@ -34,7 +34,7 @@ void check_obj_info_t::collect_shard_lock_type()
     transaction().set_read_lock(m_sid);
 }
 
-void check_obj_info_t::extract_reads(std::unordered_set<event_id_t> &read_set)
+void check_obj_info_t::extract_reads(std::set<event_id_t> &read_set)
 {
     //FIXME
     (void)read_set;
@@ -78,7 +78,7 @@ has_obj_info_t::has_obj_info_t(Transaction &tx, const std::string &collection, c
       m_sid(get_shard(m_collection, m_key))
 {}
 
-void has_obj_info_t::extract_reads(std::unordered_set<event_id_t> &read_set)
+void has_obj_info_t::extract_reads(std::set<event_id_t> &read_set)
 {
     //FIXME
     (void)read_set;
@@ -125,7 +125,7 @@ get_info_t::get_info_t(Transaction &tx, const std::string &collection, const std
            m_sid(get_shard(collection, key))
 {}
 
-void get_info_t::extract_reads(std::unordered_set<event_id_t> &read_set)
+void get_info_t::extract_reads(std::set<event_id_t> &read_set)
 {
     read_set.insert(m_eid);
 }
@@ -340,7 +340,7 @@ find_info_t::find_info_t(Transaction &tx, bitstream &req, taskid_t task)
     }
 }
 
-void find_info_t::extract_reads(std::unordered_set<event_id_t> &read_set)
+void find_info_t::extract_reads(std::set<event_id_t> &read_set)
 {
     for(auto &[key, shard, eid]: m_result)
     {
@@ -430,7 +430,7 @@ bool find_info_t::validate_repeatable_read(bool generate_witness)
 bool find_info_t::validate_no_phantom(bool generate_witness)
 {
     // build the set of known result
-    std::unordered_set<event_id_t> eids;
+    std::set<event_id_t> eids;
     for(const auto &it : m_result)
     {
         eids.emplace(std::get<2>(it));

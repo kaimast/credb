@@ -50,9 +50,9 @@ transaction_bounds_t TransactionHandle::get_boundaries() const
     return result;
 }
 
-std::unordered_map<identity_uid_t, op_set_t> TransactionHandle::remote_ops() const
+std::map<identity_uid_t, op_set_t> TransactionHandle::remote_ops() const
 {
-    std::unordered_map<identity_uid_t, op_set_t> result;
+    std::map<identity_uid_t, op_set_t> result;
 
     json::Document remote_ops(m_document, 4);
 

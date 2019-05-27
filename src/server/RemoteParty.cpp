@@ -37,7 +37,7 @@ void RemoteParty::set_attestation_context(sgx_ra_context_t context)
     m_enclave.set_attestation_context(identifier(), context);
 }
 
-void RemoteParty::wait() { m_condition_var.wait(mutex()); }
+void RemoteParty::wait() { m_condition_var.wait(m_mutex); }
 
 void RemoteParty::notify_all() { m_condition_var.notify_all(); }
 

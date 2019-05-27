@@ -31,7 +31,7 @@ class TransactionLedger
 public:
     TransactionLedger(BufferManager &buffer_manager);
 
-    ledger_pos_t insert(const std::unordered_map<taskid_t, OpContext> &op_contexts, identity_uid_t tx_root, transaction_id_t tx_id, const op_set_t &local_ops, const std::unordered_map<identity_uid_t, op_set_t> &remote_ops);
+    ledger_pos_t insert(const std::map<taskid_t, OpContext> &op_contexts, identity_uid_t tx_root, transaction_id_t tx_id, const op_set_t &local_ops, const std::map<identity_uid_t, op_set_t> &remote_ops);
 
     TransactionHandle get(ledger_pos_t pos);
 

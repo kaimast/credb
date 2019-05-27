@@ -41,9 +41,9 @@ TEST_F(TransactionLedgerTest, set_id)
     transaction_id_t tx_id = 1;
 
     op_set_t local_ops;
-    std::unordered_map<identity_uid_t, op_set_t> remote_ops; //empty
+    std::map<identity_uid_t, op_set_t> remote_ops; //empty
 
-    std::unordered_map<taskid_t, OpContext> op_contexts;
+    std::map<taskid_t, OpContext> op_contexts;
     op_contexts.emplace(1, TESTSRC.duplicate());
 
     auto pos = ledger->insert(op_contexts, idty->get_unique_id(), tx_id, local_ops, remote_ops);
@@ -57,13 +57,13 @@ TEST_F(TransactionLedgerTest, set_local_ops)
 {
     transaction_id_t tx_id = 1;
 
-    std::unordered_set<event_id_t> reads = { {1,5,7} };
-    std::unordered_set<event_id_t> writes = { {5, 2, 1}, {4, 2, 2}};
+    std::set<event_id_t> reads = { {1,5,7} };
+    std::set<event_id_t> writes = { {5, 2, 1}, {4, 2, 2}};
 
     op_set_t local_ops = {reads, writes};
-    std::unordered_map<identity_uid_t, op_set_t> remote_ops; //empty
+    std::map<identity_uid_t, op_set_t> remote_ops; //empty
 
-    std::unordered_map<taskid_t, OpContext> op_contexts;
+    std::map<taskid_t, OpContext> op_contexts;
     op_contexts.emplace(1, TESTSRC.duplicate());
 
     auto pos = ledger->insert(op_contexts, idty->get_unique_id(), tx_id, local_ops, remote_ops);
@@ -77,14 +77,14 @@ TEST_F(TransactionLedgerTest, set_remote_ops)
 {
     transaction_id_t tx_id = 1;
 
-    std::unordered_map<taskid_t, OpContext> op_contexts;
+    std::map<taskid_t, OpContext> op_contexts;
     op_contexts.emplace(1, TESTSRC.duplicate());
 
-    std::unordered_set<event_id_t> reads = { {1,5,7} };
-    std::unordered_set<event_id_t> writes = { {5, 2, 1}, {4, 2, 2}};
+    std::set<event_id_t> reads = { {1,5,7} };
+    std::set<event_id_t> writes = { {5, 2, 1}, {4, 2, 2}};
 
     op_set_t local_ops;
-    std::unordered_map<identity_uid_t, op_set_t> remote_ops;
+    std::map<identity_uid_t, op_set_t> remote_ops;
 
     remote_ops[OTHER_SERVER.get_unique_id()] = op_set_t{reads, writes};
 

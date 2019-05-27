@@ -34,7 +34,7 @@ void TransactionLedger::organize_ledger()
     newb->flush_page();
 }
 
-ledger_pos_t TransactionLedger::insert(const std::unordered_map<taskid_t, OpContext> &op_contexts, identity_uid_t tx_root, transaction_id_t tx_id, const op_set_t &local_ops, const std::unordered_map<identity_uid_t, op_set_t> &remote_ops)
+ledger_pos_t TransactionLedger::insert(const std::map<taskid_t, OpContext> &op_contexts, identity_uid_t tx_root, transaction_id_t tx_id, const op_set_t &local_ops, const std::map<identity_uid_t, op_set_t> &remote_ops)
 {
     auto write_op_set = [] (json::Writer &writer, const op_set_t &set) -> void
     {

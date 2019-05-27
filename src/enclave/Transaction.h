@@ -212,7 +212,7 @@ private:
 
     const IsolationLevel m_isolation;
 
-    std::unordered_map<taskid_t, OpContext> m_op_contexts; 
+    std::map<taskid_t, OpContext> m_op_contexts; 
 
     TransactionLedger &m_transaction_ledger;
 

@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <string>
 #include <tuple>
-#include <unordered_map>
+#include <map>
 
 #ifdef TEST
 #include <fstream>
@@ -93,7 +93,7 @@ struct event_range_t
 /**
  * Defines the extent of a transaction across the ledger
  */
-using transaction_bounds_t = std::unordered_map<shard_id_t, event_range_t>;
+using transaction_bounds_t = std::map<shard_id_t, event_range_t>;
 
 /**
  * Constant for an invalid event identifier

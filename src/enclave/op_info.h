@@ -28,7 +28,7 @@ public:
     
     virtual void collect_shard_lock_type() = 0;
 
-    virtual void extract_reads(std::unordered_set<event_id_t> &read_set) = 0;
+    virtual void extract_reads(std::set<event_id_t> &read_set) = 0;
 
     virtual void extract_writes(std::array<uint16_t, NUM_SHARDS> &write_set) = 0;
 
@@ -85,7 +85,7 @@ private:
 struct write_op_t : public operation_info_t
 {
 public:
-    void extract_reads(std::unordered_set<event_id_t> &read_set) override
+    void extract_reads(std::set<event_id_t> &read_set) override
     {
         (void)read_set;
     }
@@ -128,7 +128,7 @@ public:
         return OperationType::CheckObject;
     }
 
-    void extract_reads(std::unordered_set<event_id_t> &read_set) override;
+    void extract_reads(std::set<event_id_t> &read_set) override;
 
     void collect_shard_lock_type() override;
 
@@ -154,7 +154,7 @@ public:
         return OperationType::HasObject;
     }
 
-    void extract_reads(std::unordered_set<event_id_t> &read_set) override;
+    void extract_reads(std::set<event_id_t> &read_set) override;
 
     void collect_shard_lock_type() override;
 
@@ -179,7 +179,7 @@ public:
         return OperationType::GetObject;
     }
 
-    void extract_reads(std::unordered_set<event_id_t> &read_set) override;
+    void extract_reads(std::set<event_id_t> &read_set) override;
 
     void collect_shard_lock_type() override;
 
@@ -288,7 +288,7 @@ public:
 
     bool validate(bool generate_witness) override;
    
-    void extract_reads(std::unordered_set<event_id_t> &read_set) override;
+    void extract_reads(std::set<event_id_t> &read_set) override;
 
 private:
     void write_witness(const std::string &key,

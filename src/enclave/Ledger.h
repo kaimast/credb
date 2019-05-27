@@ -127,7 +127,7 @@ public:
     bool unset_trigger(const std::string &collection, remote_party_id identifier);
     void remove_triggers_for(remote_party_id identifier);
 
-    void get_next_event_ids(std::unordered_set<event_id_t> &out, shard_id_t shard, uint16_t num, LockHandle *lock_handle_);
+    void get_next_event_ids(std::set<event_id_t> &out, shard_id_t shard, uint16_t num, LockHandle *lock_handle_);
 
     /**
      * Returns the total number of objects in the system

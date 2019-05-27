@@ -36,7 +36,7 @@ else
 endif
 
 compile_args   = ['-Wextra', '-Werror']
-cpp_compile_args = ['-std=c++17', '-Wno-implicit-exception-spec-mismatch'] # Remove me once clang issue is fixed in SGX SDK
+cpp_compile_args = ['-std=c++17']
 
 use_enclave = true
 if sgx_mode == 'fake_enclave'
@@ -90,6 +90,8 @@ if py3_ext.language_version() == '3.5'
     python_dir = 'lib/python3.5/dist-packages'
 elif py3_ext.language_version() == '3.6'
     python_dir = 'lib/python3.6/dist-packages'
+elif py3_ext.language_version() == '3.7'
+    python_dir = 'lib/python3.7/dist-packages'
 else
     error('Unknown python version')
 endif

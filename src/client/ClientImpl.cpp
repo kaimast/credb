@@ -137,31 +137,28 @@ ClientImpl::ClientImpl(const std::string &client_name, const std::string &server
 
 void ClientImpl::close()
 {
-    lock();
+    std::unique_lock lock(m_mutex);
+
     if(socket().is_valid())
     {
         m_state = ClientState::Closed;
         NetworkSocketListener::close_socket();
     }
-    unlock();
 }
 
 void ClientImpl::setup()
 {
+    std::unique_lock lock(m_mutex);
+
     while(m_state != ClientState::Connected && m_state != ClientState::Failure
             && socket().is_connected())
     {
-        m_socket_cond.wait(mutex());
+        m_socket_cond.wait(lock);
     }
 
     if(!socket().is_connected() || m_state == ClientState::Failure)
     {
-        unlock();
         throw std::runtime_error("Failed to setup server connection: " + m_error_str);
-    }
-    else
-    {
-        unlock();
     }
 }
 
@@ -316,9 +313,8 @@ bool ClientImpl::dump_everything(const std::string &filename)
 
 void ClientImpl::set_trigger(const std::string &collection, std::function<void()> func)
 {
-    lock();
+    std::unique_lock lock(m_mutex);
     m_triggers.emplace(collection, func);
-    unlock();
 }
 
 json::Document ClientImpl::get_statistics()
@@ -336,17 +332,15 @@ json::Document ClientImpl::get_statistics()
 
 void ClientImpl::unset_trigger(const std::string &collection)
 {
-    lock();
+    std::unique_lock lock(m_mutex);
     auto it = m_triggers.find(collection);
 
     if(it == m_triggers.end())
     {
-        unlock();
         throw std::runtime_error("no such trigger");
     }
 
     m_triggers.erase(it);
-    unlock();
 }
 
 bool ClientImpl::load_everything(const std::string &filename)
@@ -363,19 +357,18 @@ bool ClientImpl::load_everything(const std::string &filename)
 
 bitstream ClientImpl::receive_response(uint32_t msg_id)
 {
-    lock();
+    std::unique_lock lock(m_mutex);
     auto it = m_responses.find(msg_id);
 
     while(it == m_responses.end())
     {
-        m_socket_cond.wait(mutex());
+        m_socket_cond.wait(lock);
         it = m_responses.find(msg_id);
     }
 
     auto resp = std::move(it->second);
     m_responses.erase(it);
 
-    unlock();
     return resp;
 }
 
@@ -454,7 +447,8 @@ void ClientImpl::handle_attestation_message(bitstream &input, bitstream &output)
     };
 }
 
-void ClientImpl::handle_message(bitstream &input, bitstream &output)
+void ClientImpl::handle_message(bitstream &input, bitstream &output,
+        std::unique_lock<std::mutex> &lock)
 {
     if(m_state != ClientState::Connected)
     {
@@ -483,9 +477,9 @@ void ClientImpl::handle_message(bitstream &input, bitstream &output)
 
         auto func = it->second;
         
-        unlock();
+        lock.unlock();
         func();
-        lock();
+        lock.lock();
         break;
     }
     default:
@@ -505,6 +499,8 @@ void ClientImpl::handle_operation_response(bitstream &input, bitstream &output)
 
 void ClientImpl::on_network_message(yael::network::Socket::message_in_t &msg)
 {
+    std::unique_lock lock(m_mutex);
+
     bitstream input, output;
 
     if(msg.length < (sizeof(MessageType) + sizeof(EncryptionType)))
@@ -528,10 +524,10 @@ void ClientImpl::on_network_message(yael::network::Socket::message_in_t &msg)
         break;
     case EncryptionType::Encrypted:
         decrypt(msg.data, msg.length, input);
-        handle_message(input, output);
+        handle_message(input, output, lock);
         break;
     case EncryptionType::PlainText:
-        handle_message(peeker, output);
+        handle_message(peeker, output, lock);
         break; // no encryption in fake enclave mode
     default:
         LOG(ERROR) << "Unknown encryption header field: " << static_cast<int>(encryption);

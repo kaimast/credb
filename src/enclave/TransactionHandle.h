@@ -17,8 +17,8 @@ namespace trusted
 
 struct op_set_t
 {
-    std::unordered_set<event_id_t> reads;
-    std::unordered_set<event_id_t> writes;
+    std::set<event_id_t> reads;
+    std::set<event_id_t> writes;
 };
 
 inline bool operator==(const op_set_t &first, const op_set_t &second)
@@ -76,12 +76,12 @@ public:
 
     transaction_bounds_t get_boundaries() const;
     
-    std::unordered_map<identity_uid_t, op_set_t> remote_ops() const;
+    std::map<identity_uid_t, op_set_t> remote_ops() const;
 
 private:
-    inline std::unordered_set<event_id_t> read_ops(const json::Document &doc) const
+    inline std::set<event_id_t> read_ops(const json::Document &doc) const
     {
-        std::unordered_set<event_id_t> result;
+        std::set<event_id_t> result;
 
         if(doc.get_size() % 3 != 0)
         {

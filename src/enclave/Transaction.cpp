@@ -186,7 +186,7 @@ Witness Transaction::commit(bool generate_witness)
         throw std::runtime_error("Cannot commit: invalid state");
     }
 
-    std::unordered_set<event_id_t> read_set, write_set;
+    std::set<event_id_t> read_set, write_set;
     std::array<uint16_t, NUM_SHARDS> write_shards;
     write_shards.fill(0);
 

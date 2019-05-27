@@ -4,11 +4,10 @@
 #include "util/hash.h"
 #include "credb/event_id.h"
 
-namespace std
+namespace credb
 {
 
-template <>
-struct hash<credb::event_id_t>
+struct event_id_hasher
 {
     size_t operator()(const credb::event_id_t &eid) const
     {
@@ -16,4 +15,4 @@ struct hash<credb::event_id_t>
     }
 };
 
-} // namespace std
+} // namespace credb

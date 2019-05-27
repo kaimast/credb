@@ -97,9 +97,12 @@ private:
     void process_message_one(bitstream &input, bitstream &output);
     void process_message_three(bitstream &input, bitstream &output);
 
-    void handle_message(bitstream &input, bitstream &output);
+    void handle_message(bitstream &input, bitstream &output, std::unique_lock<std::mutex> &lock);
+
     void handle_attestation_message(bitstream &input, bitstream &output);
     void handle_operation_response(bitstream &input, bitstream &output);
+
+    std::mutex m_mutex;
 
     /// Needed for function call responses
     cow::DummyMemoryManager m_mem;
@@ -121,7 +124,7 @@ private:
 
     operation_id_t m_next_operation_id = 1;
 
-    std::condition_variable_any m_socket_cond;
+    std::condition_variable m_socket_cond;
 
     std::unordered_map<operation_id_t, bitstream> m_responses;
 

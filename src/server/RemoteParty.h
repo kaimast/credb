@@ -55,6 +55,9 @@ public:
 
     void wait_for_connection() { get_attestation().wait_for_attestation(); }
 
+    void lock() { m_mutex.lock(); }
+    void unlock() { m_mutex.unlock(); }
+
 protected:
     // Must be called by child class
     // Child class must call unlock() after setup is complete
@@ -63,6 +66,8 @@ protected:
     virtual void on_disconnect() override;
 
     EnclaveHandle &m_enclave;
+
+    std::mutex m_mutex;
 
 private:
     Attestation m_attestation;

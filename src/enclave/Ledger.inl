@@ -82,7 +82,7 @@ inline event_id_t Ledger::remove(const OpContext &op_context, const std::string 
     const auto transaction_ref = INVALID_LEDGER_POS;
 
 
-    const std::unordered_set<event_id_t> read_set, write_set;
+    const std::set<event_id_t> read_set, write_set;
     json::Document to_write;
     const std::string path;
 

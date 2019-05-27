@@ -122,7 +122,7 @@ void Ledger::remove_triggers_for(remote_party_id identifier)
     }
 }
 
-void Ledger::get_next_event_ids(std::unordered_set<event_id_t> &out, shard_id_t shard, uint16_t num, LockHandle *lock_handle_)
+void Ledger::get_next_event_ids(std::set<event_id_t> &out, shard_id_t shard, uint16_t num, LockHandle *lock_handle_)
 {
     LockHandle lock_handle(*this, lock_handle_);
 
