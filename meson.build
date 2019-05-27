@@ -155,10 +155,10 @@ server_incs = [credb_incdir, sgx_incdir]
 server_deps = [yael_dep, log_dep, boost_po_dep, sgx_uae_dep, ukey_exchange_dep, sgx_urts_dep, thread_dep, gflags_dep]
 
 if get_option('sgx_mode') == 'fake_enclave'
-    executable('credb', server_cpp_files, fake_enclave_cpp_files, include_directories: server_incs,
+    server = executable('credb', server_cpp_files, fake_enclave_cpp_files, include_directories: server_incs,
         dependencies: server_deps + [openssl_dep, cowlang_dep, json_dep], c_args: compile_args, cpp_args: compile_args + cpp_compile_args, install:true, link_with: ulibcrypto, link_args: ['-rdynamic'])
 else
-    executable('credb', server_cpp_files, gen_untrusted_enclave, include_directories: server_incs,
+    server = executable('credb', server_cpp_files, gen_untrusted_enclave, include_directories: server_incs,
         dependencies: server_deps, c_args: compile_args, cpp_args: cpp_compile_args, install:true, link_with: ulibcrypto)
 endif
 
@@ -166,38 +166,43 @@ subdir('src/client')
 
 compile_args = compile_args + ['-DPYTHON_DATETIME=<python' + py3_ext.language_version()+'m/datetime.h>']
 
-credb = shared_library('libcredb', client_cpp_files, c_args: compile_args, cpp_args: compile_args + cpp_compile_args, include_directories: [credb_incdir, sgx_incdir], install: true, dependencies: [openssl_dep, log_dep, yael_dep, json_dep, cowlang_dep, py3_dep], link_with: ulibcrypto, name_prefix: '', link_args: ['-lstdc++fs']) # Name hack so it doesn't conflict with python module
+libcredb = shared_library('libcredb', client_cpp_files, c_args: compile_args, cpp_args: compile_args + cpp_compile_args, include_directories: [credb_incdir, sgx_incdir], install: true, dependencies: [openssl_dep, log_dep, yael_dep, json_dep, cowlang_dep, py3_dep], link_with: ulibcrypto, name_prefix: '', link_args: ['-lstdc++fs']) # Name hack so it doesn't conflict with python module
 
 install_subdir('include/credb', install_dir : 'include')
 
 witness_reader_files = ['src/ledger/witness_reader.cpp', 'src/common/util/base64.cpp']
-witness_reader = executable('witness-reader', witness_reader_files, link_with: credb, include_directories: [credb_incdir, sgx_incdir],
+witness_reader = executable('witness-reader', witness_reader_files, link_with: [libcredb], include_directories: [credb_incdir, sgx_incdir],
                             c_args: compile_args, cpp_args: compile_args + cpp_compile_args, dependencies: [json_dep])
 
 client_incdir = include_directories('src/client')
 
-py3_ext.extension_module('credb', python_file, dependencies: [py3_dep, openssl_dep, boost_py3_dep], install:true, include_directories: [sgx_incdir, credb_incdir, client_incdir], c_args: compile_args, cpp_args: compile_args + cpp_compile_args, install_dir: python_dir, link_with: [credb])
+py3_ext.extension_module('credb', python_file, dependencies: [py3_dep, openssl_dep, boost_py3_dep], install:true, include_directories: [sgx_incdir, credb_incdir, client_incdir], c_args: compile_args, cpp_args: compile_args + cpp_compile_args, install_dir: python_dir, link_with: [libcredb])
 
 subdir('test/')
 
-tests = executable('credb-test', test_cpp_files, test_extra_cpp_files, link_with: credb, include_directories: [credb_incdir, sgx_incdir],
+tests = executable('credb-test', test_cpp_files, test_extra_cpp_files, link_with: [libcredb], include_directories: [credb_incdir, sgx_incdir],
                    c_args: test_compile_args, cpp_args: test_compile_args + cpp_compile_args, dependencies: [gtest, log_dep, gflags_dep, boost_py3_dep, py3_dep, yael_dep, json_dep, cowlang_dep],
                    link_args: ['-lstdc++fs'])
 test('credb-test', tests)
 
 subdir('doc')
 
-clang_tidy_checks = '*,-hicpp-signed-bitwise,-readability-implicit-bool-conversion,-google-readability-todo,-cppcoreguidelines-pro-*,-fuchsia-*,-clang-diagnostic*,-llvm-include-order'
-
 # NOTE: gtest on ubuntu still uses deprecated functions so we can't lint the test files yet
 clangtidy = find_program('clang-tidy', required: false)
+
 if clangtidy.found()
+    tidy_files = client_cpp_files + server_cpp_files
+
     run_target(
         'tidy',
         command: [
-            clangtidy,
-            '-checks=' + clang_tidy_checks,
-            '-warnings-as-errors=*',
-            '-p', meson.build_root()
-        ] + client_cpp_files + server_cpp_files)
+            'scripts/clang-tidy.sh',
+            clangtidy.path(),
+            meson.source_root(),
+            meson.build_root(),
+            tidy_files
+        ],
+    depends: [server, libcredb])
 endif
+
+

@@ -1,3 +1,6 @@
+/// (c) 2018 Cornell University
+/// This file is part of the CreDB Project. See LICENSE for more information.
+
 #include "EncryptedIO.h"
 #include "logging.h"
 #include "util/defines.h"

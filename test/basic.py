@@ -72,6 +72,7 @@ c.put(a, 4242)
 assert_equals(c.get(a), 4242)
 
 c.clear()
+conn.close()
 
 if server:
     server.stop()

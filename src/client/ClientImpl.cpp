@@ -1,8 +1,11 @@
+/// (c) 2018 Cornell University
+/// This file is part of the CreDB Project. See LICENSE for more information
+
 #include <yael/EventLoop.h>
 
 #include <cstddef>
 #include <sgx_uae_service.h>
-
+#include <stdbitstream.h>
 #include <fstream>
 #include <experimental/filesystem>
 #include <iostream>

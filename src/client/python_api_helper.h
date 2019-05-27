@@ -1,3 +1,6 @@
+/// (c) 2018 Cornell University
+/// This file is part of the CreDB Project. See LICENSE for more information
+
 #include "credb/Client.h"
 #include "credb/Collection.h"
 #include "credb/Transaction.h"

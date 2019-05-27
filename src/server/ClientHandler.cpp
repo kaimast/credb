@@ -1,3 +1,8 @@
+/// (c) 2018 Cornell University
+/// This file is part of the CreDB Project. See LICENSE for more information.
+
+#include <stdbitstream.h>
+
 #include "ClientHandler.h"
 #include "ClientAcceptor.h"
 #include "PeerAcceptor.h"
@@ -43,28 +48,30 @@ void ClientHandler::handle_plain_text_message(bitstream &msg)
     taskid_t task_id;
     operation_id_t op_id;
 
-    msg >> reinterpret_cast<mtype_data_t &>(msg_type);
-    msg >> task_id >> op_id;
-    msg >> reinterpret_cast<op_data_t &>(op_type);
+    try {
+        msg >> msg_type >> task_id >> op_id >> op_type;
 
-    if(op_type != OperationType::Peer)
-    {
-        LOG(FATAL) << "Unknown op type";
+        if(op_type != OperationType::Peer)
+        {
+            throw std::runtime_error("Unexpected op type");
+        }
+
+        // FIXME check if client is authorized to create new connections
+
+        std::string remote_address;
+        msg >> remote_address;
+
+        m_peer_acceptor.connect(remote_address);
+
+        bitstream response;
+        response << static_cast<etype_data_t>(EncryptionType::PlainText);
+        response << static_cast<mtype_data_t>(MessageType::OperationResponse);
+        response << task_id << op_id << true;
+
+        send(response);
+    } catch(const std::exception &e) {
+        LOG(ERROR) << "Failed to parse client message: " << e.what();
     }
-
-    // FIXME check if client is authorized to create new connections
-
-    std::string remote_address;
-    msg >> remote_address;
-
-    m_peer_acceptor.connect(remote_address);
-
-    bitstream response;
-    response << static_cast<etype_data_t>(EncryptionType::PlainText);
-    response << static_cast<mtype_data_t>(MessageType::OperationResponse);
-    response << task_id << op_id << true;
-
-    send(response);
 }
 
 void ClientHandler::on_network_message(yael::network::Socket::message_in_t &msg)
