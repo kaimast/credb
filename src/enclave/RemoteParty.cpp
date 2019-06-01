@@ -91,16 +91,14 @@ credb_status_t RemoteParty::decrypt(const uint8_t *in_data, uint32_t in_len, bit
         return CREDB_ERROR_UNEXPECTED;
     }
 
-    uint8_t tag[SGX_AESGCM_MAC_SIZE];
+    std::array<uint8_t, SAMPLE_SP_IV_SIZE> aes_gcm_iv = { 0 };
+    std::array<uint8_t, SGX_AESGCM_MAC_SIZE> tag;
+
     input >> tag;
 
-    uint8_t aes_gcm_iv[SAMPLE_SP_IV_SIZE] = { 0 };
     inner.resize(payload_size);
 
-    auto ret = sgx_rijndael128GCM_decrypt(sk_key, payload, payload_size,
-                                          reinterpret_cast<uint8_t *>(inner.data()), &aes_gcm_iv[0],
-                                          SAMPLE_SP_IV_SIZE, nullptr, 0,
-                                          reinterpret_cast<const sgx_aes_gcm_128bit_tag_t *>(tag));
+    auto ret = sgx_rijndael128GCM_decrypt(sk_key, payload, payload_size, reinterpret_cast<uint8_t *>(inner.data()), aes_gcm_iv.data(), SAMPLE_SP_IV_SIZE, nullptr, 0, reinterpret_cast<const sgx_aes_gcm_128bit_tag_t *>(tag.data());
 
     if(ret != SGX_SUCCESS)
     {

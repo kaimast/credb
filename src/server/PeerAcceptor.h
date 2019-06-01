@@ -9,9 +9,7 @@
 #include "EnclaveHandle.h"
 #include "RemoteParties.h"
 
-namespace credb
-{
-namespace untrusted
+namespace credb::untrusted
 {
 
 class PeerHandler;
@@ -37,5 +35,4 @@ private:
     untrusted::RemoteParties &m_remote_parties;
 };
 
-} // namespace untrusted
-} // namespace credb
+} // namespace credb::untrusted

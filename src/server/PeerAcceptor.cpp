@@ -15,9 +15,7 @@
 #include <yael/network/TcpSocket.h>
 using namespace yael;
 
-namespace credb
-{
-namespace untrusted
+namespace credb::untrusted
 {
 
 static PeerAcceptor *g_peer_acceptor = nullptr;
@@ -78,5 +76,4 @@ remote_party_id PeerAcceptor::connect(const std::string &url)
     return peer->identifier();
 }
 
-} // namespace untrusted
-} // namespace credb
+} // namespace credb::untrusted

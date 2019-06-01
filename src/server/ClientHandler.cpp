@@ -17,9 +17,7 @@
 #include "Enclave_u.h"
 #endif
 
-namespace credb
-{
-namespace untrusted
+namespace credb::untrusted
 {
 
 ClientHandler::ClientHandler(ClientAcceptor &acceptor,
@@ -100,5 +98,4 @@ void ClientHandler::on_network_message(yael::network::Socket::message_in_t &msg)
     delete[] msg.data;
 }
 
-} // namespace untrusted
-} // namespace credb
+} // namespace credb::untrusted

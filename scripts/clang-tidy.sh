@@ -1,7 +1,6 @@
 #! /bin/bash
 
-# Pick any flags you like here
-CHECKS='-hicpp-*,-readability-implicit-bool-conversion,-cppcoreguidelines-*,-clang-diagnostic*,-llvm-*,-bugprone-*,-modernize-*,-misc-*'
+CHECKS='bugprone-*,modernize-*,misc-*,-misc-non-private-member-variables-in-classes,-bugprone-exception-escape'
 
 BIN=$1 && shift
 PROJECT_ROOT=$1 && shift

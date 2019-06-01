@@ -15,9 +15,7 @@
 #include <yael/EventLoop.h>
 using namespace yael;
 
-namespace credb
-{
-namespace untrusted
+namespace credb::untrusted
 {
 
 static ClientAcceptor *g_client_acceptor = nullptr;
@@ -39,7 +37,7 @@ ClientAcceptor::ClientAcceptor(EnclaveHandle &enclave,
 
     if(!res)
     {
-        throw std::runtime_error("couldn't set up client port");
+        LOG(FATAL) << "Could not list on port " << port;
     }
 
     this->set_socket(std::move(socket), yael::SocketType::Acceptor);
@@ -65,5 +63,4 @@ std::shared_ptr<ClientHandler> ClientAcceptor::get(remote_party_id identifier)
     return std::dynamic_pointer_cast<ClientHandler>(party);
 }
 
-} // namespace untrusted
-} // namespace credb
+} // namespace credb::untrusted

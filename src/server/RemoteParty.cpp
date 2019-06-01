@@ -5,9 +5,7 @@
 
 #include "RemoteParties.h"
 
-namespace credb
-{
-namespace untrusted {
+namespace credb::untrusted {
 
 RemoteParty::RemoteParty(std::unique_ptr<yael::network::Socket> &&socket, EnclaveHandle &enclave, AttestationMode att_mode)
 : yael::NetworkSocketListener(std::forward<std::unique_ptr<yael::network::Socket>>(socket),
@@ -44,5 +42,4 @@ void RemoteParty::wait() { m_condition_var.wait(m_mutex); }
 
 void RemoteParty::notify_all() { m_condition_var.notify_all(); }
 
-} // namespace untrusted
-} // namespace credb
+} // namespace credb::untrusted

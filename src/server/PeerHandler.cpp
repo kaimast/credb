@@ -15,9 +15,7 @@
 #include <yael/network/TcpSocket.h>
 using namespace yael;
 
-namespace credb
-{
-namespace untrusted
+namespace credb::untrusted
 {
 
 PeerHandler::PeerHandler(EnclaveHandle &enclave, std::unique_ptr<yael::network::Socket> &&s)
@@ -166,5 +164,4 @@ void PeerHandler::handle_op_response(bitstream &input)
     this->notify_all();
 }
 
-}
-}
+} // namespace credb::untrusted

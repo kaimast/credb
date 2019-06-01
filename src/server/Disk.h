@@ -56,7 +56,7 @@ private:
     }
 
 public:
-    Disk(const std::string &disk_path = "");
+    Disk(std::string disk_path = "");
     ~Disk();
 
     bool write(const std::string &filename, uint8_t const* data, uint32_t length);

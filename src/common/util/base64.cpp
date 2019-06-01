@@ -31,6 +31,7 @@
 
 #include "credb/base64.h"
 
+#include <array>
 #include <cstring>
 #include <iostream>
 
@@ -53,10 +54,10 @@ inline size_t cstr_find(const char *str, char c)
 std::string base64_encode(unsigned char const *bytes_to_encode, unsigned int in_len)
 {
     std::string ret;
-    int i = 0;
-    int j = 0;
-    unsigned char char_array_3[3];
-    unsigned char char_array_4[4];
+    size_t i = 0;
+    
+    std::array<uint8_t, 3> char_array_3;
+    std::array<uint8_t, 4> char_array_4;
 
     while(in_len--)
     {
@@ -78,7 +79,7 @@ std::string base64_encode(unsigned char const *bytes_to_encode, unsigned int in_
 
     if(i)
     {
-        for(j = i; j < 3; j++)
+        for(size_t j = i; j < 3; j++)
         {
             char_array_3[j] = '\0';
         }
@@ -87,7 +88,7 @@ std::string base64_encode(unsigned char const *bytes_to_encode, unsigned int in_
         char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
         char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
 
-        for(j = 0; (j < i + 1); j++)
+        for(size_t j = 0; (j < i + 1); j++)
         {
             ret += base64_chars[char_array_4[j]];
         }
@@ -103,11 +104,13 @@ std::string base64_encode(unsigned char const *bytes_to_encode, unsigned int in_
 
 std::string base64_decode(std::string const &encoded_string)
 {
-    int in_len = encoded_string.size();
-    int i = 0;
-    int j = 0;
-    int in_ = 0;
-    unsigned char char_array_4[4], char_array_3[3];
+    size_t in_len = encoded_string.size();
+    size_t i = 0;
+    size_t in_ = 0;
+    
+    std::array<uint8_t, 3> char_array_3;
+    std::array<uint8_t, 4> char_array_4;
+    
     std::string ret;
 
     while(in_len-- && (encoded_string[in_] != '=') && is_base64(encoded_string[in_]))
@@ -140,7 +143,7 @@ std::string base64_decode(std::string const &encoded_string)
 
     if(i)
     {
-        for(j = 0; j < i; j++)
+        for(size_t j = 0; j < i; j++)
         {
             char_array_4[j] = cstr_find(base64_chars, char_array_4[j]);
         }
@@ -148,7 +151,7 @@ std::string base64_decode(std::string const &encoded_string)
         char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
         char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
 
-        for(j = 0; (j < i - 1); j++)
+        for(size_t j = 0; (j < i - 1); j++)
         {
             ret += char_array_3[j];
         }

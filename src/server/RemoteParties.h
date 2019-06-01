@@ -8,9 +8,7 @@
 
 #include "RemoteParty.h"
 
-namespace credb
-{
-namespace untrusted
+namespace credb::untrusted
 {
 
 /**
@@ -67,5 +65,4 @@ private:
     std::unordered_map<remote_party_id, std::shared_ptr<RemoteParty>> m_remote_parties;
 };
 
-} // namespace untrusted
-} // namespace credb
+} // namespace credb::untrusted

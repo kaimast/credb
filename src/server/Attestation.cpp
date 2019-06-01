@@ -25,9 +25,7 @@
 #include <thread>
 #include <unordered_map>
 
-namespace credb
-{
-namespace untrusted
+namespace credb::untrusted
 {
 
 #ifndef FAKE_ENCLAVE
@@ -285,5 +283,5 @@ void Attestation::queue_msg2(sgx_ra_msg2_t *msg2, uint32_t msg2_size)
     m_msg2 = msg2;
     m_msg2_size = msg2_size;
 }
-}
-} // namespace credb
+
+} // namespace credb::untrustd

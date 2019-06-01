@@ -10,9 +10,7 @@
 #include "Enclave_u.h"
 #endif
 
-namespace credb
-{
-namespace untrusted
+namespace credb::untrusted
 {
 
 RemoteParties *g_remote_parties = nullptr;
@@ -30,8 +28,7 @@ remote_party_id RemoteParties::register_remote_party(std::shared_ptr<RemoteParty
     return id;
 }
 
-} // namespace untrusted
-} // namespace credb
+} // namespace credb::untrusted
 
 void attestation_queue_groupid_result(remote_party_id identifier, bool result)
 {

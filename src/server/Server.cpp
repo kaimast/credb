@@ -22,9 +22,7 @@
 
 using namespace yael;
 
-namespace credb
-{
-namespace untrusted
+namespace credb::untrusted
 {
 
 Server::Server(const std::string &name, const std::string &addr, uint16_t port, const std::string &disk_path)
@@ -41,29 +39,28 @@ Server::Server(const std::string &name, const std::string &addr, uint16_t port, 
 
 Server::~Server() = default;
 
-void Server::listen(uint16_t port)
+void Server::listen(uint16_t port) noexcept
 {
     if(!m_peer_acceptor->init(port))
     {
-        throw std::runtime_error("Failed to list on socket");
+        LOG(FATAL) << "Failed to list on port " << port;
     }
 
     EventLoop::get_instance().register_event_listener(m_peer_acceptor);
 }
 
-remote_party_id Server::connect(const std::string &addr)
+remote_party_id Server::connect(const std::string &addr) noexcept
 {
     return m_peer_acceptor->connect(addr);
 }
 
-void Server::set_upstream(const std::string &addr)
+void Server::set_upstream(const std::string &addr) noexcept
 {
     remote_party_id id = connect(addr);
     m_enclave.set_upstream(id);
 }
 
-} // namespace untrusted
-} // namespace credb
+} // namespace credb::untrusted
 
 /// GLOG bindings for the enclave
 

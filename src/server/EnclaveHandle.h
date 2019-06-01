@@ -20,7 +20,7 @@ namespace credb
 class EnclaveHandle
 {
 public:
-    EnclaveHandle(const std::string &name, Disk &disk);
+    EnclaveHandle(std::string name, Disk &disk);
     ~EnclaveHandle();
 
     EnclaveHandle(const EnclaveHandle &other) = delete;

@@ -18,8 +18,8 @@
 /// needed for C enclave bindings
 Disk *g_disk = nullptr;
 
-Disk::Disk(const std::string &disk_path)
-    : m_disk_path(disk_path)
+Disk::Disk(std::string disk_path)
+    : m_disk_path(std::move(disk_path))
 {
     if(!m_disk_path.empty() && m_disk_path.back() != '/')
     {
@@ -28,7 +28,6 @@ Disk::Disk(const std::string &disk_path)
 
     g_disk = this;
 }
-
 
 Disk::~Disk()
 {

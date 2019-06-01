@@ -27,9 +27,9 @@ public:
     Server(const std::string &name, const std::string &addr, uint16_t port, const std::string &disk_path);
     ~Server();
 
-    void listen(uint16_t port);
-    remote_party_id connect(const std::string &addr);
-    void set_upstream(const std::string &addr);
+    void listen(uint16_t port) noexcept;
+    remote_party_id connect(const std::string &addr) noexcept;
+    void set_upstream(const std::string &addr) noexcept;
 
 private:
     Disk m_disk;

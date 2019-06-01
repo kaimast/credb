@@ -63,8 +63,8 @@ namespace credb
 EnclaveHandle *g_enclave_handle = nullptr;
 
 #ifdef FAKE_ENCLAVE
-EnclaveHandle::EnclaveHandle(const std::string &name, Disk &disk)
-: m_enclave_id(0), m_name(name), m_upstream_id(INVALID_REMOTE_PARTY), m_disk(disk)
+EnclaveHandle::EnclaveHandle(std::string name, Disk &disk)
+    : m_enclave_id(0), m_name(name), m_upstream_id(INVALID_REMOTE_PARTY), m_disk(disk)
 {
     LOG(INFO) << "Starting fake enclave as '" << m_name << "'";
 
@@ -136,8 +136,8 @@ void EnclaveHandle::peer_insert_response(remote_party_id peer_id, uint32_t op_id
 
 #else
 
-EnclaveHandle::EnclaveHandle(const std::string &name, Disk &disk)
-: m_enclave_id(0), m_name(name), m_upstream_id(INVALID_REMOTE_PARTY), m_disk(disk)
+EnclaveHandle::EnclaveHandle(std::string name, Disk &disk)
+: m_enclave_id(0), m_name(std::move(name)), m_upstream_id(INVALID_REMOTE_PARTY), m_disk(disk)
 {
     int updated = 0;
     g_enclave_handle = this;

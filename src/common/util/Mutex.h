@@ -105,7 +105,7 @@ public:
 #else
 namespace credb
 {
-typedef std::mutex Mutex;
+using Mutex = std::mutex;
 }
 #endif
 

@@ -40,22 +40,7 @@
 #include "PendingSizeResponse.h"
 #include "PendingWitnessResponse.h"
 
-using sample_epid_group_id_t = uint8_t[4];
 using sample_isv_svn_t = uint16_t;
-
-
-#define SAMPLE_HASH_SIZE 32 // SHA256
-#define SAMPLE_MAC_SIZE \
-    16 // Message Authentication Code
-       // - 16 bytes
-
-using sample_cpu_svn_t = uint8_t[SAMPLE_CPUSVN_SIZE];
-using sample_isv_svn_t = uint16_t;
-
-using sample_measurement_t = uint8_t[SAMPLE_HASH_SIZE];
-using sample_mac_t = uint8_t[SAMPLE_MAC_SIZE];
-using sample_report_data_t = uint8_t[SAMPLE_REPORT_DATA_SIZE];
-using sample_prod_id_t = uint16_t;
 
 using namespace yael;
 
@@ -93,8 +78,8 @@ sample_spid_t g_spid;
 namespace credb
 {
 
-ClientImpl::ClientImpl(const std::string &client_name, const std::string &server_name, const std::string &address, uint16_t port)
-    : m_name(client_name), m_server_name(server_name)
+ClientImpl::ClientImpl(std::string client_name, std::string server_name, const std::string &address, uint16_t port)
+    : m_name(std::move(client_name)), m_server_name(std::move(server_name))
 {
     const std::string KEYS_FILENAME = client_name + ".identity";
 
@@ -255,16 +240,15 @@ void ClientImpl::encrypt(bitstream &data, bitstream &outstream)
 {
     uint32_t len = data.size();
 
-    uint8_t aes_gcm_iv[SAMPLE_SP_IV_SIZE] = { 0 };
-    uint8_t tag[SGX_AESGCM_MAC_SIZE];
+    std::array<uint8_t, SAMPLE_SP_IV_SIZE> aes_gcm_iv = { 0 };
+    std::array<uint8_t, SGX_AESGCM_MAC_SIZE> tag;
 
     outstream.move_to(0);
     outstream.resize(sizeof(etype_data_t) + sizeof(len) + len + sizeof(tag));
     outstream << static_cast<etype_data_t>(EncryptionType::Encrypted);
     outstream << len;
 
-    auto ret = sgx_rijndael128GCM_encrypt(&m_sk_key, (const uint8_t *)data.data(), len, outstream.current(),
-                                          &aes_gcm_iv[0], SAMPLE_SP_IV_SIZE, nullptr, 0, &tag);
+    auto ret = sgx_rijndael128GCM_encrypt(&m_sk_key, const_cast<const uint8_t*>(data.data()), len, outstream.current(), aes_gcm_iv.data(), SAMPLE_SP_IV_SIZE, nullptr, 0, reinterpret_cast<sgx_aes_gcm_128bit_tag_t*>(tag.data()));
 
     outstream.move_to(sizeof(etype_data_t) + sizeof(len) + len);
     outstream << tag;
@@ -585,16 +569,14 @@ void ClientImpl::decrypt(const uint8_t *data, uint32_t len, bitstream &out)
     uint8_t *payload = nullptr;
     input.read_raw_data(&payload, payload_len);
 
-    uint8_t tag[SGX_AESGCM_MAC_SIZE];
-    input >> tag;
+    std::array<uint8_t, SAMPLE_SP_IV_SIZE> aes_gcm_iv = { 0 };
+    std::array<uint8_t, SGX_AESGCM_MAC_SIZE> tag;
 
-    uint8_t aes_gcm_iv[SAMPLE_SP_IV_SIZE] = { 0 };
+    input >> tag;
 
     out.resize(payload_len);
 
-    auto ret = sgx_rijndael128GCM_decrypt(&m_sk_key, payload, payload_len, out.data(),
-                                          &aes_gcm_iv[0], SAMPLE_SP_IV_SIZE, nullptr, 0,
-                                          reinterpret_cast<const sgx_aes_gcm_128bit_tag_t *>(tag));
+    auto ret = sgx_rijndael128GCM_decrypt(&m_sk_key, payload, payload_len, out.data(), aes_gcm_iv.data(), SAMPLE_SP_IV_SIZE, nullptr, 0, reinterpret_cast<const sgx_aes_gcm_128bit_tag_t *>(tag.data()));
 
     if(ret != SGX_SUCCESS)
     {
@@ -697,7 +679,9 @@ void ClientImpl::process_message_one(bitstream &input, bitstream &output)
 #endif
 
 #endif
-    sgx_ec256_public_t gb_ga[2];
+
+    std::array<sgx_ec256_public_t, 2> gb_ga;
+
     if(memcpy_s(&gb_ga[0], sizeof(gb_ga[0]), &m_dhke_public, sizeof(m_dhke_server_public)) ||
        memcpy_s(&gb_ga[1], sizeof(gb_ga[1]), &m_dhke_server_public, sizeof(m_dhke_public)))
     {
@@ -705,24 +689,25 @@ void ClientImpl::process_message_one(bitstream &input, bitstream &output)
     }
 
     // Sign gb_ga
-    ret = sgx_ecdsa_sign(reinterpret_cast<uint8_t*>(&gb_ga), sizeof(gb_ga),
-                         reinterpret_cast<sgx_ec256_private_t*>(&m_client_private_key), &msg2.sign_gb_ga, ecc_state);
+    ret = sgx_ecdsa_sign(reinterpret_cast<uint8_t*>(&gb_ga), sizeof(gb_ga), reinterpret_cast<sgx_ec256_private_t*>(&m_client_private_key), &msg2.sign_gb_ga, ecc_state);
+
     if(ret != SGX_SUCCESS)
     {
         LOG(FATAL) << "failed to sign ga_gb";
     }
 
     // Generate the CMACsmk for gb||SPID||TYPE||KDF_ID||Sigsp(gb,ga)
-    uint8_t mac[SAMPLE_EC_MAC_SIZE] = { 0 };
+    std::array<uint8_t, SAMPLE_EC_MAC_SIZE> mac = { 0 };
     uint32_t cmac_size = offsetof(sgx_ra_msg2_t, mac);
 
-    ret = sgx_rijndael128_cmac_msg(&m_smk_key, reinterpret_cast<const uint8_t *>(&msg2), cmac_size, &mac);
+    ret = sgx_rijndael128_cmac_msg(&m_smk_key, reinterpret_cast<const uint8_t *>(&msg2), cmac_size, reinterpret_cast<sgx_cmac_128bit_tag_t*>(mac.data()));
+
     if(ret != SGX_SUCCESS)
     {
         LOG(FATAL) << "cmac fail in";
     }
 
-    memcpy(msg2.mac, mac, sizeof(mac));
+    memcpy(msg2.mac, mac.data(), mac.size());
 
     // FIXME make sure context is always closed
     if(ecc_state)
