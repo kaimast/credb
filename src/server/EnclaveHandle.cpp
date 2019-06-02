@@ -166,7 +166,11 @@ EnclaveHandle::EnclaveHandle(std::string name, Disk &disk)
         LOG(FATAL) << "Failed to set up public key for the enclave";
     }
 
-    assert(m_enclave_id != 0);
+    if(m_enclave_id == 0)
+    {
+        LOG(FATAL) << "Got invalid enclave identifier";
+    }
+    
     LOG(INFO) << "Enclave set up!";
 
     ret = credb_get_public_key(m_enclave_id, &m_public_key);

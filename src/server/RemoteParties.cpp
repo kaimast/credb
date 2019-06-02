@@ -40,7 +40,9 @@ void attestation_queue_groupid_result(remote_party_id identifier, bool result)
 
 void attestation_queue_msg2(remote_party_id identifier, sgx_ra_msg2_t *p_msg2, uint32_t size)
 {
+    // NOLINTNEXTLINE(hicpp-no-malloc)
     auto msg2 = reinterpret_cast<sgx_ra_msg2_t *>(malloc(size));
+
     memcpy(msg2, p_msg2, size);
 
     auto rp = credb::untrusted::g_remote_parties->get(identifier, false);

@@ -1,6 +1,8 @@
 #! /bin/bash
+#! /bin/bash
 
-CHECKS='bugprone-*,modernize-*,misc-*,-misc-non-private-member-variables-in-classes,-bugprone-exception-escape'
+CHECKS="hicpp-*,bugprone-*,modernize-*,misc-*,clang-analyzer-*"
+DISABLED_CHECKS="-hicpp-signed-bitwise,-bugprone-exception-escape,-hicpp-member-init,-misc-non-private-member-variables-in-classes,-bugprone-macro-parentheses"
 
 BIN=$1 && shift
 PROJECT_ROOT=$1 && shift
@@ -15,5 +17,7 @@ cp  ${MESON_ROOT}/compile_commands.json ${TIDY_DIR}
 # Replace meson commands clang does not understand
 sed -i 's/-pipe//g' ${TIDY_DIR}/compile_commands.json
 
-echo "Running clang checks: ${CHECKS}"
-$BIN -checks=${CHECKS} -warnings-as-errors=* -p ${TIDY_DIR} $@
+ALL_CHECKS="$CHECKS,$DISABLED_CHECKS"
+
+echo "Running clang checks: ${ALL_CHECKS}"
+$BIN -header-filter=${PROJECT_ROOT}/include/*.h,${PROJECT_ROOT}/src/*.h -checks=${ALL_CHECKS} -warnings-as-errors=* -p ${TIDY_DIR} $@

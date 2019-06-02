@@ -707,7 +707,7 @@ void ClientImpl::process_message_one(bitstream &input, bitstream &output)
         LOG(FATAL) << "cmac fail in";
     }
 
-    memcpy(msg2.mac, mac.data(), mac.size());
+    memcpy(reinterpret_cast<void*>(msg2.mac), reinterpret_cast<void*>(mac.data()), mac.size());
 
     // FIXME make sure context is always closed
     if(ecc_state)

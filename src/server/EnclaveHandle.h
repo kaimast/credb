@@ -27,7 +27,11 @@ public:
 
     sgx_enclave_id_t identifier() const
     {
-        assert(m_enclave_id != 0);
+        if(m_enclave_id == 0)
+        {
+            LOG(FATAL) << "Enclave not set up yet!";
+        }
+    
         return m_enclave_id;
     }
 

@@ -46,7 +46,11 @@ void Attestation::init()
 {
     if(m_mode == AttestationMode::TwoWay_IsInitiator || m_mode == AttestationMode::OneWay)
     {
-        assert(m_state == AttestationState::TellGroupId);
+        if(m_state != AttestationState::TellGroupId)
+        {
+            LOG(FATAL) << "Invalid state";
+        }
+
         tell_groupid();
     }
 }
@@ -72,7 +76,10 @@ void Attestation::update()
         if(m_msg2 != nullptr)
         {
             res = handle_msg2(m_msg2, m_msg2_size);
+
+            // NOLINTNEXTLINE(hicpp-no-malloc)
             free(m_msg2);
+
             m_msg2 = nullptr;
         }
         break;
@@ -104,7 +111,11 @@ void Attestation::wait_for_attestation()
 
 void Attestation::set_done()
 {
-    assert(m_state != AttestationState::Done);
+    if(m_state == AttestationState::Done)
+    {
+        LOG(FATAL) << "Invalid state";
+    }
+
     LOG(INFO) << "Attestation done for remote party #" << m_remote_party.identifier();
 
     std::unique_lock<credb::Mutex> lock(m_connection_mutex);
@@ -224,6 +235,8 @@ bool Attestation::handle_msg2(const sgx_ra_msg2_t *msg2, uint32_t msg2_size)
     if(ret != SGX_SUCCESS)
     {
         LOG(ERROR) << "Call sgx_ra_proc_msg2 failed: " << to_string(ret);
+
+        // NOLINTNEXTLINE(hicpp-no-malloc)
         free(msg3);
         return false;
     }
@@ -247,7 +260,9 @@ bool Attestation::handle_msg2(const sgx_ra_msg2_t *msg2, uint32_t msg2_size)
             m_state = AttestationState::TellGroupId;
         }
 
+        // NOLINTNEXTLINE(hicpp-no-malloc)
         free(msg3);
+
         return true;
     }
 }
@@ -279,7 +294,11 @@ void Attestation::queue_groupid_result(bool *result)
 
 void Attestation::queue_msg2(sgx_ra_msg2_t *msg2, uint32_t msg2_size)
 {
-    assert(m_msg2 == nullptr);
+    if(m_msg2 != nullptr)
+    {
+        LOG(FATAL) << "Invalid state: Already got msg2 queued up";
+    }
+
     m_msg2 = msg2;
     m_msg2_size = msg2_size;
 }
