@@ -62,7 +62,6 @@ credb_status_t Enclave::init(const std::string &name)
     auto hash = std::hash<std::string>()(name);
     size_t steps = hash % 100;
     
-    log_debug("Seed: " + std::to_string(steps));
     for(size_t i = 0; i < steps; ++i)
     { 
         ret = sgx_ecc256_create_key_pair(&m_private_key, &public_key, ecc_state);

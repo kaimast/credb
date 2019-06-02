@@ -5,7 +5,7 @@ sgx_stdcxx_incdir = include_directories(sgx_sdk_dir+'/include/libcxx')
 
 gen_trusted_enclave = sgx_source_gen.process(enclave_dir+'/Enclave.edl')
 
-enclave_cpp_file_names=[
+enclave_cpp_files = files(
     'Enclave.cpp',
     'Client.cpp',
     'Collection.cpp',
@@ -22,7 +22,6 @@ enclave_cpp_file_names=[
     'TransactionLedger.cpp',
     'TransactionHandle.cpp',
     'ObjectEventHandle.cpp',
-#    'Block.cpp',
     'RemoteParty.cpp',
     'PendingMessage.cpp',
     'bindings/Transaction.cpp',
@@ -44,7 +43,8 @@ enclave_cpp_file_names=[
     'MultiMap.cpp',
     'HashMap.cpp',
     '../common/util/MurmurHash2.cpp',
-    'ProgramRunner.cpp', 'TaskManager.cpp',
+    'ProgramRunner.cpp',
+    'TaskManager.cpp',
     'machineprimitives.cpp',
     'machineprimitives_asm.S',
     'RemotePartyRunner.cpp',
@@ -53,8 +53,8 @@ enclave_cpp_file_names=[
     'EncryptedIO.cpp',
     'LocalEncryptedIO.cpp',
     'RemoteEncryptedIO.cpp',
-]
+)
 
-enclave_cpp_files = files(enclave_cpp_file_names)
+libfakeenclave = static_library('fake_enclave', enclave_cpp_files, c_args: compile_args + ['-DFAKE_ENCLAVE'], cpp_args: cpp_compile_args + ['-DFAKE_ENCLAVE'], include_directories: [credb_incdir, sgx_incdir])
 
 sgx_enclave_signer = sgx_sdk_dir + '/bin/x64/sgx_sign'

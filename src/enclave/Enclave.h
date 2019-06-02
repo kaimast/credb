@@ -65,10 +65,8 @@ public:
         return *m_identity;
     }
 
-#ifndef IS_TEST
     EncryptedIO &encrypted_io() { return *m_encrypted_io; }
     RemoteParties &remote_parties() { return m_remote_parties; }
-#endif
 
     BufferManager &buffer_manager() { return m_buffer_manager; }
     TaskManager &task_manager() { return m_task_manager; }
@@ -90,14 +88,12 @@ public:
 
     IdentityDatabase &identity_database() { return m_identity_database; }
 
-#ifndef IS_TEST
     //TODO move upstream specific stuff to its own class
 
     bool set_trigger(const std::string &collection, remote_party_id identifier);
     bool unset_trigger(const std::string &collection, remote_party_id identifier);
 
     std::unordered_set<remote_party_id> get_triggers(const std::string &collection);
-#endif
 
 private:
     std::unique_ptr<EncryptedIO> m_encrypted_io;
@@ -114,9 +110,7 @@ private:
      */
     Identity *m_identity;
 
-#ifndef IS_TEST
     RemoteParties m_remote_parties;
-#endif
 
     sgx_ec256_private_t m_private_key;
     sgx_ec256_public_t m_upstream_public_key;

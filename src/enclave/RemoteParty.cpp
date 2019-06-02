@@ -98,7 +98,7 @@ credb_status_t RemoteParty::decrypt(const uint8_t *in_data, uint32_t in_len, bit
 
     inner.resize(payload_size);
 
-    auto ret = sgx_rijndael128GCM_decrypt(sk_key, payload, payload_size, reinterpret_cast<uint8_t *>(inner.data()), aes_gcm_iv.data(), SAMPLE_SP_IV_SIZE, nullptr, 0, reinterpret_cast<const sgx_aes_gcm_128bit_tag_t *>(tag.data());
+    auto ret = sgx_rijndael128GCM_decrypt(sk_key, payload, payload_size, reinterpret_cast<uint8_t *>(inner.data()), aes_gcm_iv.data(), SAMPLE_SP_IV_SIZE, nullptr, 0, reinterpret_cast<const sgx_aes_gcm_128bit_tag_t *>(tag.data()));
 
     if(ret != SGX_SUCCESS)
     {

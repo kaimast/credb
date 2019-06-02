@@ -58,15 +58,15 @@ endif
 
 if get_option('buildtype') == 'release'
     if get_option('sgx_mode') == 'release' or get_option('sgx_mode') == 'simulation' or get_option('sgx_mode') == 'fake_enclave'
-        compile_args = compile_args + ['-DNDEBUG', '-UDEBUG']
+        compile_args += ['-DNDEBUG', '-UDEBUG']
     elif get_option('sgx_mode') == 'prerelease'
-        compile_args = compile_args + ['-DNDEBUG', '-DEDEBUG', '-DNSGX_DEBUG']
+        compile_args += ['-DNDEBUG', '-DEDEBUG', '-DNSGX_DEBUG']
     else
         error('Unknown sgx_mode: ' + get_option('sgx_mode'))
     endif
 elif get_option('buildtype') == 'debugoptimized'
     if get_option('sgx_mode') == 'release' or get_option('sgx_mode') == 'simulation' or get_option('sgx_mode') == 'fake_enclave'
-        compile_args = compile_args + ['-DDEBUG', '-UNDEBUG', '-UEDEBUG']
+        compile_args += ['-DDEBUG', '-UNDEBUG', '-UEDEBUG']
     elif get_option('sgx_mode') == 'prerelease'
         error('Cannot do prerelease and debugoptimized at the same time')
     else
@@ -76,7 +76,7 @@ elif get_option('buildtype') == 'debug'
     if get_option('sgx_mode') == 'prerelease'
         error('Cannot do prerelease and debug at the same time')
     else 
-        compile_args = compile_args + ['-DDEBUG', '-UNDEBUG', '-UEDEBUG']
+        compile_args += ['-DDEBUG', '-UNDEBUG', '-UEDEBUG']
     endif
 else
     error('Unknown buildtype: ' + get_option('buildtype'))
@@ -129,9 +129,9 @@ ulibcrypto = static_library('ucrypto',  ulibcrypto_cpp_files, dependencies: [ope
 subdir('src/enclave/')
 
 if use_enclave
-    common_args = ['-DIS_ENCLAVE', '-nostdinc', '-fvisibility=hidden', '-fpie', '-fstack-protector'] + compile_args
+    common_args = ['-DIS_ENCLAVE', '-nostdinc', '-fvisibility=hidden', '-fstack-protector'] + compile_args
     enclave_so = executable('enclave.so', enclave_cpp_files, gen_trusted_enclave, 
-    c_args: common_args,
+    c_args: common_args, pie: true,
     cpp_args: common_args + cpp_compile_args + ['-nostdinc++'],
     link_args:['-Wl,--no-undefined','-nostdlib','-nodefaultlibs','-nostartfiles','-L'+sgx_sdk_dir+'/lib64',
     '-Wl,--whole-archive','-l'+sgx_trts_name,'-Wl,--no-whole-archive',
@@ -155,8 +155,7 @@ server_incs = [credb_incdir, sgx_incdir]
 server_deps = [yael_dep, log_dep, boost_po_dep, sgx_uae_dep, ukey_exchange_dep, sgx_urts_dep, thread_dep, gflags_dep]
 
 if get_option('sgx_mode') == 'fake_enclave'
-    server = executable('credb', server_cpp_files, fake_enclave_cpp_files, include_directories: server_incs,
-        dependencies: server_deps + [openssl_dep, cowlang_dep, json_dep], c_args: compile_args, cpp_args: compile_args + cpp_compile_args, install:true, link_with: ulibcrypto, link_args: ['-rdynamic'])
+    server = executable('credb', server_cpp_files, include_directories: server_incs, dependencies: server_deps + [openssl_dep, cowlang_dep, json_dep], c_args: compile_args, cpp_args: compile_args + cpp_compile_args, install:true, link_with: [ulibcrypto, libenclave], link_args: ['-rdynamic'])
 else
     server = executable('credb', server_cpp_files, gen_untrusted_enclave, include_directories: server_incs,
         dependencies: server_deps, c_args: compile_args, cpp_args: cpp_compile_args, install:true, link_with: ulibcrypto)
@@ -180,8 +179,7 @@ py3_ext.extension_module('credb', python_file, dependencies: [py3_dep, openssl_d
 
 subdir('test/')
 
-tests = executable('credb-test', test_cpp_files, test_extra_cpp_files, link_with: [libcredb], include_directories: [credb_incdir, sgx_incdir],
-                   c_args: test_compile_args, cpp_args: test_compile_args + cpp_compile_args, dependencies: [gtest, log_dep, gflags_dep, boost_py3_dep, py3_dep, yael_dep, json_dep, cowlang_dep],
+tests = executable('credb-test', test_cpp_files, test_extra_cpp_files, link_with: [libcredb, libfakeenclave], include_directories: [credb_incdir, sgx_incdir], c_args: test_compile_args, cpp_args: test_compile_args + cpp_compile_args, dependencies: [gtest, log_dep, gflags_dep, boost_py3_dep, py3_dep, yael_dep, json_dep, cowlang_dep],
                    link_args: ['-lstdc++fs'])
 test('credb-test', tests)
 

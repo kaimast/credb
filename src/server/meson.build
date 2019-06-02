@@ -15,11 +15,5 @@ server_cpp_files=files(
     'EnclaveHandle.cpp',
     'PeerAcceptor.cpp',
     'PeerHandler.cpp',
-    '../common/util/base64.cpp')
-
-fake_enclave_cpp_files = files()
-
-# Hack around a bug in meson
-foreach name : enclave_cpp_file_names
-    fake_enclave_cpp_files = fake_enclave_cpp_files + files('../enclave/'+name)
-endforeach
+    '../common/util/base64.cpp'
+)
