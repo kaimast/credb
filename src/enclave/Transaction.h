@@ -15,9 +15,7 @@
 #include "logging.h"
 #include "OpContext.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 struct operation_info_t;
@@ -257,5 +255,4 @@ private:
 
 using TransactionPtr = std::shared_ptr<Transaction>;
 
-}
-}
+} // namespace credb::trusted

@@ -12,9 +12,7 @@
 #include <bitstream.h>
 #include <string>
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class EncryptedIO
@@ -73,5 +71,4 @@ private:
     sgx_aes_gcm_128bit_key_t m_disk_key;
 };
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

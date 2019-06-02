@@ -11,9 +11,7 @@
 #include "ObjectIterator.h"
 #include "ObjectKeyProvider.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class ObjectListIterator
@@ -51,6 +49,5 @@ private:
     shard_id_t m_current_shard;
 };
 
-}
-}
+} // namespace credb::trusted
 

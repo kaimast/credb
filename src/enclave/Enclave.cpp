@@ -19,9 +19,7 @@
 #include "Enclave_t.h"
 #endif
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 Enclave *g_enclave;
@@ -74,10 +72,9 @@ credb_status_t Enclave::init(const std::string &name)
         return CREDB_ERROR_UNEXPECTED;
     }
 
-#ifndef IS_TEST
 #ifndef FAKE_ENCLAVE
     sgx_report_t report;
-    sgx_create_report(NULL, NULL, &report);
+    sgx_create_report(nullptr, nullptr, &report);
 
     sgx_key_request_t key_request;
     key_request.key_name = SGX_KEYSELECT_SEAL;
@@ -105,7 +102,6 @@ credb_status_t Enclave::init(const std::string &name)
         log_error("Failed to derive disk key: " + to_string(res));
         return CREDB_ERROR_KEYGEN_FAILED;
     }
-#endif
 #endif
 
     sgx_ecc256_close_context(ecc_state);
@@ -455,8 +451,7 @@ bool Enclave::write_to_disk(const std::string &filename, const bitstream &data)
     return m_encrypted_io->write_to_disk(filename, data);
 }
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted
 
 //// ECALLS
 

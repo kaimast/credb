@@ -5,9 +5,7 @@
 #include "Enclave.h"
 #include "EncryptedIO.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class RemoteEncryptedIO : public EncryptedIO
@@ -39,5 +37,4 @@ private:
     Enclave &m_enclave;
 };
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

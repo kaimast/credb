@@ -189,7 +189,7 @@ subdir('doc')
 clangtidy = find_program('clang-tidy', required: false)
 
 if clangtidy.found()
-    tidy_files = client_cpp_files + server_cpp_files
+    tidy_files = client_cpp_files + server_cpp_files + enclave_cpp_files
 
     run_target(
         'tidy',
@@ -200,7 +200,7 @@ if clangtidy.found()
             meson.build_root(),
             tidy_files
         ],
-    depends: [server, libcredb])
+    depends: [server, libcredb, libfakeenclave])
 endif
 
 

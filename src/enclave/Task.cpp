@@ -5,9 +5,7 @@
 #include "Enclave.h"
 #include "TaskManager.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 Task::Task(Enclave &enclave)
@@ -74,5 +72,4 @@ void Task::cleanup()
     m_task_manager.unregister_task(identifier());
 }
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

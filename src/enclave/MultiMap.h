@@ -14,9 +14,7 @@
 
 #include "AbstractMap.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class MultiMap : public AbstractMap<MultiMapNode<int64_t, std::string>, int64_t>
@@ -79,5 +77,4 @@ private:
     friend class iterator_t;
 };
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

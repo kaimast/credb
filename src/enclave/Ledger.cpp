@@ -36,11 +36,8 @@
 
 #include <algorithm>
 
-namespace credb
+namespace credb::trusted
 {
-namespace trusted
-{
-
 
 Ledger::Ledger(Enclave &enclave)
 : m_enclave(enclave), m_buffer_manager(m_enclave.buffer_manager()),
@@ -1171,5 +1168,4 @@ void Ledger::load_metadata(bitstream &input)
     log_info("Ledger metadata loaded");
 }
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

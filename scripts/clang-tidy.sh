@@ -20,4 +20,4 @@ sed -i 's/-pipe//g' ${TIDY_DIR}/compile_commands.json
 ALL_CHECKS="$CHECKS,$DISABLED_CHECKS"
 
 echo "Running clang checks: ${ALL_CHECKS}"
-$BIN -header-filter=${PROJECT_ROOT}/include/*.h,${PROJECT_ROOT}/src/*.h -checks=${ALL_CHECKS} -warnings-as-errors=* -p ${TIDY_DIR} $@
+$BIN -header-filter=${PROJECT_ROOT}/enclave/*.h,${PROJECT_ROOT}/include/*.h,${PROJECT_ROOT}/src/*.h -checks=${ALL_CHECKS} -warnings-as-errors=* -p ${TIDY_DIR} $@

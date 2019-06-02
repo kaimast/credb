@@ -22,9 +22,9 @@ public:
     ~ObjectIterator();
 
     ObjectIterator(const OpContext &context,
-                   const std::string &collection,
-                   const std::string &key,
-                   const std::string &path,
+                   std::string collection,
+                   std::string key,
+                   std::string path,
                    Ledger &ledger,
                    LockHandle *parent_lock_handle);
 

@@ -4,9 +4,7 @@
 #include "RemoteEncryptedIO.h"
 #include "logging.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 RemoteEncryptedIO::RemoteEncryptedIO(Enclave &enclave, const sgx_aes_gcm_128bit_key_t &disk_key)
@@ -30,5 +28,4 @@ bool RemoteEncryptedIO::write_to_disk(const std::string &filename, const bitstre
     return true;
 }
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

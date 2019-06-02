@@ -7,9 +7,7 @@
 #include "logging.h"
 #include "op_info.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 TransactionProxy::TransactionProxy(bitstream &request, const OpContext &op_context, RemoteParties &remote_parties, TransactionManager &transaction_manager, Enclave &enclave)
@@ -110,5 +108,4 @@ void TransactionProxy::handle_op_response()
     Task::switch_into_thread();
 }
 
-}
-}
+} // namespace credb::trusted

@@ -14,11 +14,7 @@
 
 using namespace cow;
 
-namespace credb
-{
-namespace trusted
-{
-namespace bindings
+namespace credb::trusted::bindings
 {
 
 TransactionCollection::TransactionCollection(MemoryManager &mem,
@@ -26,8 +22,8 @@ TransactionCollection::TransactionCollection(MemoryManager &mem,
                            credb::trusted::TransactionPtr transaction,
                            credb::trusted::Ledger &ledger,
                            LockHandle &lock_handle,
-                           const std::string &name)
-    : Module(mem), m_runner(runner), m_ledger(ledger), m_transaction(transaction), m_lock_handle(lock_handle), m_name(name)
+                           std::string name)
+    : Module(mem), m_runner(runner), m_ledger(ledger), m_transaction(transaction), m_lock_handle(lock_handle), m_name(std::move(name))
 {
 }
 
@@ -162,12 +158,12 @@ cow::ValuePtr TransactionCollection::get_member(const std::string &name)
 
             if(name == "put")
             {
-                auto op = new put_info_t(*m_transaction, m_name, full_path, doc, m_runner.identifier());
+                auto op = new put_info_t(*m_transaction, m_name, full_path, doc.duplicate(), m_runner.identifier());
                 m_transaction->register_operation(op);
             }
             else
             {
-                auto op = new add_info_t(*m_transaction, m_name, full_path, doc, m_runner.identifier());
+                auto op = new add_info_t(*m_transaction, m_name, full_path, doc.duplicate(), m_runner.identifier());
                 m_transaction->register_operation(op);
             }
 
@@ -180,6 +176,4 @@ cow::ValuePtr TransactionCollection::get_member(const std::string &name)
     }
 }
 
-} // namespace bindings
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted::bindings

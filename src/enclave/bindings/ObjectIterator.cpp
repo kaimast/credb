@@ -2,11 +2,7 @@
 
 #include <cowlang/cow.h>
 
-namespace credb
-{
-namespace trusted
-{
-namespace bindings
+namespace credb::trusted::bindings
 {
 
 ObjectListIterator::ObjectListIterator(cow::MemoryManager &mem, credb::trusted::ObjectListIterator &&it)
@@ -37,6 +33,4 @@ cow::ValuePtr ObjectListIterator::next()
     return t;
 }
 
-} // namespace bindings
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted::bindings

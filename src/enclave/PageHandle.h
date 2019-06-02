@@ -5,9 +5,7 @@
 
 #include "Page.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 template <class T> class PageHandle
@@ -52,9 +50,11 @@ public:
 
     void clear();
 
+    [[nodiscard]]
+    bool is_valid() const { return m_meta != nullptr; }
+
     T *operator->() const { return dynamic_cast<T*>(m_meta->page()); }
     T &operator*() const { return dynamic_cast<T&>(*m_meta->page()); }
 };
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

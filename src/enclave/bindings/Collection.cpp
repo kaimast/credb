@@ -24,8 +24,8 @@ Collection::Collection(MemoryManager &mem,
                        const OpContext &op_context,
                        credb::trusted::Ledger &ledger,
                        LockHandle &lock_handle,
-                       const std::string &name)
-: Module(mem), m_op_context(op_context), m_ledger(ledger), m_lock_handle(lock_handle), m_name(name)
+                       std::string name)
+: Module(mem), m_op_context(op_context), m_ledger(ledger), m_lock_handle(lock_handle), m_name(std::move(name))
 {
 }
 

@@ -3,9 +3,7 @@
 
 #include "TransactionLedger.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 TransactionLedger::TransactionLedger(BufferManager &buffer_manager)
@@ -114,5 +112,4 @@ TransactionHandle TransactionLedger::get(ledger_pos_t pos)
     return hdl;
 }
 
-}
-}
+} // namespace credb::trusted

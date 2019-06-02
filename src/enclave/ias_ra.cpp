@@ -108,12 +108,12 @@ static sample_spid_t g_sim_spid = { "Service X" };
 int ias_verify_attestation_evidence(sample_quote_t *p_isv_quote, uint8_t *pse_manifest, ias_att_report_t *p_attestation_verification_report)
 {
     int ret = 0;
-    sgx_ecc_state_handle_t ecc_state = NULL;
+    sgx_ecc_state_handle_t ecc_state = nullptr;
 
     // unused parameters
     UNUSED(pse_manifest);
 
-    if((NULL == p_isv_quote) || (NULL == p_attestation_verification_report))
+    if((p_isv_quote == nullptr) || (p_attestation_verification_report == nullptr))
     {
         return -1;
     }
@@ -131,9 +131,9 @@ int ias_verify_attestation_evidence(sample_quote_t *p_isv_quote, uint8_t *pse_ma
     0 << IAS_PSE_EVAL_STATUS_PSDASVN_OUT_OF_DATE_BIT_POS |
     0 << IAS_PSE_EVAL_STATUS_SIGRL_OUT_OF_DATE_BIT_POS | 0 << IAS_PSE_EVAL_STATUS_PRIVRL_OUT_OF_DATE_BIT_POS;
     memset(p_attestation_verification_report->info_blob.latest_equivalent_tcb_psvn, 0, PSVN_SIZE);
-    memset(p_attestation_verification_report->info_blob.latest_pse_isvsvn, 0, ISVSVN_SIZE);
-    memset(p_attestation_verification_report->info_blob.latest_psda_svn, 0, PSDA_SVN_SIZE);
-    memset(p_attestation_verification_report->info_blob.performance_rekey_gid, 0, GID_SIZE);
+    memset(reinterpret_cast<void*>(p_attestation_verification_report->info_blob.latest_pse_isvsvn), 0, ISVSVN_SIZE);
+    memset(reinterpret_cast<void*>(p_attestation_verification_report->info_blob.latest_psda_svn), 0, PSDA_SVN_SIZE);
+    memset(reinterpret_cast<void*>(p_attestation_verification_report->info_blob.performance_rekey_gid), 0, GID_SIZE);
 
     // @TODO: Product signing algorithm still TBD.  May be RSA2048 signing.
     // Generate the Service providers ECCDH key pair.
@@ -184,25 +184,18 @@ int ias_verify_attestation_evidence(sample_quote_t *p_isv_quote, uint8_t *pse_ma
 
 int ias_get_sigrl(const sample_epid_group_id_t gid, uint32_t *p_sig_rl_size, uint8_t **p_sig_rl)
 {
-    int ret = 0;
-
     UNUSED(gid);
 
-    do
+    if(p_sig_rl == nullptr || p_sig_rl_size == nullptr)
     {
+        return -1;
+    }
 
-        if(NULL == p_sig_rl || NULL == p_sig_rl_size)
-        {
-            ret = -1;
-            break;
-        }
-        *p_sig_rl_size = 0;
-        *p_sig_rl = NULL;
-        // we should try to get sig_rl from an attestation server
-        break;
-    } while(0);
+    *p_sig_rl_size = 0;
+    *p_sig_rl = nullptr;
+    // we should try to get sig_rl from an attestation server
 
-    return (ret);
+    return 0;
 }
 
 
@@ -223,13 +216,11 @@ int ias_enroll(int sp_credentials, sample_spid_t *p_spid, int *p_authentication_
     UNUSED(sp_credentials);
     UNUSED(p_authentication_token);
 
-    if(NULL != p_spid)
+    if(p_spid != nullptr)
     {
         memcpy_s(p_spid, sizeof(sample_spid_t), &g_sim_spid, sizeof(sample_spid_t));
+        return 0;
     }
-    else
-    {
-        return (1);
-    }
-    return (0);
+        
+    return 1;
 }

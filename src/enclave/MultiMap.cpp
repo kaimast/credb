@@ -8,9 +8,7 @@
 
 #include "credb/defines.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 MultiMap::iterator_t::iterator_t(MultiMap &map, bucketid_t bpos)
@@ -324,5 +322,4 @@ void MultiMap::clear()
     }
 }
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

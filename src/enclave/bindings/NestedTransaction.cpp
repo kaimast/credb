@@ -2,11 +2,7 @@
 
 #include "../logging.h"
 
-namespace credb
-{
-namespace trusted
-{
-namespace bindings
+namespace credb::trusted::bindings
 {
 
 NestedTransaction::NestedTransaction(cow::MemoryManager &mem, Transaction &parent,
@@ -44,6 +40,4 @@ cow::ValuePtr NestedTransaction::get_member(const std::string &name)
     }
 }
 
-}
-}
-}
+} // namespace credb::trusted::bindings

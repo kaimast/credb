@@ -7,9 +7,7 @@
 #include "Task.h"
 #include "MiniThread.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 /**
@@ -37,5 +35,4 @@ private:
     bitstream m_result;
 };
 
-}
-}
+} // namespace credb::trusted

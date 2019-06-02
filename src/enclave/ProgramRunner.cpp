@@ -13,9 +13,7 @@
 #include "TaskManager.h"
 #include "logging.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 ProgramRunner::ProgramRunner(Enclave &enclave,
@@ -124,5 +122,4 @@ void ProgramRunner::work()
     mark_done();
 }
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

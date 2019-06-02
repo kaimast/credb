@@ -7,9 +7,7 @@
 
 #include <stdexcept>
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 LockHandle::LockHandle(Ledger &ledger, LockHandle *parent, bool nonblocking)
@@ -151,7 +149,10 @@ Shard &LockHandle::get_shard(shard_id_t shard_no, LockType lock_type, bool nonbl
 
             if(lock_type == LockType::Write && lock_info.write_count == 0)
             {
-                assert(lock_info.read_count > 0);
+                if(lock_info.read_count == 0)
+                {
+                    LOG(FATAL) << "Invalid state: read count is 0";
+                }
 
                 if(nonblocking)
                 {
@@ -257,5 +258,4 @@ void LockHandle::release_block(shard_id_t shard_no, block_id_t block, LockType l
     }
 }
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

@@ -21,9 +21,7 @@
 #include <memory>
 #include <bitstream.h>
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class TaskManager;
@@ -164,5 +162,4 @@ inline bitstream RemoteParty::generate_op_request(taskid_t task_id, operation_id
 
 
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

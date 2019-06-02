@@ -4,9 +4,7 @@
 #include "BufferManager.h"
 #include "logging.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 BufferManager::shard_t::~shard_t()
@@ -45,11 +43,20 @@ void BufferManager::shard_t::unpin_page(page_no_t page_no)
 {
     m_lock.read_lock();
     auto it = m_metas.find(page_no);
-    assert(it != m_metas.end());
+
+    if(it == m_metas.end())
+    {
+        log_fatal("Invalid state: no such meta");
+    }
+
     auto &meta = *it->second;
     m_lock.read_unlock();
 
-    assert(meta.cnt_pin > 0);
+    if(meta.cnt_pin == 0)
+    {
+        log_fatal("Invalid state: pin count is 0");
+    }
+    
     auto old_val = meta.cnt_pin.fetch_sub(1);
     
     if(old_val == 1)
@@ -70,7 +77,12 @@ void BufferManager::shard_t::mark_page_dirty(page_no_t page_no)
 {
     m_lock.read_lock();
     auto it = m_metas.find(page_no);
-    assert(it != m_metas.end());
+
+    if(it == m_metas.end())
+    {
+        log_fatal("Invalid state: no such meta");
+    }
+    
     auto &meta = *it->second;
     m_lock.read_unlock();
 
@@ -124,7 +136,11 @@ void BufferManager::shard_t::flush_all_pages()
 
 void BufferManager::shard_t::discard_cache(internal_page_meta_t *meta)
 {
-    assert(!meta->cnt_pin);
+    if(meta->cnt_pin != 0)
+    {
+        log_fatal("Invalid state: pin count > 0");
+    }
+
     m_loaded_size -= meta->size();
 
     delete meta->page();
@@ -184,7 +200,12 @@ void BufferManager::shard_t::flush_page(page_no_t page_no)
 {
     m_lock.read_lock();
     auto it = m_metas.find(page_no);
-    assert(it != m_metas.end());
+
+    if(it == m_metas.end())
+    {
+        log_fatal("Invalid state: no such meta");
+    }
+
     auto &meta = *it->second;
     m_lock.read_unlock();
 
@@ -194,7 +215,12 @@ void BufferManager::shard_t::flush_page(page_no_t page_no)
 BufferManager::metas_map_t::iterator BufferManager::shard_t::unload_page(page_no_t page_no)
 {
     auto it = m_metas.find(page_no);
-    assert(it != m_metas.end());
+
+    if(it == m_metas.end())
+    {
+        log_fatal("Invalid state: no such meta");
+    }
+
     auto meta = it->second;
     auto next = m_metas.erase(it);
 
@@ -247,8 +273,8 @@ void BufferManager::shard_t::check_evict()
 #endif
 }
 
-BufferManager::BufferManager(EncryptedIO *encrypted_io, const std::string &file_prefix, size_t buffer_size)
-: m_encrypted_io(encrypted_io), m_file_prefix(file_prefix), m_buffer_size(buffer_size), m_next_page_no(1)
+BufferManager::BufferManager(EncryptedIO *encrypted_io, std::string file_prefix, size_t buffer_size)
+: m_encrypted_io(encrypted_io), m_file_prefix(std::move(file_prefix)), m_buffer_size(buffer_size), m_next_page_no(1)
 {
     for(size_t i = 0; i < NUM_SHARDS; ++i)
     {
@@ -303,5 +329,4 @@ void BufferManager::write_to_disk(page_no_t page_no, const bitstream &data)
 
 void BufferManager::set_encrypted_io(EncryptedIO *encrypted_io) { m_encrypted_io = encrypted_io; }
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

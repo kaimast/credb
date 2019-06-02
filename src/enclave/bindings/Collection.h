@@ -24,7 +24,7 @@ public:
                const OpContext &op_context,
                credb::trusted::Ledger &ledger,
                LockHandle &lock_handle,
-               const std::string &name);
+               std::string name);
 
     cow::ValuePtr get_member(const std::string &name) override;
 

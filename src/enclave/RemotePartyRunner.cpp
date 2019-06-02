@@ -6,9 +6,7 @@
 #include "logging.h"
 #include "util/FunctionCallResult.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 RemotePartyRunner::RemotePartyRunner(Enclave &enclave,
@@ -58,5 +56,4 @@ void RemotePartyRunner::handle_done()
     m_remote_party->unlock();
 }
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

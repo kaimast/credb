@@ -124,7 +124,7 @@ struct check_obj_info_t : public read_op_t
 public:
     check_obj_info_t(Transaction &tx, bitstream &req, taskid_t task);
 
-    check_obj_info_t(Transaction &tx, const std::string &collection, const std::string &key, const json::Document &predicates, bool result, taskid_t task);
+    check_obj_info_t(Transaction &tx, std::string collection, std::string key, const json::Document &predicates, bool result, taskid_t task);
 
     OperationType type() const override
     {
@@ -150,7 +150,7 @@ struct has_obj_info_t : public read_op_t
 public:
     has_obj_info_t(Transaction &tx, bitstream &req, taskid_t task);
 
-    has_obj_info_t(Transaction &tx, const std::string &collection, const std::string &key, bool result, taskid_t task);
+    has_obj_info_t(Transaction &tx, std::string collection, std::string key, bool result, taskid_t task);
 
     OperationType type() const override
     {
@@ -200,7 +200,7 @@ struct put_info_t : public write_op_t
 public:
     put_info_t(Transaction &tx, bitstream &req, taskid_t task);
 
-    put_info_t(Transaction &tx, const std::string &collection, const std::string &key, const json::Document &doc, taskid_t task);
+    put_info_t(Transaction &tx, std::string collection, std::string key, json::Document doc, taskid_t task);
 
     OperationType type() const override
     {
@@ -229,7 +229,7 @@ struct add_info_t : public write_op_t
 public:
     add_info_t(Transaction &tx, bitstream &req, taskid_t task);
 
-    add_info_t(Transaction &tx, const std::string &collection, const std::string &key, const json::Document &doc, taskid_t task);
+    add_info_t(Transaction &tx, std::string collection, std::string key, json::Document doc, taskid_t task);
 
     OperationType type() const override
     {

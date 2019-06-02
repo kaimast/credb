@@ -15,9 +15,7 @@
 #include "util/defines.h"
 #include "util/hash.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 /**
@@ -260,5 +258,4 @@ private:
     std::array<shard_t, NUM_SHARDS> m_shards;
 };
 
-}
-}
+} // namespace credb::trusted

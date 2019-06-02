@@ -4,9 +4,7 @@
 #include "TransactionManager.h"
 #include "Enclave.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 TransactionManager::~TransactionManager()
@@ -113,5 +111,4 @@ void TransactionManager::remove_transaction(Transaction &tx)
     m_transactions.erase(it);
 }
 
-}
-}
+} // namespace credb::trusted

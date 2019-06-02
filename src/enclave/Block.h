@@ -14,9 +14,7 @@
 
 #include "Page.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 /// smaller blocks are easier to copy in and out of the enclave
@@ -104,7 +102,6 @@ public:
 };
 
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted
 
 #include "Block.inl"

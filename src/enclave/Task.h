@@ -9,9 +9,7 @@
 #include <bitstream.h>
 #include <memory>
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class TaskManager;
@@ -68,5 +66,4 @@ inline bool Task::is_done() const { return m_done; }
 
 using TaskPtr = std::shared_ptr<Task>;
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

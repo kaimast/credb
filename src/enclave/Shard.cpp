@@ -4,9 +4,7 @@
 #include "Shard.h"
 #include "BufferManager.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 Shard::Shard(BufferManager &buffer) : m_buffer(buffer)
@@ -90,6 +88,12 @@ void Shard::load_metadata(bitstream &input)
     page_no_t page_no;
     input >> page_no;
     m_pending_block = m_buffer.get_page<LedgerBlock>(page_no);
+
+    if(!m_pending_block.is_valid())
+    {
+        LOG(FATAL) << "Invalid state: no such meta data page";
+    }
+
     m_pending_block->unseal();
 }
 
@@ -112,5 +116,4 @@ void Shard::discard_cached_block(page_no_t page_no)
 }
 
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

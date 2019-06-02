@@ -3,9 +3,7 @@
 
 #include "TransactionHandle.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 transaction_bounds_t TransactionHandle::get_boundaries() const
@@ -80,6 +78,4 @@ std::map<identity_uid_t, op_set_t> TransactionHandle::remote_ops() const
     return result;
 }
 
-
-}
-}
+} // namespace credb::trusted

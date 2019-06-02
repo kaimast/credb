@@ -13,12 +13,12 @@ namespace trusted
 ObjectIterator::~ObjectIterator() { clear(); }
 
 ObjectIterator::ObjectIterator(const OpContext &context,
-                               const std::string &collection,
-                               const std::string &key,
-                               const std::string &path,
+                               std::string collection,
+                               std::string key,
+                               std::string path,
                                Ledger &ledger,
                                LockHandle *parent_lock_handle)
-: m_context(context), m_collection(collection), m_key(key), m_path(path), m_ledger(ledger), m_lock_handle(ledger, parent_lock_handle)
+: m_context(context), m_collection(std::move(collection)), m_key(std::move(key)), m_path(std::move(path)), m_ledger(ledger), m_lock_handle(ledger, parent_lock_handle)
 {
     m_start = ledger.get_latest_version(m_context, m_collection, m_key, m_path, m_current_eid, m_lock_handle, LockType::Read);
 }

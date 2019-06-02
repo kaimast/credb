@@ -7,20 +7,16 @@
 
 using namespace cow;
 
-namespace credb
-{
-namespace trusted
-{
-namespace bindings
+namespace credb::trusted::bindings
 {
 
 Object::Object(MemoryManager &mem,
                const credb::trusted::OpContext &op_context,
                Ledger &ledger,
-               const std::string &collection,
-               const std::string &key,
+               std::string collection,
+               std::string key,
                LockHandle &lock_handle)
-: Module(mem), m_op_context(op_context), m_ledger(ledger), m_collection(collection), m_key(key),
+: Module(mem), m_op_context(op_context), m_ledger(ledger), m_collection(std::move(collection)), m_key(std::move(key)),
   m_lock_handle(lock_handle)
 {
 }
@@ -125,6 +121,4 @@ ValuePtr Object::get_member(const std::string &name)
     }
 }
 
-} // namespace bindings
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted::bindings

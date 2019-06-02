@@ -9,9 +9,7 @@
 #include <json/json.h>
 #include <unordered_set>
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class Enclave;
@@ -20,7 +18,7 @@ class Enclave;
 class Index
 {
 public:
-    Index(const std::string &name, const std::vector<std::string> &paths);
+    Index(std::string name, std::vector<std::string> paths);
     virtual ~Index();
 
     const std::vector<std::string> &paths() const;
@@ -75,7 +73,4 @@ inline bool Index::compare(const json::Document &first, const json::Document &se
     return view1 == view2;
 }
 
- 
-
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

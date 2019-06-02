@@ -9,9 +9,7 @@
 #include "OpContext.h"
 #include "TransactionManager.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 Transaction::Transaction(IsolationLevel isolation, Ledger &ledger_, TransactionLedger &transaction_ledger, TransactionManager &tx_mgr, identity_uid_t root, transaction_id_t id, bool is_remote)
@@ -245,5 +243,4 @@ Witness Transaction::commit(bool generate_witness)
     return witness;
 }
 
-}
-}
+} // namespace credb::trusted

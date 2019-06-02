@@ -5,9 +5,7 @@
 #include "logging.h"
 #include "util/get_heap_size_of.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 inline PageHandle<HashMap::node_t> duplicate(PageHandle<HashMap::node_t> &hdl)
@@ -298,5 +296,4 @@ bool HashMap::get(const KeyType& key, ValueType &value_out)
     return false;
 }
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

@@ -5,9 +5,7 @@
 
 #include "ProgramRunner.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class RemotePartyRunner : public ProgramRunner
@@ -34,5 +32,4 @@ private:
     operation_id_t m_op_id;
 };
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

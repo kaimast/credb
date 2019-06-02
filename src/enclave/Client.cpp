@@ -18,9 +18,7 @@
 #include "ias_ra.h"
 #endif
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 Client::Client(Enclave &enclave, int32_t id)
@@ -192,5 +190,4 @@ bool Client::get_encryption_key(sgx_ec_key_128bit_t **key)
 #endif
 }
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

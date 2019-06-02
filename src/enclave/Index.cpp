@@ -3,13 +3,11 @@
 
 #include "Index.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
-Index::Index(const std::string &name, const std::vector<std::string> &paths)
-: m_name(name), m_paths(paths)
+Index::Index(std::string name, std::vector<std::string> paths)
+    : m_name(std::move(name)), m_paths(std::move(paths))
 {
 }
 
@@ -170,7 +168,11 @@ void HashIndex::find(const json::Document &predicate, std::unordered_set<std::st
 
 size_t HashIndex::estimate_value_count(const json::Document &predicate)
 {
-    assert(paths().size() == 1);
+    if(paths().size() != 1)
+    {
+        log_fatal("Invalid state");
+    }
+
     const std::string &vkey = paths()[0];
     json::Document in(predicate, vkey + ".$in");
     if(in.empty())
@@ -191,5 +193,4 @@ size_t HashIndex::estimate_value_count(const json::Document &predicate)
 }
 
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

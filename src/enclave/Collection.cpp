@@ -10,13 +10,11 @@
 #include "RemoteParties.h"
 #include "logging.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
-Collection::Collection(BufferManager &buffer_manager, const std::string &name)
-: m_buffer_manager(buffer_manager), m_name(name)
+Collection::Collection(BufferManager &buffer_manager, std::string name)
+: m_buffer_manager(buffer_manager), m_name(std::move(name))
 {
     m_primary_index = new HashMap(m_buffer_manager, m_name + "_primary_index");
 }
@@ -187,6 +185,4 @@ void Collection::unload_everything()
     m_secondary_indexes.clear();
 }
 
-
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

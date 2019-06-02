@@ -13,9 +13,7 @@
 #include "BufferManager.h"
 #include "TransactionHandle.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class TransactionBlock: public Block<TransactionHandle>, public RWLockable
@@ -96,5 +94,4 @@ inline void TransactionLedger::generate_block()
     m_pending_block_id = m_pending_block->identifier();
 }
 
-}
-}
+} // namespace credb::trusted

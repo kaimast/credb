@@ -57,9 +57,7 @@ sample_spid_t g_spid;
 // static const sample_extended_epid_group* g_sp_extended_epid_group_id = nullptr; // FIXME: defined
 // but not used
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 Peer::Peer(Enclave &enclave, remote_party_id id, const std::string &hostname, uint16_t port, bool is_initiator)
@@ -935,5 +933,4 @@ void Peer::handle_call_request(bitstream &input, const OpContext &op_context, ta
     RemoteParty::handle_call_request(input, op_context, task_id, op_id);
 }
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

@@ -23,9 +23,7 @@
 
 #include <sgx_tkey_exchange.h>
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 RemoteParty::RemoteParty(Enclave &enclave, remote_party_id identifier)
@@ -783,7 +781,10 @@ void RemoteParty::handle_request_upstream_mode(bitstream &input,
 
         input >> collection >> predicates >> projection >> limit;
 
-        assert(limit != 0);
+        if(limit == 0)
+        {
+            log_fatal("Got invalid value for limit");
+        }
 
         auto it = m_ledger.find(op_context, collection, predicates);
 
@@ -1086,5 +1087,4 @@ void RemoteParty::handle_request_get_object(bitstream &input, const OpContext &o
     }
 }
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

@@ -2,9 +2,7 @@
 
 #include <cowlang/Interpreter.h>
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class OpContext;
@@ -29,7 +27,7 @@ public:
                           std::shared_ptr<credb::trusted::Transaction> transaction,
                           credb::trusted::Ledger &ledger,
                           LockHandle &lock_handle,
-                          const std::string &name);
+                          std::string name);
 
     cow::ValuePtr get_member(const std::string &name) override;
 
@@ -42,5 +40,4 @@ private:
 };
 
 } // namespace bindings
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

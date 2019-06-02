@@ -11,9 +11,7 @@
 #include <bitstream.h>
 #include "util/defines.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class Ledger;
@@ -27,7 +25,7 @@ class HashMap;
 class Collection
 {
 public:
-    Collection(BufferManager &buffer_manager, const std::string &name);
+    Collection(BufferManager &buffer_manager, std::string name);
 
     Collection(Collection &&other) noexcept;
 
@@ -64,5 +62,4 @@ private:
     std::mutex m_mutex;
 };
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

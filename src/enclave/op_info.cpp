@@ -7,9 +7,7 @@
 #include "Ledger.h"
 #include "util/keys.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 shard_id_t operation_info_t::get_shard(const std::string &collection, const std::string &full_path) const
@@ -27,8 +25,8 @@ check_obj_info_t::check_obj_info_t(Transaction &tx, bitstream &req, taskid_t tas
     m_sid = get_shard(m_collection, m_key);
 }
 
-check_obj_info_t::check_obj_info_t(Transaction &tx, const std::string &collection, const std::string &key, const json::Document &predicates, bool result, taskid_t task)
-    : read_op_t(tx, task), m_collection(collection), m_key(key), m_predicates(predicates.duplicate()), m_result(result),
+check_obj_info_t::check_obj_info_t(Transaction &tx, std::string collection, std::string key, const json::Document &predicates, bool result, taskid_t task)
+    : read_op_t(tx, task), m_collection(std::move(collection)), m_key(std::move(key)), m_predicates(predicates.duplicate()), m_result(result),
       m_sid(get_shard(m_collection, m_key))
 {}
 
@@ -76,8 +74,8 @@ has_obj_info_t::has_obj_info_t(Transaction &tx, bitstream &req, taskid_t task)
     m_sid = get_shard(m_collection, m_key);
 }
 
-has_obj_info_t::has_obj_info_t(Transaction &tx, const std::string &collection, const std::string &key, bool result, taskid_t task)
-    : read_op_t(tx, task), m_collection(collection), m_key(key), m_result(result),
+has_obj_info_t::has_obj_info_t(Transaction &tx, std::string collection, std::string key, bool result, taskid_t task)
+    : read_op_t(tx, task), m_collection(std::move(collection)), m_key(std::move(key)), m_result(result),
       m_sid(get_shard(m_collection, m_key))
 {}
 
@@ -183,8 +181,8 @@ put_info_t::put_info_t(Transaction &tx, bitstream &req, taskid_t task)
     m_sid = get_shard(m_collection, m_key);
 }
 
-put_info_t::put_info_t(Transaction &tx, const std::string &collection, const std::string &key, const json::Document &doc, taskid_t task)
-    : write_op_t(tx, task), m_collection(collection), m_key(key), m_doc(doc.duplicate())
+put_info_t::put_info_t(Transaction &tx, std::string collection, std::string key, json::Document doc, taskid_t task)
+    : write_op_t(tx, task), m_collection(std::move(collection)), m_key(std::move(key)), m_doc(std::move(doc))
 {
     m_sid = get_shard(m_collection, m_key);
 }
@@ -236,8 +234,8 @@ add_info_t::add_info_t(Transaction &tx, bitstream &req, taskid_t task)
     m_sid = get_shard(m_collection, m_key);
 }
 
-add_info_t::add_info_t(Transaction &tx, const std::string &collection, const std::string &key, const json::Document &doc, taskid_t task)
-    : write_op_t(tx, task), m_collection(collection), m_key(key), m_doc(doc.duplicate())
+add_info_t::add_info_t(Transaction &tx, std::string collection, std::string key, json::Document doc, taskid_t task)
+    : write_op_t(tx, task), m_collection(std::move(collection)), m_key(std::move(key)), m_doc(std::move(doc))
 {
     m_sid = get_shard(m_collection, m_key);
 }
@@ -529,5 +527,4 @@ bool find_info_t::validate(bool generate_witness)
     return true;
 }
 
-}
-}
+} // namespace credb::trusted

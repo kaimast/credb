@@ -17,9 +17,7 @@
 #include "PageHandle.h"
 #include "logging.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class BufferManager
@@ -125,7 +123,7 @@ class BufferManager
     };
 
 public:
-    BufferManager(EncryptedIO *encrypted_io, const std::string &file_prefix, size_t buffer_size);
+    BufferManager(EncryptedIO *encrypted_io, std::string file_prefix, size_t buffer_size);
     ~BufferManager();
 
     /**
@@ -206,8 +204,7 @@ private:
     shard_t *m_shards[NUM_SHARDS];
 };
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted
 
 #include "BufferManager.inl"
 #include "Page.inl"

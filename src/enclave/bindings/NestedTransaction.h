@@ -2,11 +2,7 @@
 
 #include "Transaction.h"
 
-namespace credb
-{
-namespace trusted
-{
-namespace bindings
+namespace credb::trusted::bindings
 {
 
 /**
@@ -28,6 +24,4 @@ private:
     Transaction &m_parent;
 };
 
-}
-}
-}
+} // namespace credb::trusted::bindings

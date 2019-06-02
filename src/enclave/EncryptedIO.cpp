@@ -12,9 +12,7 @@
 #include "Enclave_t.h"
 #endif
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 bool EncryptedIO::decrypt_disk(uint8_t *buffer, int32_t size, bitstream &bstream)
@@ -47,5 +45,4 @@ bool EncryptedIO::decrypt_disk(uint8_t *buffer, int32_t size, bitstream &bstream
     return true;
 }
 
-}
-}
+} // namespace credb::trusted
