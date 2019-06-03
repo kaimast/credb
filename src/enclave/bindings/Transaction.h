@@ -5,9 +5,7 @@
 #include "../Transaction.h"
 #include "Database.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class OpContext;
@@ -53,6 +51,5 @@ private:
     credb::trusted::TransactionPtr m_transaction;
 };
 
-}
-}
-}
+} // namespace bindings
+} // namespace credb::trusted

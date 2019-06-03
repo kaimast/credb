@@ -11,9 +11,7 @@
 #include "Enclave_t.h"
 #endif
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 bool LocalEncryptedIO::read_from_disk(const std::string &filename, bitstream &data)
@@ -107,5 +105,4 @@ size_t LocalEncryptedIO::total_file_size()
     return result;
 }
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

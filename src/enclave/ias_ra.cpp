@@ -130,7 +130,8 @@ int ias_verify_attestation_evidence(sample_quote_t *p_isv_quote, uint8_t *pse_ma
     0 << IAS_PSE_EVAL_STATUS_ISVSVN_OUT_OF_DATE_BIT_POS | 0 << IAS_PSE_EVAL_STATUS_EPID_GROUP_REVOKED_BIT_POS |
     0 << IAS_PSE_EVAL_STATUS_PSDASVN_OUT_OF_DATE_BIT_POS |
     0 << IAS_PSE_EVAL_STATUS_SIGRL_OUT_OF_DATE_BIT_POS | 0 << IAS_PSE_EVAL_STATUS_PRIVRL_OUT_OF_DATE_BIT_POS;
-    memset(p_attestation_verification_report->info_blob.latest_equivalent_tcb_psvn, 0, PSVN_SIZE);
+
+    memset(reinterpret_cast<void*>(p_attestation_verification_report->info_blob.latest_equivalent_tcb_psvn), 0, PSVN_SIZE);
     memset(reinterpret_cast<void*>(p_attestation_verification_report->info_blob.latest_pse_isvsvn), 0, ISVSVN_SIZE);
     memset(reinterpret_cast<void*>(p_attestation_verification_report->info_blob.latest_psda_svn), 0, PSDA_SVN_SIZE);
     memset(reinterpret_cast<void*>(p_attestation_verification_report->info_blob.performance_rekey_gid), 0, GID_SIZE);
@@ -159,7 +160,8 @@ int ias_verify_attestation_evidence(sample_quote_t *p_isv_quote, uint8_t *pse_ma
         SWAP_ENDIAN_32B(p_attestation_verification_report->info_blob.signature.x);
         SWAP_ENDIAN_32B(p_attestation_verification_report->info_blob.signature.y);
 
-    } while(0);
+    } while(false);
+
     if(ecc_state)
     {
         sgx_ecc256_close_context(ecc_state);

@@ -185,14 +185,12 @@ credb_status_t RemoteParty::encrypt(const bitstream &data, bitstream &encrypted)
     encrypted.move_to(0);
     encrypted.resize(sizeof(etype_data_t) + sizeof(payload_len) + payload_len + sizeof(tag));
 
-    uint8_t aes_gcm_iv[SAMPLE_SP_IV_SIZE] = { 0 };
+    std::array<uint8_t, SAMPLE_SP_IV_SIZE> aes_gcm_iv = {0};
 
     encrypted << static_cast<etype_data_t>(EncryptionType::Encrypted);
     encrypted << payload_len;
 
-    auto ret = sgx_rijndael128GCM_encrypt(sk_key, reinterpret_cast<const uint8_t *>(data.data()),
-                                          payload_len, encrypted.current(), &aes_gcm_iv[0],
-                                          SAMPLE_SP_IV_SIZE, nullptr, 0, &tag);
+    auto ret = sgx_rijndael128GCM_encrypt(sk_key, reinterpret_cast<const uint8_t *>(data.data()), payload_len, encrypted.current(), &aes_gcm_iv[0], SAMPLE_SP_IV_SIZE, nullptr, 0, &tag);
 
     if(ret != SGX_SUCCESS)
     {

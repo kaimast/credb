@@ -3,11 +3,7 @@
 
 using namespace cow;
 
-namespace credb
-{
-namespace trusted
-{
-namespace bindings
+namespace credb::trusted::bindings
 {
 
 ValuePtr OpContext::get_member(const std::string &name)
@@ -67,6 +63,4 @@ ValuePtr OpContext::get_member(const std::string &name)
     }
 }
 
-} // namespace bindings
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted::bindings

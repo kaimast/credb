@@ -13,11 +13,7 @@
 
 using namespace cow;
 
-namespace credb
-{
-namespace trusted
-{
-namespace bindings
+namespace credb::trusted::bindings
 {
 
 Collection::Collection(MemoryManager &mem,
@@ -146,6 +142,4 @@ cow::ValuePtr Collection::get_member(const std::string &name)
     }
 }
 
-} // namespace bindings
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted::bindings

@@ -12,9 +12,7 @@
 #include "ObjectIterator.h"
 #include "credb/defines.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class ObjectKeyProvider
@@ -39,5 +37,4 @@ private:
     std::vector<std::string>::const_iterator m_iterator;
 };
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

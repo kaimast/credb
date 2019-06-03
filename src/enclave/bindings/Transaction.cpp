@@ -15,11 +15,7 @@
 
 using namespace cow;
 
-namespace credb
-{
-namespace trusted
-{
-namespace bindings
+namespace credb::trusted::bindings
 {
 
 Transaction::Transaction(cow::MemoryManager &mem,
@@ -230,6 +226,4 @@ cow::ValuePtr Transaction::get_member(const std::string &name)
     }
 }
 
-}
-}
-}
+} // namespace credb::trusted::bindings

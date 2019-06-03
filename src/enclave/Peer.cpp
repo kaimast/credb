@@ -242,17 +242,18 @@ sgx_status_t Peer::handle_attestation_message_one(bitstream &input)
     }
 
     // Generate the CMACsmk for gb||SPID||TYPE||KDF_ID||Sigsp(gb,ga)
-    uint8_t mac[SAMPLE_EC_MAC_SIZE] = { 0 };
+    std::array<uint8_t, SAMPLE_EC_MAC_SIZE> mac = { 0 };
     uint32_t cmac_size = offsetof(sgx_ra_msg2_t, mac);
 
-    ret = sgx_rijndael128_cmac_msg(&m_smk_key, reinterpret_cast<const uint8_t *>(&msg2), cmac_size, &mac);
+    ret = sgx_rijndael128_cmac_msg(&m_smk_key, reinterpret_cast<const uint8_t *>(&msg2), cmac_size, reinterpret_cast<sgx_cmac_128bit_tag_t*>(mac.data()));
 
     if(ret != SGX_SUCCESS)
     {
         return SGX_ERROR_UNEXPECTED;
     }
 
-    memcpy(msg2.mac, mac, sizeof(mac));
+    memcpy(reinterpret_cast<void*>(msg2.mac),
+            reinterpret_cast<void*>(mac.data()), mac.size());
 
     // FIXME make sure context is always closed
     if(ecc_state)

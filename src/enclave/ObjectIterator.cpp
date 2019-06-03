@@ -5,9 +5,7 @@
 #include "Ledger.h"
 #include "BufferManager.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 ObjectIterator::~ObjectIterator() { clear(); }
@@ -161,5 +159,4 @@ void ObjectIterator::clear()
     m_current_event.clear();
 }
 
-}
-}
+} // namespace credb::trusted

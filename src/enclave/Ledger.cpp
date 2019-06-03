@@ -1004,7 +1004,7 @@ ObjectListIterator Ledger::find(const OpContext &op_context,
 
     if(!p_col)
     {
-        return ObjectListIterator(op_context, collection, predicates, *this, lock_handle, nullptr);
+        return ObjectListIterator(op_context, collection, predicates.duplicate(), *this, lock_handle, nullptr);
     }
 
     std::set<std::string> paths;
@@ -1084,7 +1084,7 @@ ObjectListIterator Ledger::find(const OpContext &op_context,
         
         std::unique_ptr<VectorObjectKeyProvider> key_provider(new VectorObjectKeyProvider(std::move(merged_keys)));
 
-        return ObjectListIterator(op_context, collection, predicates, *this, lock_handle, std::move(key_provider));
+        return ObjectListIterator(op_context, collection, predicates.duplicate(), *this, lock_handle, std::move(key_provider));
     }
     else
     {
@@ -1092,7 +1092,7 @@ ObjectListIterator Ledger::find(const OpContext &op_context,
         log_debug("linear scan");
         std::unique_ptr<ObjectKeyProvider> key_provider(new HashMap::LinearScanKeyProvider(col.primary_index()));
 
-        return ObjectListIterator(op_context, collection, predicates, *this, lock_handle, std::move(key_provider));
+        return ObjectListIterator(op_context, collection, predicates.duplicate(), *this, lock_handle, std::move(key_provider));
     }
 }
 

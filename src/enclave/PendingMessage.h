@@ -7,9 +7,7 @@
 #include <bitstream.h>
 #include <stdint.h>
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class Peer;
@@ -53,5 +51,4 @@ private:
     Peer &m_peer;
 };
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

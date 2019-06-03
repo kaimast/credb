@@ -5,9 +5,7 @@
 
 #include "logging.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 void TaskManager::register_task(std::shared_ptr<Task> task)
@@ -31,5 +29,4 @@ void TaskManager::unregister_task(taskid_t identifier)
     }
 }
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

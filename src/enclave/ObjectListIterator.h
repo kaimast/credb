@@ -18,8 +18,8 @@ class ObjectListIterator
 {
 public:
     ObjectListIterator(const OpContext &op_context,
-                       const std::string &collection,
-                       const json::Document &predicates,
+                       std::string collection,
+                       json::Document predicates,
                        Ledger &ledger,
                        LockHandle *parent_lock_handle,
                        std::unique_ptr<ObjectKeyProvider> keys);

@@ -5,7 +5,10 @@
 
 #ifdef FAKE_ENCLAVE
 #include <glog/logging.h>
+#include <cstdlib>
 #else
+inline void exit(int) {} //FIXME
+
 #include "Enclave_t.h"
 #endif
 
@@ -79,6 +82,7 @@
         _s += ":" + to_string(__LINE__) + "] "; \
         _s += msg;                              \
         print_error(_s.c_str());                \
+        exit(EXIT_FAILURE);                     \
     })
 
 

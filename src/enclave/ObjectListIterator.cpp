@@ -5,18 +5,16 @@
 #include "Ledger.h"
 #include "logging.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 ObjectListIterator::ObjectListIterator(const OpContext &op_context,
-                                       const std::string &collection,
-                                       const json::Document &predicates,
+                                       std::string collection,
+                                       json::Document predicates,
                                        Ledger &ledger,
                                        LockHandle *parent_lock_handle,
                                        std::unique_ptr<ObjectKeyProvider> keys)
-: m_context(op_context), m_collection(collection), m_predicates(predicates.duplicate()),
+: m_context(op_context), m_collection(std::move(collection)), m_predicates(std::move(predicates)),
   m_ledger(ledger), m_lock_handle(ledger, parent_lock_handle), m_keys(std::move(keys)),
   m_current_block(INVALID_BLOCK), m_current_shard(-1)
 {
@@ -97,5 +95,4 @@ event_id_t ObjectListIterator::next(std::string &key, ObjectEventHandle &res)
 
 
 
-}
-}
+} // namespace credb::trusted

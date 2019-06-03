@@ -19,9 +19,7 @@
 #include "Ledger.h"
 #include "RemoteParties.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 RemoteParties::RemoteParties(Enclave &enclave) : m_enclave(enclave)
@@ -184,10 +182,7 @@ void RemoteParties::set_identity(remote_party_id local_id, const Identity &ident
     }
 }
 
-} // namespace trusted
-} // namespace credb
-
-#ifndef IS_TEST
+} // namespace credb::trusted
 
 #define MAC_KEY_SIZE 16
 int memcpy_s(
@@ -280,5 +275,3 @@ credb_status_t credb_ra_init(remote_party_id id, sgx_ra_context_t* context)
     }
 #endif
 }
-
-#endif

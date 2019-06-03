@@ -4,9 +4,7 @@
 #include "PendingMessage.h"
 #include "Peer.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 PendingMessage::PendingMessage(operation_id_t op_id, Peer &peer)
@@ -46,5 +44,4 @@ bool PendingMessage::wait(bool block)
     }
 }
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

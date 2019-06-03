@@ -62,7 +62,13 @@ private:
         page_no_t page_no = identifier;
         auto hdl = m_buffer_manager.get_page<TransactionBlock>(page_no);
 
-        //FIXME handle downstream properlya
+        if(!hdl.is_valid())
+        {
+            log_fatal("Failed to get block");
+            return {};
+        }
+
+        //FIXME handle downstream properly
         
         return hdl;
     }

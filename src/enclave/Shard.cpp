@@ -91,7 +91,7 @@ void Shard::load_metadata(bitstream &input)
 
     if(!m_pending_block.is_valid())
     {
-        LOG(FATAL) << "Invalid state: no such meta data page";
+        log_fatal("Invalid state: no such meta data page");
     }
 
     m_pending_block->unseal();

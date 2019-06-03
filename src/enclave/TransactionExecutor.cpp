@@ -107,6 +107,11 @@ void TransactionExecutor::abort()
         }
         else
         {
+            if(m_task == nullptr)
+            {
+                log_fatal("Invalid state: task is null");
+            }
+
             auto op_id = peer->get_next_operation_id();
             auto req = RemoteParty::generate_op_request(m_task->identifier(), op_id, OperationType::TransactionAbort);
 
@@ -125,7 +130,7 @@ void TransactionExecutor::abort()
     tx.abort();
 
     if(tx.is_distributed())
-    {   
+    {
         wait_for(responses, *m_task);
     }
 }
@@ -143,7 +148,7 @@ Witness TransactionExecutor::phase_two(bool generate_witness)
 
     if(m_task == nullptr)
     {
-        throw std::runtime_error("Cannot executed distributedly. No associated task");
+        throw std::runtime_error("Cannot execute distributedly. No associated task");
     }
 
     for(auto &child: tx.children())

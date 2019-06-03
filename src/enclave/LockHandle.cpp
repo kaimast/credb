@@ -151,7 +151,7 @@ Shard &LockHandle::get_shard(shard_id_t shard_no, LockType lock_type, bool nonbl
             {
                 if(lock_info.read_count == 0)
                 {
-                    LOG(FATAL) << "Invalid state: read count is 0";
+                    log_fatal("Invalid state: read count is 0");
                 }
 
                 if(nonblocking)

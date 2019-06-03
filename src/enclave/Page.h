@@ -10,9 +10,7 @@
 #include <list>
 #include <bitstream.h>
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class BufferManager;
@@ -80,5 +78,4 @@ public:
     }
 };
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

@@ -8,9 +8,7 @@
 #include "logging.h"
 #include "BufferManager.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 ObjectKeyProvider::~ObjectKeyProvider() = default;
@@ -42,9 +40,4 @@ size_t VectorObjectKeyProvider::count_rest()
     return m_identifiers.size() - (m_identifiers.cbegin() - m_iterator);
 }
 
-
-//------ ObjectIterator
-
-
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

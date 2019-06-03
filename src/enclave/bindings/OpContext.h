@@ -2,9 +2,7 @@
 
 #include <cowlang/Module.h>
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class OpContext;
@@ -27,5 +25,4 @@ private:
 };
 
 } // namespace bindings
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

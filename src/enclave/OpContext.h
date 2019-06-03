@@ -5,9 +5,7 @@
 
 #include "util/Identity.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 /**
@@ -56,5 +54,4 @@ private:
     const std::string m_program;
 };
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

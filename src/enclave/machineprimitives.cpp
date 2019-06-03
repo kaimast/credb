@@ -34,7 +34,9 @@ constexpr int STACKALIGN = 0xf;
 
 void minithread_allocate_stack(stack_pointer_t *stackbase, stack_pointer_t *stacktop)
 {
-    *stackbase = (stack_pointer_t)malloc(STACKSIZE);
+    //NOLINTNEXTLINE
+    *stackbase = reinterpret_cast<stack_pointer_t>(malloc(STACKSIZE));
+
     if(!*stackbase)
     {
         return;
@@ -58,7 +60,11 @@ extern "C" {
 extern int minithread_root();
 }
 
-void minithread_free_stack(stack_pointer_t stackbase) { free(stackbase); }
+void minithread_free_stack(stack_pointer_t stackbase)
+{
+    // NOLINTNEXTLINE(hicpp-no-malloc)
+    free(stackbase);
+}
 
 void minithread_initialize_stack(stack_pointer_t *stacktop, proc_t body_proc, arg_t body_arg, proc_t final_proc, arg_t final_arg)
 {

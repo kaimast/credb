@@ -104,11 +104,11 @@ ledger_pos_t TransactionLedger::insert(const std::map<taskid_t, OpContext> &op_c
 TransactionHandle TransactionLedger::get(ledger_pos_t pos)
 {
     auto block = get_block(pos.block);
+
     block->read_lock();
-
     auto hdl = block->get(pos.index);
-
     block->read_unlock();
+
     return hdl;
 }
 
