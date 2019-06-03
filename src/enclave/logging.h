@@ -7,7 +7,10 @@
 #include <glog/logging.h>
 #include <cstdlib>
 #else
-inline void exit(int) {} //FIXME
+inline void exit(int)
+{ 
+    abort();
+}
 
 #include "Enclave_t.h"
 #endif

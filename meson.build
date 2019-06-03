@@ -19,7 +19,7 @@ cpp = meson.get_compiler('cpp')
 
 sgx_mode = get_option('sgx_mode')
 
-if sgx_mode == 'simulation' or sgx_mode == 'fake_enclave'
+if sgx_mode == 'simulation'
     message('will link sgx_*_sim.so')
     sgx_urts_name = 'sgx_urts_sim'
     sgx_uae_name = 'sgx_uae_service_sim'
@@ -37,12 +37,6 @@ endif
 
 compile_args   = ['-Wextra', '-Werror']
 cpp_compile_args = ['-std=c++17']
-
-use_enclave = true
-if sgx_mode == 'fake_enclave'
-    compile_args = compile_args + ['-DFAKE_ENCLAVE']
-    use_enclave = false
-endif
 
 if get_option('always_page') == true
     compile_args = compile_args + ['-DALWAYS_PAGE']
@@ -128,38 +122,33 @@ ulibcrypto = static_library('ucrypto',  ulibcrypto_cpp_files, dependencies: [ope
 
 subdir('src/enclave/')
 
-if use_enclave
-    common_args = ['-DIS_ENCLAVE', '-nostdinc', '-fvisibility=hidden', '-fstack-protector'] + compile_args
-    enclave_so = executable('enclave.so', enclave_cpp_files, gen_trusted_enclave, 
-    c_args: common_args, pie: true,
-    cpp_args: common_args + cpp_compile_args + ['-nostdinc++'],
-    link_args:['-Wl,--no-undefined','-nostdlib','-nodefaultlibs','-nostartfiles','-L'+sgx_sdk_dir+'/lib64',
-    '-Wl,--whole-archive','-l'+sgx_trts_name,'-Wl,--no-whole-archive',
-    '-Wl,--start-group', '-lsgx_tstdc','-lsgx_tcxx', '-lsgx_tkey_exchange','-l'+sgx_tcrypto_name,'-l'+sgx_tservice_name,'-ldocument_sgx','-lcowlang_sgx',
- '-Wl,--end-group',
-    '-Wl,-Bstatic','-Wl,-Bsymbolic','-Wl,--no-undefined',
-    '-Wl,-pie,-eenclave_entry','-Wl,--export-dynamic',
-    '-Wl,--defsym,__ImageBase=0','-Wl,--gc-sections',
-    '-Wl,--version-script='+meson.source_root()+'/src/enclave/Enclave.lds'],
-    include_directories: [sgx_incdir, sgx_tlibc_incdir, sgx_stdcxx_incdir, local_incdir],
-    dependencies: [json_sgx_dep, cowlang_sgx_dep])
+common_args = ['-DIS_ENCLAVE', '-nostdinc', '-fvisibility=hidden', '-fstack-protector'] + compile_args
+enclave_so = executable('enclave.so', enclave_cpp_files, gen_trusted_enclave, 
+c_args: common_args, pie: true,
+cpp_args: common_args + cpp_compile_args + ['-nostdinc++'],
+link_args:['-Wl,--no-undefined','-nostdlib','-nodefaultlibs','-nostartfiles','-L'+sgx_sdk_dir+'/lib64',
+'-Wl,--whole-archive','-l'+sgx_trts_name,'-Wl,--no-whole-archive',
+'-Wl,--start-group', '-lsgx_tstdc','-lsgx_tcxx', '-lsgx_tkey_exchange','-l'+sgx_tcrypto_name,'-l'+sgx_tservice_name,'-ldocument_sgx','-lcowlang_sgx',
+'-Wl,--end-group',
+'-Wl,-Bstatic','-Wl,-Bsymbolic','-Wl,--no-undefined',
+'-Wl,-pie,-eenclave_entry','-Wl,--export-dynamic',
+'-Wl,--defsym,__ImageBase=0','-Wl,--gc-sections',
+'-Wl,--version-script='+meson.source_root()+'/src/enclave/Enclave.lds'],
+include_directories: [sgx_incdir, sgx_tlibc_incdir, sgx_stdcxx_incdir, local_incdir],
+dependencies: [json_sgx_dep, cowlang_sgx_dep])
 
-    custom_target('enclave.signed.so', input: enclave_so, output:'enclave.signed.so', install:true, install_dir:'.',
-        command:[sgx_enclave_signer, 'sign', '-key', meson.source_root()+'/src/enclave/Enclave_private.pem', '-enclave','enclave.so', '-out', 'enclave.signed.so', '-config',meson.source_root()+'/src/enclave/Enclave.config.xml']
-    )
-endif
+custom_target('enclave.signed.so', input: enclave_so, output:'enclave.signed.so', install:true, install_dir:'.',
+    command:[sgx_enclave_signer, 'sign', '-key', meson.source_root()+'/src/enclave/Enclave_private.pem', '-enclave','enclave.so', '-out', 'enclave.signed.so', '-config',meson.source_root()+'/src/enclave/Enclave.config.xml']
+)
 
 subdir('src/server/')
 
 server_incs = [credb_incdir, sgx_incdir]
 server_deps = [yael_dep, log_dep, boost_po_dep, sgx_uae_dep, ukey_exchange_dep, sgx_urts_dep, thread_dep, gflags_dep]
 
-if get_option('sgx_mode') == 'fake_enclave'
-    server = executable('credb', server_cpp_files, include_directories: server_incs, dependencies: server_deps + [openssl_dep, cowlang_dep, json_dep], c_args: compile_args, cpp_args: compile_args + cpp_compile_args, install:true, link_with: [ulibcrypto, libenclave], link_args: ['-rdynamic'])
-else
-    server = executable('credb', server_cpp_files, gen_untrusted_enclave, include_directories: server_incs,
-        dependencies: server_deps, c_args: compile_args, cpp_args: cpp_compile_args, install:true, link_with: ulibcrypto)
-endif
+server_unsafe = executable('credb-unsafe', server_cpp_files, include_directories: server_incs, dependencies: server_deps + [openssl_dep, cowlang_dep, json_dep], c_args: compile_args, cpp_args: compile_args + cpp_compile_args + ['-DFAKE_ENCLAVE'], install:true, link_with: [ulibcrypto, libfakeenclave], link_args: ['-rdynamic'])
+    
+server = executable('credb', server_cpp_files, gen_untrusted_enclave, include_directories: server_incs, dependencies: server_deps, c_args: compile_args, cpp_args: cpp_compile_args, install:true, link_with: ulibcrypto)
 
 subdir('src/client')
 

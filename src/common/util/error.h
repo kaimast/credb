@@ -22,10 +22,8 @@ static sgx_errlist_t sgx_errlist[] =
   { SGX_ERROR_NO_DEVICE, "Invalid SGX device." },
   { SGX_ERROR_MEMORY_MAP_CONFLICT, "Memory map conflicted." },
   { SGX_ERROR_INVALID_METADATA, "Invalid enclave metadata." },
-  {
-  SGX_ERROR_INVALID_STATE,
-  "Invalid state",
-  },
+  { SGX_ERROR_FEATURE_NOT_SUPPORTED, "Feature not supported." },
+  { SGX_ERROR_INVALID_STATE, "Invalid state" },
   { SGX_ERROR_DEVICE_BUSY, "SGX device was busy." },
   { SGX_ERROR_INVALID_VERSION, "Enclave version was invalid." },
   { SGX_ERROR_INVALID_ATTRIBUTE, "Enclave was not authorized." },

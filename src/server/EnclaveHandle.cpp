@@ -144,7 +144,17 @@ EnclaveHandle::EnclaveHandle(std::string name, Disk &disk)
 
     LOG(INFO) << "Starting enclave as '" << m_name << "'";
 
-    auto ret = sgx_create_enclave(ENCLAVE_FILE, SGX_DEBUG_FLAG, &m_token, &updated, &m_enclave_id, nullptr);
+    void* ex_features_p[32];
+    memset(ex_features_p, 0, sizeof(ex_features_p));
+    memset(&m_token, 0, sizeof(m_token));
+
+    sgx_kss_config_t kss_config;
+    memset(&kss_config, 0, sizeof(kss_config));
+
+    ex_features_p[2] = &kss_config;
+
+    auto ret = sgx_create_enclave_ex(ENCLAVE_FILE, SGX_DEBUG_FLAG, &m_token, &updated, &m_enclave_id, nullptr, 1 << 2, const_cast<const void**>(ex_features_p));
+
     if(ret != SGX_SUCCESS)
     {
         LOG(FATAL) << "Cannot create enclave: " << to_string(ret);

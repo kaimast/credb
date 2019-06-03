@@ -19,6 +19,9 @@
 #include "Enclave_t.h"
 #endif
 
+// FIXME move to new Seal API
+#define KEY_POLICY_KSS  (SGX_KEYPOLICY_CONFIGID | SGX_KEYPOLICY_ISVFAMILYID | SGX_KEYPOLICY_ISVEXTPRODID)
+
 namespace credb::trusted
 {
 
@@ -74,20 +77,21 @@ credb_status_t Enclave::init(const std::string &name)
 
 #ifndef FAKE_ENCLAVE
     sgx_report_t report;
-    sgx_create_report(nullptr, nullptr, &report);
+    if(sgx_create_report(nullptr, nullptr, &report) != SGX_SUCCESS)
+    {
+        log_fatal("Create report failed!");
+    }
 
     sgx_key_request_t key_request;
     key_request.key_name = SGX_KEYSELECT_SEAL;
-    key_request.key_policy = SGX_KEYPOLICY_MRENCLAVE;
+    key_request.key_policy = SGX_KEYPOLICY_MRENCLAVE | KEY_POLICY_KSS;
     key_request.isv_svn = report.body.isv_svn;
     key_request.cpu_svn = report.body.cpu_svn;
     key_request.reserved1 = 0;
-    key_request.attribute_mask = { 0, 0 };
-    key_request.misc_mask = 0;
-    //    key_request.reserved2 = 0;
+    key_request.attribute_mask = { SGX_FLAGS_INITTED | SGX_FLAGS_EINITTOKEN_KEY, 0 };
 
+    memset(&key_request.misc_mask, 0, sizeof(key_request.misc_mask));
     memset(&key_request.reserved2, 0, sizeof(key_request.reserved2));
-    memset(&key_request.key_id, 0, sizeof(sgx_key_id_t));
 
     sgx_aes_gcm_128bit_key_t disk_key;
     auto res = sgx_get_key(&key_request, &disk_key);
@@ -95,7 +99,7 @@ credb_status_t Enclave::init(const std::string &name)
 
     if(res == SGX_SUCCESS)
     {
-        log_info("generated disk key");
+        log_info("Successfully generated disk key");
     }
     else
     {
@@ -164,7 +168,7 @@ void Enclave::set_upstream(remote_party_id upstream_id)
         m_ledger.get_collection(col, true).primary_index().load_root(bstream);
     }
 #endif
-    
+
     log_info("Successfully connected to upstream");
 }
 

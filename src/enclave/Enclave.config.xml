@@ -8,4 +8,5 @@
   <DisableDebug>0</DisableDebug>
   <MiscSelect>0</MiscSelect>
   <MiscMask>0xFFFFFFFF</MiscMask>
+  <EnableKSS>1</EnableKSS>
 </EnclaveConfiguration>
