@@ -19,9 +19,6 @@
 #include "Enclave_t.h"
 #endif
 
-// FIXME move to new Seal API
-#define KEY_POLICY_KSS  (SGX_KEYPOLICY_CONFIGID | SGX_KEYPOLICY_ISVFAMILYID | SGX_KEYPOLICY_ISVEXTPRODID)
-
 namespace credb::trusted
 {
 
@@ -84,7 +81,7 @@ credb_status_t Enclave::init(const std::string &name)
 
     sgx_key_request_t key_request;
     key_request.key_name = SGX_KEYSELECT_SEAL;
-    key_request.key_policy = SGX_KEYPOLICY_MRENCLAVE | KEY_POLICY_KSS;
+    key_request.key_policy = SGX_KEYPOLICY_MRENCLAVE;
     key_request.isv_svn = report.body.isv_svn;
     key_request.cpu_svn = report.body.cpu_svn;
     key_request.reserved1 = 0;
@@ -95,7 +92,6 @@ credb_status_t Enclave::init(const std::string &name)
 
     sgx_aes_gcm_128bit_key_t disk_key;
     auto res = sgx_get_key(&key_request, &disk_key);
-    m_encrypted_io->set_disk_key(disk_key);
 
     if(res == SGX_SUCCESS)
     {
@@ -106,6 +102,8 @@ credb_status_t Enclave::init(const std::string &name)
         log_error("Failed to derive disk key: " + to_string(res));
         return CREDB_ERROR_KEYGEN_FAILED;
     }
+
+    m_encrypted_io->set_disk_key(disk_key);
 #endif
 
     sgx_ecc256_close_context(ecc_state);

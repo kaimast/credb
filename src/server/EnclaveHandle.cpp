@@ -149,6 +149,9 @@ EnclaveHandle::EnclaveHandle(std::string name, Disk &disk)
     memset(&m_token, 0, sizeof(m_token));
 
     sgx_kss_config_t kss_config;
+    memset(kss_config.config_id, 0, sizeof(kss_config.config_id));
+    kss_config.config_svn = 0;
+
     memset(&kss_config, 0, sizeof(kss_config));
 
     ex_features_p[2] = &kss_config;
@@ -163,6 +166,8 @@ EnclaveHandle::EnclaveHandle(std::string name, Disk &disk)
     m_extended_groupid = 0;
 
     ret = sgx_get_extended_epid_group_id(&m_extended_groupid);
+
+
     if(ret != SGX_SUCCESS)
     {
         LOG(FATAL) << "Couldn't get extended EPID group id: " << to_string(ret);
