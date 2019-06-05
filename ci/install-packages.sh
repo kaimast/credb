@@ -16,7 +16,6 @@ sudo apt-get install -y --no-install-recommends \
     g++-9 sudo ca-certificates git pkg-config \
     build-essential ocaml automake autoconf libtool wget python ocamlbuild libssl-dev \
     libgmp3-dev libgflags-dev libgoogle-glog-dev google-mock googletest libgtest-dev \
-    pkg-config libboost-program-options-dev libboost-python-dev unzip ninja-build \
-    clang-8 clang-tidy-8 clang-format \
-    python3-pip python3-dev python3 meson python3-setuptools python3-wheel psmisc doxygen graphviz libbotan-2-dev cmake > /dev/null 2>&1
+    pkg-config libboost-program-options-dev libboost-python-dev unzip ninja-build clang-tidy-8 \
+    python3-pip python3-dev python3 meson python3-setuptools python3-wheel psmisc doxygen graphviz libbotan-2-dev cmake -y
 
