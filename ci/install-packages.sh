@@ -12,7 +12,7 @@ sudo add-apt-repository ppa:jonathonf/meson -y
 
 sudo apt-get update
 
-apt-get install -y --no-install-recommends \
+sudo apt-get install -y --no-install-recommends \
     g++-9 sudo ca-certificates git pkg-config \
     build-essential ocaml automake autoconf libtool wget python ocamlbuild libssl-dev \
     libgmp3-dev libgflags-dev libgoogle-glog-dev google-mock googletest libgtest-dev \

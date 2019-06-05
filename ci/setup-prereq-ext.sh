@@ -9,7 +9,7 @@ export CXX=g++-9
 # sgxsdk
 git clone https://github.com/01org/linux-sgx.git > /dev/null 2>&1
 cd linux-sgx
-git checkout sgx_2.3.1
+git checkout sgx_2.5
 ./download_prebuilt.sh > /dev/null 2>&1
 make sdk_install_pkg > /dev/null 2>&1
 printf "no\n/opt/intel\n" | sudo $(ls linux/installer/bin/sgx_linux_x64_sdk_*.bin) > /dev/null 2>&1
