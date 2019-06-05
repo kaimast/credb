@@ -3,9 +3,7 @@
 
 #include "ObjectEventHandle.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 ObjectEventHandle::ObjectEventHandle() = default;
@@ -104,5 +102,4 @@ json::Document ObjectEventHandle::get_policy() const
     return json::Document(value(), "policy", false);
 }
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

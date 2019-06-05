@@ -97,7 +97,7 @@ void Client::handle_message(const uint8_t *data, uint32_t len)
 
 void Client::handle_attestation_result(bitstream &input)
 {
-    int msg_status[2];
+    std::array<int, 2> msg_status;
 
     input >> msg_status[0];
     input >> msg_status[1];

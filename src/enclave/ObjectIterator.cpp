@@ -66,11 +66,11 @@ std::pair<event_id_t, json::Document> ObjectIterator::next()
 
     if(m_path.empty())
     {
-        return {eid, hdl.value().duplicate()};
+        return {eid, hdl.value().duplicate(true)};
     }
     else
     {
-        auto val = hdl.value(m_path).duplicate();
+        auto val = hdl.value(m_path).duplicate(true);
 
         if(val.valid())
         {

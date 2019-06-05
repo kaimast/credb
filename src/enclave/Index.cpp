@@ -13,10 +13,12 @@ Index::Index(std::string name, std::vector<std::string> paths)
 
 Index::~Index() = default;
 
-const std::vector<std::string> &Index::paths() const { return m_paths; }
+const std::vector<std::string> &Index::paths() const
+{
+    return m_paths;
+}
 
 const std::string &Index::name() const { return m_name; }
-
 
 HashIndex::HashIndex(BufferManager &buffer, const std::string &name, const std::vector<std::string> &paths)
 : Index(name, paths), m_map(buffer, name)
@@ -113,8 +115,12 @@ bool HashIndex::remove(const json::Document &document, const std::string &key)
 }
 
 void HashIndex::find(const json::Document &predicate, std::unordered_set<std::string> &out, SetOperation op)
-{
-    assert(paths().size() == 1);
+{   
+    if(paths().size() != 1)
+    {
+        log_fatal("Invalid state: need exactly one path");
+    }
+
     const std::string &vkey = paths()[0];
     json::Document in(predicate, vkey + ".$in");
     if(in.empty())

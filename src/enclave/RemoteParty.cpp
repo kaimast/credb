@@ -180,8 +180,8 @@ credb_status_t RemoteParty::encrypt(const bitstream &data, bitstream &encrypted)
 
     return CREDB_SUCCESS;
 #else
-
-    uint8_t tag[SGX_AESGCM_MAC_SIZE];
+    
+    sgx_aes_gcm_128bit_tag_t tag;
     encrypted.move_to(0);
     encrypted.resize(sizeof(etype_data_t) + sizeof(payload_len) + payload_len + sizeof(tag));
 
@@ -190,7 +190,8 @@ credb_status_t RemoteParty::encrypt(const bitstream &data, bitstream &encrypted)
     encrypted << static_cast<etype_data_t>(EncryptionType::Encrypted);
     encrypted << payload_len;
 
-    auto ret = sgx_rijndael128GCM_encrypt(sk_key, reinterpret_cast<const uint8_t *>(data.data()), payload_len, encrypted.current(), &aes_gcm_iv[0], SAMPLE_SP_IV_SIZE, nullptr, 0, &tag);
+    // For some reason it wants a non const version of the data
+    auto ret = sgx_rijndael128GCM_encrypt(sk_key, const_cast<uint8_t*>(reinterpret_cast<const uint8_t *>(data.data())), payload_len, encrypted.current(), aes_gcm_iv.data(), aes_gcm_iv.size(), nullptr, 0, &tag);
 
     if(ret != SGX_SUCCESS)
     {
@@ -1053,6 +1054,7 @@ void RemoteParty::handle_request_get_object(bitstream &input, const OpContext &o
     auto [eid, value] = it.next();
 
     bitstream bstream;
+
     bitstream &out = generate_witness ? bstream : output;
 
     if(eid == INVALID_EVENT)
@@ -1064,6 +1066,7 @@ void RemoteParty::handle_request_get_object(bitstream &input, const OpContext &o
     else
     {
         out << eid << value;
+
         if(generate_witness)
         {
             Witness witness;

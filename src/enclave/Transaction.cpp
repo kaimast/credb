@@ -128,10 +128,10 @@ bool Transaction::prepare(bool generate_witness)
             m_lock_handle.get_shard(shard_no, lock_type);
         }
     }
-    catch(would_block_exception)
+    catch(const would_block_exception& e)
     {
         // We can't wait here as it may cause a deadlock
-        abort();
+        this->abort();
         return false;
     }
 
@@ -197,7 +197,8 @@ Witness Transaction::commit(bool generate_witness)
         op->extract_writes(write_shards);
     }
 
-    for(shard_id_t shard = 0; shard < write_shards.size(); ++shard)
+    auto num_shards = static_cast<shard_id_t>(write_shards.size());
+    for(shard_id_t shard = 0; shard < num_shards; ++shard)
     {
         auto num = write_shards[shard];
 

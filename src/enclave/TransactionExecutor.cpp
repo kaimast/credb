@@ -10,9 +10,7 @@
 #include "logging.h"
 #include "wait.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 bool TransactionExecutor::phase_one(bool generate_witness)
@@ -27,40 +25,40 @@ bool TransactionExecutor::phase_one(bool generate_witness)
 
     std::vector<PendingBooleanResponse> responses;
 
-    if(m_task == nullptr && tx.is_distributed())
-    {
-        throw std::runtime_error("Cannot executed distributedly. No associated task");
-    }
-
     if(tx.is_distributed())
     {
+        if(m_task == nullptr)
+        {
+            log_fatal("Cannot executed distributedly: No associated task");
+        }
+
         // might cause deadlocks
         tx.lock_handle().set_blocking(false);
-    }
 
-    for(auto &child: tx.children())
-    {
-        auto peer = m_remote_parties.find_by_uid<Peer>(child);
-
-        if(peer)
+        for(auto &child: tx.children())
         {
-            auto op_id = peer->get_next_operation_id();
-            auto req = RemoteParty::generate_op_request(m_task->identifier(), op_id, OperationType::TransactionPrepare);
+            auto peer = m_remote_parties.find_by_uid<Peer>(child);
 
-            req << tx.get_root() << tx.identifier() << generate_witness;
+            if(peer)
+            {
+                auto op_id = peer->get_next_operation_id();
+                auto req = RemoteParty::generate_op_request(m_task->identifier(), op_id, OperationType::TransactionPrepare);
 
-            peer->lock();
+                req << tx.get_root() << tx.identifier() << generate_witness;
 
-            peer->send(req);
-            PendingBooleanResponse pending(op_id, *peer);
-            responses.emplace_back(std::move(pending));
+                peer->lock();
 
-            peer->unlock();
-        }
-        else
-        {
-            log_warning("cannot prepare: no such peer");
-            success = false;
+                peer->send(req);
+                PendingBooleanResponse pending(op_id, *peer);
+                responses.emplace_back(std::move(pending));
+
+                peer->unlock();
+            }
+            else
+            {
+                log_warning("cannot prepare: no such peer");
+                success = false;
+            }
         }
     }
 
@@ -71,6 +69,7 @@ bool TransactionExecutor::phase_one(bool generate_witness)
 
     if(tx.is_distributed())
     {
+        //NOLINTNEXTLINE
         if(!wait_for(responses, *m_task))
         {
             success = false;
@@ -141,14 +140,14 @@ Witness TransactionExecutor::phase_two(bool generate_witness)
 
     if(tx.is_remote())
     {
-        throw std::runtime_error("Cannot commit remote transaction");
+        log_fatal("Invalid state: Cannot commit remote transaction");
     }
 
     std::vector<PendingWitnessResponse> responses;
 
     if(m_task == nullptr)
     {
-        throw std::runtime_error("Cannot execute distributedly. No associated task");
+        log_fatal("Cannot execute distributedly. No associated task");
     }
 
     for(auto &child: tx.children())
@@ -192,5 +191,4 @@ Witness TransactionExecutor::phase_two(bool generate_witness)
     return witness;
 }
 
-}
-}
+} // namespace credb::trusted

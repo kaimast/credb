@@ -51,7 +51,7 @@ if get_option('encrypt_files') == true
 endif
 
 if get_option('buildtype') == 'release'
-    if get_option('sgx_mode') == 'release' or get_option('sgx_mode') == 'simulation' or get_option('sgx_mode') == 'fake_enclave'
+    if get_option('sgx_mode') == 'release' or get_option('sgx_mode') == 'simulation'
         compile_args += ['-DNDEBUG', '-UDEBUG']
     elif get_option('sgx_mode') == 'prerelease'
         compile_args += ['-DNDEBUG', '-DEDEBUG', '-DNSGX_DEBUG']
@@ -59,7 +59,7 @@ if get_option('buildtype') == 'release'
         error('Unknown sgx_mode: ' + get_option('sgx_mode'))
     endif
 elif get_option('buildtype') == 'debugoptimized'
-    if get_option('sgx_mode') == 'release' or get_option('sgx_mode') == 'simulation' or get_option('sgx_mode') == 'fake_enclave'
+    if get_option('sgx_mode') == 'release' or get_option('sgx_mode') == 'simulation'
         compile_args += ['-DDEBUG', '-UNDEBUG', '-UEDEBUG']
     elif get_option('sgx_mode') == 'prerelease'
         error('Cannot do prerelease and debugoptimized at the same time')
@@ -123,8 +123,7 @@ ulibcrypto = static_library('ucrypto',  ulibcrypto_cpp_files, dependencies: [ope
 subdir('src/enclave/')
 
 common_args = ['-DIS_ENCLAVE', '-nostdinc', '-fvisibility=hidden', '-fstack-protector'] + compile_args
-enclave_so = executable('enclave.so', enclave_cpp_files, gen_trusted_enclave, 
-c_args: common_args, pie: true,
+enclave_so = executable('enclave.so', enclave_cpp_files + enclave_asm_files, gen_trusted_enclave, c_args: common_args, pie: true,
 cpp_args: common_args + cpp_compile_args + ['-nostdinc++'],
 link_args:['-Wl,--no-undefined','-nostdlib','-nodefaultlibs','-nostartfiles','-L'+sgx_sdk_dir+'/lib64',
 '-Wl,--whole-archive','-l'+sgx_trts_name,'-Wl,--no-whole-archive',

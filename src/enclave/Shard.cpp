@@ -89,11 +89,6 @@ void Shard::load_metadata(bitstream &input)
     input >> page_no;
     m_pending_block = m_buffer.get_page<LedgerBlock>(page_no);
 
-    if(!m_pending_block.is_valid())
-    {
-        log_fatal("Invalid state: no such meta data page");
-    }
-
     m_pending_block->unseal();
 }
 

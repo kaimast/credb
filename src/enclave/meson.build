@@ -46,7 +46,6 @@ enclave_cpp_files = files(
     'ProgramRunner.cpp',
     'TaskManager.cpp',
     'machineprimitives.cpp',
-    'machineprimitives_asm.S',
     'RemotePartyRunner.cpp',
     'Task.cpp',
     'BufferManager.cpp',
@@ -55,6 +54,10 @@ enclave_cpp_files = files(
     'RemoteEncryptedIO.cpp',
 )
 
-libfakeenclave = static_library('fake_enclave', enclave_cpp_files, c_args: compile_args + ['-DFAKE_ENCLAVE'], cpp_args: cpp_compile_args + ['-DFAKE_ENCLAVE'], include_directories: [credb_incdir, sgx_incdir])
+enclave_asm_files = files(
+    'machineprimitives_asm.S'
+)
+
+libfakeenclave = static_library('fake_enclave', enclave_asm_files + enclave_cpp_files, c_args: compile_args + ['-DFAKE_ENCLAVE'], cpp_args: cpp_compile_args + ['-DFAKE_ENCLAVE'], include_directories: [credb_incdir, sgx_incdir])
 
 sgx_enclave_signer = sgx_sdk_dir + '/bin/x64/sgx_sign'

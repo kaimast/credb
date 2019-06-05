@@ -144,12 +144,13 @@ EnclaveHandle::EnclaveHandle(std::string name, Disk &disk)
 
     LOG(INFO) << "Starting enclave as '" << m_name << "'";
 
-    void* ex_features_p[32];
-    memset(ex_features_p, 0, sizeof(ex_features_p));
+    void* ex_features_p[32]; //NOLINT
+
+    memset(reinterpret_cast<void*>(ex_features_p), 0, sizeof(ex_features_p));
     memset(&m_token, 0, sizeof(m_token));
 
     sgx_kss_config_t kss_config;
-    memset(kss_config.config_id, 0, sizeof(kss_config.config_id));
+    memset(reinterpret_cast<void*>(kss_config.config_id), 0, sizeof(kss_config.config_id));
     kss_config.config_svn = 0;
 
     memset(&kss_config, 0, sizeof(kss_config));

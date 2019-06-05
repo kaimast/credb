@@ -218,9 +218,11 @@ bool Ledger::check(const OpContext &op_context,
     auto it = iterate(op_context, collection, key, path, lock_handle_);
     auto [eid, value] = it.next();
 
+    // NOLINTNEXTLINE
     if(!eid)
     {
         // no such object
+        // NOLINTNEXTLINE
         return false;
     }
     else

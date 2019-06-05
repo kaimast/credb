@@ -42,7 +42,7 @@ Transaction::Transaction(cow::MemoryManager &mem,
                 credb::trusted::ProgramRunner &runner,
                 credb::trusted::TransactionPtr transaction,
                 LockHandle &lock_handle)
-    : Database(mem, runner.op_context(), ledger, enclave, &runner, lock_handle), m_transaction(transaction)
+    : Database(mem, runner.op_context(), ledger, enclave, &runner, lock_handle), m_transaction(std::move(transaction))
 {
     if(!has_program_runner())
     {

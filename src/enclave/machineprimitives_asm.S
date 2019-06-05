@@ -1,4 +1,7 @@
-.globl minithread_switch, minithread_root
+.text
+
+.global minithread_switch
+.global minithread_root
 
 minithread_switch:
     pushq %rax

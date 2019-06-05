@@ -21,6 +21,11 @@ PageHandle<T> BufferManager::shard_t::new_page(page_no_t page_no, Args &&... arg
     auto handle = get_page_internal<T>(page_no, true);
     m_lock.read_unlock();
 
+    if(!handle.is_valid())
+    {
+        log_fatal("Failed to create new shard page");
+    }
+
     return handle;
 }
 
@@ -29,7 +34,7 @@ PageHandle<T> BufferManager::shard_t::get_page_internal(page_no_t page_no, bool 
 {
     if(page_no == INVALID_PAGE_NO)
     {
-        return PageHandle<T>();
+        log_fatal("Got invalid page id");
     }
 
     auto it = m_metas.find(page_no);

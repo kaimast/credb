@@ -5,9 +5,7 @@
 
 #include "Transaction.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class Task;
@@ -54,5 +52,4 @@ private:
     Task *m_task;
 };
 
-}
-}
+} // namespace credb::trusted

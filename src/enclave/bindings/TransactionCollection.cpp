@@ -23,7 +23,7 @@ TransactionCollection::TransactionCollection(MemoryManager &mem,
                            credb::trusted::Ledger &ledger,
                            LockHandle &lock_handle,
                            std::string name)
-    : Module(mem), m_runner(runner), m_ledger(ledger), m_transaction(transaction), m_lock_handle(lock_handle), m_name(std::move(name))
+    : Module(mem), m_runner(runner), m_ledger(ledger), m_transaction(std::move(transaction)), m_lock_handle(lock_handle), m_name(std::move(name))
 {
 }
 

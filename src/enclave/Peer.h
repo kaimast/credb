@@ -14,9 +14,7 @@
 #include "Transaction.h"
 #include "util/OperationType.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 enum class PeerState
@@ -31,7 +29,7 @@ class Enclave;
 class Peer : public RemoteParty
 {
 public:
-    Peer(Enclave &enclave, remote_party_id id, const std::string &hostname, uint16_t port, bool is_initiator);
+    Peer(Enclave &enclave, remote_party_id id, std::string hostname, uint16_t port, bool is_initiator);
 
     Peer(const Peer &other) = delete;
 
@@ -151,5 +149,4 @@ inline operation_id_t Peer::get_next_operation_id()
     return ret;
 }
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <stdexcept>
 
 #include "PageHandle.h"
 #include "Shard.h"
@@ -15,7 +16,7 @@ namespace trusted
 
 class Ledger;
 
-class would_block_exception
+class would_block_exception : std::exception
 {
 };
 

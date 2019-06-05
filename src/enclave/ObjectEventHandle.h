@@ -9,9 +9,7 @@
 #include "ledger_pos.h"
 #include "credb/event_id.h"
 
-namespace credb
-{
-namespace trusted
+namespace credb::trusted
 {
 
 class ObjectEventHandle
@@ -72,5 +70,4 @@ private:
     json::Document m_content;
 };
 
-} // namespace trusted
-} // namespace credb
+} // namespace credb::trusted

@@ -60,9 +60,8 @@ sample_spid_t g_spid;
 namespace credb::trusted
 {
 
-Peer::Peer(Enclave &enclave, remote_party_id id, const std::string &hostname, uint16_t port, bool is_initiator)
-: RemoteParty(enclave, id), m_is_initiator(is_initiator), m_peer_type(PeerType::Unknown),
-  m_hostname(hostname), m_port(port)
+Peer::Peer(Enclave &enclave, remote_party_id id, std::string hostname, uint16_t port, bool is_initiator)
+: RemoteParty(enclave, id), m_is_initiator(is_initiator), m_peer_type(PeerType::Unknown), m_hostname(std::move(hostname)), m_port(port)
 {
     if(is_initiator)
     {
@@ -225,7 +224,8 @@ sgx_status_t Peer::handle_attestation_message_one(bitstream &input)
     msg2.kdf_id = SAMPLE_AES_CMAC_KDF_ID;
 #endif
 
-    sgx_ec256_public_t gb_ga[2];
+    std::array<sgx_ec256_public_t, 2> gb_ga;
+
     if(memcpy_s(&gb_ga[0], sizeof(gb_ga[0]), &m_dhke_public, sizeof(m_dhke_other_public)) ||
        memcpy_s(&gb_ga[1], sizeof(gb_ga[1]), &m_dhke_other_public, sizeof(m_dhke_public)))
     {
@@ -233,8 +233,9 @@ sgx_status_t Peer::handle_attestation_message_one(bitstream &input)
     }
 
     // Sign gb_ga
-    ret = sgx_ecdsa_sign((uint8_t *)&gb_ga, sizeof(gb_ga),
-                         (sgx_ec256_private_t *)&m_enclave.private_key(), &msg2.sign_gb_ga, ecc_state);
+    // For some reason this API call takes a non const pointer to the key
+    // upstream does not want to modify it because it would break the API...
+    ret = sgx_ecdsa_sign(reinterpret_cast<uint8_t*>(gb_ga.data()), gb_ga.size(), const_cast<sgx_ec256_private_t*>(reinterpret_cast<const sgx_ec256_private_t*>(&m_enclave.private_key())), &msg2.sign_gb_ga, ecc_state);
 
     if(ret != SGX_SUCCESS)
     {
@@ -507,10 +508,9 @@ void Peer::handle_message(const uint8_t *data, uint32_t len)
         input >> reinterpret_cast<etype_data_t &>(encryption);
         log_debug("Received attestation message from peer");
     }
-    else
+    else if(encryption != EncryptionType::Encrypted)
     {
-        assert(encryption == EncryptionType::Encrypted);
-        // log_debug("Received encrypted message from peer");
+        log_fatal("Got unexpected encryption type");
     }
 
     if(input.size() < sizeof(mtype_data_t))
@@ -696,7 +696,7 @@ void Peer::handle_attestation_result(bitstream &input)
 {
     log_debug("Received attestation result");
 
-    int msg_status[2];
+    std::array<int, 2> msg_status;
 
     input >> msg_status[0];
     input >> msg_status[1];
@@ -717,7 +717,7 @@ void Peer::handle_attestation_result(bitstream &input)
 {
     log_debug("Received attestation result");
 
-    int msg_status[2];
+    std::array<int, 2> msg_status;
 
     input >> msg_status[0];
     input >> msg_status[1];
@@ -804,7 +804,7 @@ void Peer::set_connected()
     sgx_ec_key_128bit_t external_key;
 
 #ifdef FAKE_ENCLAVE
-    memset(external_key, 0, sizeof(external_key));
+    memset(reinterpret_cast<void*>(external_key), 0, sizeof(external_key));
 #else
     sgx_ra_get_keys(get_attestation_context(), SGX_RA_KEY_SK, &external_key);
 

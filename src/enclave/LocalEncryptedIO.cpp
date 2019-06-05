@@ -4,6 +4,7 @@
 #include "LocalEncryptedIO.h"
 #include "logging.h"
 #include <cstring>
+#include <array>
 
 #ifdef FAKE_ENCLAVE
 #include "../src/server/FakeEnclave.h"
@@ -64,10 +65,10 @@ bool LocalEncryptedIO::write_to_disk(const std::string &filename, const bitstrea
     auto tag = reinterpret_cast<sgx_aes_gcm_128bit_tag_t *>(buffer);
     auto cdata = buffer + sizeof(*tag);
 
-    uint8_t aes_gcm_iv[SAMPLE_SP_IV_SIZE] = { 0 };
+    std::array<uint8_t, SAMPLE_SP_IV_SIZE> aes_gcm_iv;
+    aes_gcm_iv.fill(0); //FIXME
 
-    auto ret = sgx_rijndael128GCM_encrypt(&disk_key(), data.data(), data.size(), cdata,
-                                          &aes_gcm_iv[0], SAMPLE_SP_IV_SIZE, nullptr, 0, tag);
+    auto ret = sgx_rijndael128GCM_encrypt(&disk_key(), data.data(), data.size(), cdata, aes_gcm_iv.data(), SAMPLE_SP_IV_SIZE, nullptr, 0, tag);
 
     if(ret != SGX_SUCCESS)
     {

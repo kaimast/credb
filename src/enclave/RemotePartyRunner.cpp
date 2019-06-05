@@ -19,8 +19,7 @@ RemotePartyRunner::RemotePartyRunner(Enclave &enclave,
                                      const std::string &key,
                                      identity_uid_t transaction_root,
                                      transaction_id_t transaction_id)
-: ProgramRunner(enclave, std::move(data), collection, key, args, transaction_root, transaction_id),
-  m_remote_party(remote_party), m_task_id(task_id), m_op_id(op_id)
+: ProgramRunner(enclave, std::move(data), collection, key, args, transaction_root, transaction_id), m_remote_party(std::move(remote_party)), m_task_id(task_id), m_op_id(op_id)
 {
 }
 

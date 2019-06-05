@@ -1,6 +1,8 @@
 /// (c) 2018 Cornell University
 /// This file is part of the CreDB Project. See LICENSE for more information.
 
+#include <array>
+
 #include "EncryptedIO.h"
 #include "logging.h"
 #include "util/defines.h"
@@ -18,19 +20,19 @@ namespace credb::trusted
 bool EncryptedIO::decrypt_disk(uint8_t *buffer, int32_t size, bitstream &bstream)
 {
 #if defined(ENCRYPT_FILES) && !defined(FAKE_ENCLAVE)
-    uint8_t tag[SGX_AESGCM_MAC_SIZE];
-    assert(static_cast<size_t>(size) >= sizeof(tag));
-    memcpy(tag, buffer, sizeof(tag));
+    std::array<uint8_t, SGX_AESGCM_MAC_SIZE> tag;
+    assert(static_cast<size_t>(size) >= tag.size());
 
-    uint8_t *data = buffer + sizeof(tag);
-    uint32_t real_size = size - sizeof(tag);
+    memcpy(reinterpret_cast<void*>(tag.data()), reinterpret_cast<void*>(buffer), tag.size());
+
+    uint8_t *data = buffer + tag.size();
+    uint32_t real_size = size - tag.size();
 
     bstream.resize(real_size);
-    uint8_t aes_gcm_iv[SAMPLE_SP_IV_SIZE] = { 0 };
 
-    auto ret = sgx_rijndael128GCM_decrypt(&m_disk_key, data, real_size, bstream.data(),
-                                          &aes_gcm_iv[0], SAMPLE_SP_IV_SIZE, nullptr, 0,
-                                          reinterpret_cast<const sgx_aes_gcm_128bit_tag_t *>(tag));
+    std::array<uint8_t, SAMPLE_SP_IV_SIZE> aes_gcm_iv = { 0 };
+
+    auto ret = sgx_rijndael128GCM_decrypt(&m_disk_key, data, real_size, bstream.data(), aes_gcm_iv.data(), SAMPLE_SP_IV_SIZE, nullptr, 0, reinterpret_cast<const sgx_aes_gcm_128bit_tag_t *>(tag.data()));
 
     if(ret != SGX_SUCCESS)
     {
@@ -39,7 +41,8 @@ bool EncryptedIO::decrypt_disk(uint8_t *buffer, int32_t size, bitstream &bstream
     }
 #else
     bstream.resize(size);
-    memcpy(bstream.data(), buffer, size);
+    memcpy(reinterpret_cast<void*>(bstream.data()),
+            reinterpret_cast<void*>(buffer), size);
 #endif
 
     return true;
