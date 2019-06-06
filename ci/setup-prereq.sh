@@ -28,7 +28,7 @@ function clone-repo() {
 cd $WORKDIR
 if clone-repo "bitstream" "https://github.com/kaimast/bitstream.git"; then
     cd bitstream
-    meson build --prefix=/usr/local/
+    meson build --prefix=${INSTALL_DIR}
     cd build
     ninja install
 fi
@@ -36,9 +36,9 @@ fi
 cd $WORKDIR
 if clone-repo "yael" "https://github.com/kaimast/yael.git"; then
     cd yael
-    meson build --prefix=$HOME/local/
+    meson build --prefix=${INSTALL_DIR}
     cd build
-    meson configure -Dbuildtype=release
+    meson configure -Dbuildtype=$BUILDTYPE
     ninja
     ninja install
 fi
@@ -46,9 +46,9 @@ fi
 cd $WORKDIR
 if clone-repo "libdocument" "https://github.com/kaimast/libdocument.git"; then
     cd libdocument
-    meson build --prefix=$HOME/local/
+    meson build --prefix=${INSTALL_DIR}
     cd build
-    meson configure -Dbuildtype=release
+    meson configure -Dbuildtype=$BUILDTYPE
     ninja
     ninja install
 fi
@@ -56,9 +56,9 @@ fi
 cd $WORKDIR
 if clone-repo "cowlang" "https://github.com/kaimast/cowlang.git"; then
     cd cowlang
-    meson build --prefix=$HOME/local/
+    meson build --prefix=${INSTALL_DIR}
     cd build
-    meson configure -Dbuildtype=release
+    meson configure -Dbuildtype=$BUILDTYPE
     ninja
     ninja install
 fi
