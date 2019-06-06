@@ -7,9 +7,6 @@ sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
 sudo echo "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main" >> /etc/apt/sources.list
 wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
 
-# We need a more recent meson too
-sudo add-apt-repository ppa:jonathonf/meson -y
-
 sudo apt-get update
 
 # NOTE ocaml-nox changes to ocamlbuild in bionic
@@ -18,5 +15,5 @@ sudo apt-get install -y --no-install-recommends \
     build-essential ocaml automake autoconf libtool wget python ocaml-nox libssl-dev \
     libgmp3-dev libgflags-dev libgoogle-glog-dev google-mock libgtest-dev \
     pkg-config libboost-program-options-dev libboost-python-dev unzip ninja-build clang-tidy-8 \
-    python3-pip python3-dev python3 meson python3-setuptools python3-wheel psmisc doxygen graphviz libbotan-2-dev cmake
+    python3-pip python3-dev python3 python3-setuptools python3-wheel psmisc doxygen graphviz cmake
 
