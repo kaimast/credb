@@ -1,54 +1,64 @@
 #! /usr/bin/bash
 
+WORKDIR=$HOME/prereq
+INSTALL_DIR=$HOME/local
+PY_VERSION=python3.5
+
+BUILDTYPE=release
+export CC=gcc-9
+export CXX=g++-9
+
 export LD_LIBRARY_PATH=$HOME/local/lib:$HOME/local/lib/x86_64-linux-gnu:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
 export LIBRARY_PATH=$HOME/local/lib:$HOME/local/lib/x86_64-linux-gnu:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
 export PYTHONPATH=${INSTALL_DIR}/lib/${PY_VERSION}/site-packages:${INSTALL_DIR}/lib/${PY_VERSION}/dist-packages
 export PATH=${PATH}:${INSTALL_DIR}/bin
 
-export CC=gcc-9
-export CXX=g++-9
+function clone-repo() {
+    dir=$1
+    url=$2
 
-# bitstream
-git clone https://github.com/kaimast/bitstream.git
-cd bitstream
-#meson build --prefix=$HOME/local/
-meson build --prefix=/usr/local/
-cd build
-ninja install
-cd ../..
-rm -rf bitstream
+    if [ -d $dir ]; then
+        return 1
+    else
+        git clone $url $dir
+        return 0
+    fi
+}
 
-# yael
-git clone https://github.com/kaimast/yael.git
-cd yael
-meson build --prefix=$HOME/local/
-cd build
-meson configure -Dbuildtype=release
-ninja
-ninja install
-cd ../..
-rm -rf yael
+cd $WORKDIR
+if clone-repo "bitstream" "https://github.com/kaimast/bitstream.git"; then
+    cd bitstream
+    meson build --prefix=/usr/local/
+    cd build
+    ninja install
+fi
 
-# libdocument
-git clone https://github.com/kaimast/libdocument.git
-cd libdocument
-meson build --prefix=$HOME/local/
-cd build
-meson configure -Dbuildtype=release
-ninja
-ninja install
-cd ../..
-rm -rf libdocument
+cd $WORKDIR
+if clone-repo "yael" "https://github.com/kaimast/yael.git"; then
+    cd yael
+    meson build --prefix=$HOME/local/
+    cd build
+    meson configure -Dbuildtype=release
+    ninja
+    ninja install
+fi
 
-# cowlang
-git clone https://github.com/kaimast/cowlang.git
-cd cowlang
-meson build --prefix=$HOME/local/
-cd build
-meson configure -Dbuildtype=release
-ninja
-ninja install
-cd ../..
-rm -rf cowlang
+cd $WORKDIR
+if clone-repo "libdocument" "https://github.com/kaimast/libdocument.git"; then
+    cd libdocument
+    meson build --prefix=$HOME/local/
+    cd build
+    meson configure -Dbuildtype=release
+    ninja
+    ninja install
+fi
 
-
+cd $WORKDIR
+if clone-repo "cowlang" "https://github.com/kaimast/cowlang.git"; then
+    cd cowlang
+    meson build --prefix=$HOME/local/
+    cd build
+    meson configure -Dbuildtype=release
+    ninja
+    ninja install
+fi

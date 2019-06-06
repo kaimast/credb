@@ -29,7 +29,6 @@ function clone-repo() {
 mkdir -p ${INSTALL_DIR}/lib/${PY_VERSION}/site-packages
 mkdir -p ${INSTALL_DIR}/lib/${PY_VERSION}/dist-packages
 
-#
 cd $WORKDIR
 if clone-repo "meson" "https://github.com/mesonbuild/meson.git"; then
     cd meson
