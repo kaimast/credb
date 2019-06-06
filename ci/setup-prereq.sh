@@ -36,9 +36,8 @@ fi
 cd $WORKDIR
 if clone-repo "yael" "https://github.com/kaimast/yael.git"; then
     cd yael
-    meson build --prefix=${INSTALL_DIR}
+    meson build -Dbotan_dir=$INSTALL_DIR/include/botan-2 -Dbuildtype=$BUILDTYPE  --prefix=$INSTALL_DIR
     cd build
-    meson configure -Dbuildtype=$BUILDTYPE
     ninja
     ninja install
 fi

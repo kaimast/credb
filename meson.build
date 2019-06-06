@@ -1,6 +1,6 @@
 project('credb', 'c', 'cpp', default_options: ['buildtype=release'], version: '0.1.0')
 
-sgx_sdk_dir = '/opt/intel/sgxsdk'
+sgx_sdk_dir = get_option('sgx_sdk_dir')
 enclave_dir = '../enclave'
 
 prefix_library_path=[get_option('prefix')+'/lib', get_option('prefix')+'/lib/x86_64-linux-gnu', '/usr/local/lib', '/usr/local/lib/x86_64-linux-gnu']

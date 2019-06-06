@@ -3,6 +3,7 @@
 WORKDIR=$HOME/prereq
 INSTALL_DIR=$HOME/local
 PY_VERSION=python3.5
+SGX_DIR=${INSTALL_DIR}/intel
 
 BUILDTYPE=release
 export CC=gcc-9
@@ -52,7 +53,7 @@ if clone-repo "linux-sgx" "https://github.com/01org/linux-sgx.git"; then
     git checkout sgx_2.5
     ./download_prebuilt.sh
     make sdk_install_pkg
-    printf "no\n/opt/intel\n" | sudo $(ls linux/installer/bin/sgx_linux_x64_sdk_*.bin)
+    printf "no\n${SGX_DIR}\n" | sudo $(ls linux/installer/bin/sgx_linux_x64_sdk_*.bin)
 fi
 
 cd $WORKDIR
