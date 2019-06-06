@@ -7,6 +7,9 @@ sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
 sudo echo "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main" >> /etc/apt/sources.list
 wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
 
+# We need openssl 1.1
+sudo add-apt-repository ppa:hola-launchpad/openssl
+
 sudo apt-get update
 
 # NOTE ocaml-nox changes to ocamlbuild in bionic
