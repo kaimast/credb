@@ -13,6 +13,8 @@
 #include "util/OperationType.h"
 
 #include <yael/network/TcpSocket.h>
+#include <stdbitstream.h>
+
 using namespace yael;
 
 namespace credb::untrusted
