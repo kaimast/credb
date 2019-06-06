@@ -64,7 +64,7 @@ TEST_F(Basic, get_is_set_without_key)
 
     for(size_t i = 0; i < NUM_OBJECTS; ++i)
     {
-        auto res = c->put(value(i));
+        auto res = c->put_and_generate_key(value(i));
         objs[i] = std::get<0>(res);
     }
 

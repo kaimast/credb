@@ -115,7 +115,7 @@ public:
      * @label{Collection_put}
      * @brief Insert a new value and generate a unique key for it
      */
-    virtual std::tuple<std::string, event_id_t> put(const json::Document &doc) = 0;
+    virtual std::tuple<std::string, event_id_t> put_and_generate_key(const json::Document &doc) = 0;
 
     /**
      * @label{Collection_put}
@@ -181,10 +181,8 @@ public:
      *
      * @param key
      *      The primary key of the object
-     * @param event_id [out]
-     *      The event identifier of the most recent version of the object
      */
-    virtual json::Document get(const std::string &key, event_id_t &event_id) = 0;
+    virtual std::pair<json::Document, event_id_t> get_with_eid(const std::string &key) = 0;
 
     /**
      * @brief Check whether an object exists
@@ -255,8 +253,8 @@ public:
      */
     json::Document get(const std::string &key)
     {
-        event_id_t eid;
-        return std::forward<json::Document>(get(key, eid));
+        auto res = get_with_eid(key);
+        return std::move(res.first);
     }
 };
 

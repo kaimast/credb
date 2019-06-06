@@ -63,9 +63,8 @@ TEST_F(OrderingTest, tx_order1)
     tc2->put("common", json::Integer(2));
     t2->commit(false);
 
-    event_id_t e1, e2;
-    c->get("foo1", e1);
-    c->get("foo2", e2);
+    auto [doc1, e1] = c->get_with_eid("foo1");
+    auto [doc2, e2] = c->get_with_eid("foo2");
 
     auto res = conn->order(e1, e2);
 
@@ -86,9 +85,8 @@ TEST_F(OrderingTest, tx_order2)
     tc2->put("foo2", json::String("baz"));
     t2->commit(false);
 
-    event_id_t e1, e2;
-    c->get("foo1", e1);
-    c->get("foo2", e2);
+    auto [doc1, e1] = c->get_with_eid("foo1");
+    auto [doc2, e2] = c->get_with_eid("foo2");
 
     auto res = conn->order(e1, e2);
 

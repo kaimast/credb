@@ -235,7 +235,7 @@ TEST_F(TransactionTest, cannot_see_uncommitted_data)
         tc1->put(k, v);
         ASSERT_ANY_THROW(c1->get(k));
         ASSERT_ANY_THROW(c2->get(k));
-        ASSERT_ANY_THROW(tc3->get(k, eid));
+        ASSERT_ANY_THROW(tc3->get_with_eid(k));
 
         auto res = t1->commit(false);
         ASSERT_TRUE(res.success);
@@ -294,18 +294,19 @@ TEST_F(TransactionTest, no_outdated_read)
 
         auto c1 = conn1->get_collection("default");
 
-        event_id_t eid1, eid2, eid3;
-        eid1 = c1->put(k, v1);
+        auto eid1 = c1->put(k, v1);
+
         ASSERT_NE(eid1, INVALID_EVENT);
         std::this_thread::sleep_for(1ms); // FIXME: downstream may not be up-to-date
 
         auto t = conn2->init_transaction(IsolationLevel::RepeatableRead);
         auto c2 = t->get_collection("default");
-        auto doc = c2->get(k, eid2);
+
+        auto [doc, eid2] = c2->get_with_eid(k);
         ASSERT_EQ(doc, v1);
         ASSERT_EQ(eid2, eid1);
 
-        eid3 = c1->put(k, v2);
+        auto eid3 = c1->put(k, v2);
         ASSERT_NE(eid3, INVALID_EVENT);
         ASSERT_NE(eid3, eid1);
 

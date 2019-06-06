@@ -33,7 +33,7 @@ public:
     virtual event_id_t put(const std::string &key, const json::Document &document) override;
     virtual event_id_t remove(const std::string &key) override;
 
-    virtual std::tuple<std::string, event_id_t> put(const json::Document &document) override;
+    virtual std::tuple<std::string, event_id_t> put_and_generate_key(const json::Document &document) override;
  
     virtual bool create_index(const std::string &index_name, const std::vector<std::string> &paths) override;
 
@@ -42,7 +42,7 @@ public:
     virtual bool has_object(const std::string &key) override;
     virtual bool check(const std::string &key, const json::Document &predicate) override;
 
-    virtual json::Document get(const std::string &key, event_id_t &event_id) override;
+    virtual std::pair<json::Document, event_id_t> get_with_eid(const std::string &key) override;
     virtual json::Document get_with_witness(const std::string &key, event_id_t &event_id, Witness &witness) override;
 
     virtual std::vector<json::Document> get_history(const std::string &key) override;

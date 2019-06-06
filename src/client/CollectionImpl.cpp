@@ -25,7 +25,7 @@
 namespace credb
 {
 
-std::tuple<std::string, event_id_t> CollectionImpl::put(const json::Document &document)
+std::tuple<std::string, event_id_t> CollectionImpl::put_and_generate_key(const json::Document &document)
 {
     auto op_id = m_client.get_next_operation_id();
     auto req = m_client.generate_op_request(op_id, OperationType::PutObjectWithoutKey);
@@ -134,7 +134,7 @@ bool CollectionImpl::check(const std::string &key, const json::Document &predica
     return resp.result();
 }
 
-json::Document CollectionImpl::get(const std::string &key, event_id_t &event_id)
+std::pair<json::Document, event_id_t> CollectionImpl::get_with_eid(const std::string &key)
 {
     auto op_id = m_client.get_next_operation_id();
     auto req = m_client.generate_op_request(op_id, OperationType::GetObject);
@@ -150,8 +150,8 @@ json::Document CollectionImpl::get(const std::string &key, event_id_t &event_id)
         throw std::runtime_error("Failed to get " + key);
     }
 
-    event_id = resp.event_id();
-    return resp.document();
+    return std::pair<json::Document, event_id_t>
+        {resp.document(), resp.event_id()};
 }
 
 json::Document CollectionImpl::get_with_witness(const std::string &key, event_id_t &event_id, Witness &witness)

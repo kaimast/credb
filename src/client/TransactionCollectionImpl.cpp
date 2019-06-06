@@ -46,12 +46,16 @@ bool TransactionCollectionImpl::has_object(const std::string &key)
     return res;
 }
 
-json::Document TransactionCollectionImpl::get(const std::string &key, event_id_t &event_id)
+std::pair<json::Document, event_id_t> TransactionCollectionImpl::get_with_eid(const std::string &key)
 {
     m_transaction.assert_not_committed();
-    auto doc = CollectionImpl::get(key, event_id);
+
+    auto [doc, event_id] = CollectionImpl::get_with_eid(key);
+
     m_transaction.queue_op(new get_info_t(name(), key, event_id));
-    return doc;
+
+    return std::pair<json::Document, event_id_t>
+            {std::move(doc), event_id};
 }
 
 std::vector<std::tuple<std::string, json::Document>>

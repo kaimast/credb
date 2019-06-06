@@ -78,7 +78,6 @@ endif
 
 py3_ext = import('python3')
 py3_dep = dependency('python3')
-boost_py3_dep = cpp.find_library('boost_python3')
 
 if py3_ext.language_version() == '3.5'
     python_dir = 'lib/python3.5/dist-packages'
@@ -163,11 +162,11 @@ witness_reader = executable('witness-reader', witness_reader_files, link_with: [
 
 client_incdir = include_directories('src/client')
 
-py3_ext.extension_module('credb', python_file, dependencies: [py3_dep, openssl_dep, boost_py3_dep], install:true, include_directories: [sgx_incdir, credb_incdir, client_incdir], c_args: compile_args, cpp_args: compile_args + cpp_compile_args, install_dir: python_dir, link_with: [libcredb])
+py3_ext.extension_module('credb', python_file, dependencies: [py3_dep, openssl_dep], install:true, include_directories: [sgx_incdir, credb_incdir, client_incdir], c_args: compile_args, cpp_args: compile_args + cpp_compile_args, install_dir: python_dir, link_with: [libcredb])
 
 subdir('test/')
 
-tests = executable('credb-test', test_cpp_files, test_extra_cpp_files, link_with: [libcredb, libfakeenclave], include_directories: [credb_incdir, sgx_incdir], c_args: test_compile_args, cpp_args: test_compile_args + cpp_compile_args, dependencies: [gtest, log_dep, gflags_dep, boost_py3_dep, py3_dep, yael_dep, json_dep, cowlang_dep],
+tests = executable('credb-test', test_cpp_files, test_extra_cpp_files, link_with: [libcredb, libfakeenclave], include_directories: [credb_incdir, sgx_incdir], c_args: test_compile_args, cpp_args: test_compile_args + cpp_compile_args, dependencies: [gtest, log_dep, gflags_dep, py3_dep, yael_dep, json_dep, cowlang_dep],
                    link_args: ['-lstdc++fs'])
 test('credb-test', tests)
 

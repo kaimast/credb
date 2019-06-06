@@ -3,14 +3,347 @@
 
 #pragma once
 
-#include <boost/python.hpp>
+#include <pybind11/pybind11.h>
 #include <stack>
 #include PYTHON_DATETIME
 #include <credb/defines.h>
 #include <json/json.h>
 
-namespace py = boost::python;
+namespace py = pybind11;
 
+namespace
+{
+
+class DocumentToPythonConverter : public json::Iterator
+{
+public:
+    DocumentToPythonConverter() = default;
+
+    ~DocumentToPythonConverter()
+    {
+        while(!parse_stack.empty())
+        {
+            parse_stack.pop();
+        }
+    }
+
+    const py::object &get_result() const
+    {
+        // Not a valid document?
+        if(parse_stack.size() != 1)
+        {
+            throw std::runtime_error("Json converter in an invalid child");
+        }
+
+        return parse_stack.top();
+    }
+
+    void handle_datetime(const std::string &key, const tm &value) override
+    {
+        auto module = py::module::import("datetime");
+
+        try
+        {
+            py::object pyval = module.attr("datetime")(value.tm_year, value.tm_mon, value.tm_mday,
+                                                       value.tm_hour, value.tm_min, value.tm_sec);
+            append_child(key, pyval);
+        }
+        catch(...)
+        {
+            PyErr_Print();
+            PyErr_Clear();
+        }
+    }
+
+    void handle_string(const std::string &key, const std::string &value) override
+    {
+        add_value(key, value);
+    }
+
+    void handle_integer(const std::string &key, int64_t value) override { add_value(key, value); }
+
+    void handle_float(const std::string &key, const double value) override
+    {
+        add_value(key, value);
+    }
+
+    void handle_boolean(const std::string &key, const bool value) override
+    {
+        add_value(key, value);
+    }
+
+    template <typename T> void add_value(const std::string &key, const T &value)
+    {
+        py::object obj = py::cast(value);
+
+        if(key.empty())
+        {
+            parse_stack.push(obj);
+        }
+        else
+        {
+            append_child(key, obj);
+        }
+    }
+
+    void handle_null(const std::string &key) override
+    {
+        py::object obj;
+        if(!key.empty())
+        {
+            append_child(key, obj);
+        }
+        else
+        {
+            parse_stack.push(obj);
+        }
+    }
+
+    void handle_map_start(const std::string &key) override
+    {
+        py::dict dict;
+
+        if(!key.empty())
+        {
+            append_child(key, dict);
+        }
+
+        parse_stack.push(dict);
+    }
+
+    void handle_map_end() override
+    {
+        if(parse_stack.size() > 1)
+        {
+            parse_stack.pop();
+        }
+    }
+
+    void handle_array_start(const std::string &key) override
+    {
+        py::list list;
+        if(!key.empty())
+        {
+            append_child(key, list);
+        }
+
+        parse_stack.push(list);
+    }
+
+    void handle_array_end() override
+    {
+        if(parse_stack.size() > 1)
+        {
+            parse_stack.pop();
+        }
+    }
+
+    void handle_binary(const std::string &key, const uint8_t *data, uint32_t len) override
+    {
+        (void)data;
+        (void)len;
+        // FIXME convert to byte object
+        add_value(key, "");
+    }
+
+private:
+    void append_child(const std::string key, py::object &obj)
+    {
+        if(parse_stack.empty())
+        {
+            throw std::runtime_error("Cannot append child at this point!");
+        }
+
+        auto &top = parse_stack.top();
+
+        if(py::isinstance<py::dict>(top))
+        {
+            auto d = py::cast<py::dict>(top);
+            d[key.c_str()] = obj;
+            return;
+        }
+
+        if(py::isinstance<py::list>(top))
+        {
+            auto l = py::cast<py::list>(top);
+            l.append(obj);
+            return;
+        }
+
+        throw std::runtime_error("Failed to convert from binary to python document: Cannot append "
+                                 "child to this type of object.");
+    }
+
+    std::stack<py::object> parse_stack;
+};
+
+class PythonToDocumentConverter
+{
+public:
+    PythonToDocumentConverter(const py::handle &root_) : root(root_), result(), writer(result) {}
+
+    void run()
+    {
+        parse_next("", root);
+    }
+
+    json::Document get_result() const
+    {
+        return json::Document(result.data(), result.size(), json::DocumentMode::ReadOnly);
+    }
+
+private:
+    void parse_next(const std::string &key, const py::handle &obj)
+    {
+        if(obj.ptr() == Py_None)
+        {
+            writer.write_null(key);
+            return;
+        }
+
+        if(py::isinstance<py::dict>(obj))
+        {
+            auto dict = py::cast<py::dict>(obj);
+
+            writer.start_map(key);
+
+            for(const auto &[key, val] : dict)
+            {
+                if(!py::isinstance<py::str>(key))
+                {
+                    throw std::runtime_error("Failed to extract key");
+                }
+
+                auto k = py::cast<std::string>(key);
+                parse_next(k, val);
+            }
+
+            writer.end_map();
+        }
+        else if(py::isinstance<py::list>(obj))
+        {
+            const auto list = py::cast<py::list>(obj);
+            writer.start_array(key);
+
+            for(uint32_t i = 0; i < py::len(list); ++i)
+            {
+                parse_next(std::to_string(i), list[i]);
+            }
+
+            writer.end_array();
+        }
+        else if(py::isinstance<py::int_>(obj))
+        {
+            auto i = py::cast<json::integer_t>(obj);
+            writer.write_integer(key, i);
+        }
+        else if(py::isinstance<py::str>(obj))
+        {
+            auto str = py::cast<py::str>(obj);
+            writer.write_string(key, str);
+        }
+        else if(py::isinstance<py::float_>(obj))
+        {
+            auto f = py::cast<json::float_t>(obj);
+            writer.write_float(key, f);
+        }
+        else if(py::isinstance<bool>(obj))
+        {
+            auto b = py::cast<bool>(obj);
+            writer.write_boolean(key, b);
+            return;
+        }
+        else
+        {
+            auto pobj = obj.ptr();
+
+            if(PyByteArray_Check(pobj))
+            {
+                auto size = PyByteArray_Size(pobj);
+                auto data = PyByteArray_AsString(pobj);
+
+                bitstream value;
+                value.assign(reinterpret_cast<uint8_t*>(data), static_cast<uint32_t>(size), true);
+                
+                writer.write_binary(key, value);
+                return;
+            }
+
+
+            // auto datetime = py::import("datetime");
+            PyDateTime_IMPORT;
+            bool is_datetime = Py_TYPE(pobj) == PyDateTimeAPI->DateTimeType;
+
+            // just assuming it is datetime for now
+            if(is_datetime)
+            {
+                tm value;
+                value.tm_year = py::cast<int>(obj.attr("year"));
+                value.tm_mon = py::cast<int>(obj.attr("month"));
+                value.tm_mday = py::cast<int>(obj.attr("day"));
+                value.tm_hour = py::cast<int>(obj.attr("hour"));
+                value.tm_min = py::cast<int>(obj.attr("minute"));
+                value.tm_sec = py::cast<int>(obj.attr("second"));
+
+                writer.write_datetime(key, value);
+                return;
+            }
+
+            throw std::runtime_error("Python to BSON conversion failed: Unknown object type");
+        }
+    }
+
+    const py::handle &root;
+    std::stack<const py::handle *> parse_stack;
+
+    bitstream result;
+    json::Writer writer;
+};
+
+}
+
+namespace pybind11::detail
+{
+
+template <> struct type_caster<json::Document>
+{
+public:
+    PYBIND11_TYPE_CASTER(json::Document, _("json::Document"));
+
+    bool load(handle src, bool)
+    {
+        PythonToDocumentConverter converter(src);
+
+        try
+        {
+            converter.run();
+        }
+        catch(json_error &e)
+        {
+            return false;
+        }
+
+        value = converter.get_result();
+        return true;
+    }
+
+    static handle cast(const json::Document &src, return_value_policy, handle)
+    {
+        if(src.empty() || !src.valid())
+        {
+            return py::handle();
+        }
+
+        DocumentToPythonConverter converter;
+        src.iterate(converter);
+
+        return converter.get_result();
+    }
+};
+
+} // namespace pybind11::detail
+
+/*
 class DocumentToPythonConverter : public json::Iterator
 {
 public:
@@ -300,4 +633,4 @@ private:
 
     bitstream result;
     json::Writer writer;
-};
+};*/
