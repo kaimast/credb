@@ -47,18 +47,17 @@ if clone-repo "botan" "https://github.com/randombit/botan.git"; then
     make install
 fi
 
-# sgxsdk
-git clone https://github.com/01org/linux-sgx.git > /dev/null 2>&1
-cd linux-sgx
-git checkout sgx_2.5
-./download_prebuilt.sh > /dev/null 2>&1
-make sdk_install_pkg > /dev/null 2>&1
-printf "no\n/opt/intel\n" | sudo $(ls linux/installer/bin/sgx_linux_x64_sdk_*.bin) > /dev/null 2>&1
-cd ..
-rm -rf linux-sgx
+cd $WORKDIR
+if clone-repo "linux-sgx" "https://github.com/01org/linux-sgx.git"; then
+    cd linux-sgx
+    git checkout sgx_2.5
+    ./download_prebuilt.sh
+    make sdk_install_pkg
+    printf "no\n/opt/intel\n" | sudo $(ls linux/installer/bin/sgx_linux_x64_sdk_*.bin)
+fi
 
 cd $WORKDIR
-if clone-repo "libpypa" "git@github.com:vinzenz/libpypa.git"; then
+if clone-repo "libpypa" "https://github.com:vinzenz/libpypa.git"; then
     cd libpypa
     echo "Building pypa"
     ./autogen.sh
