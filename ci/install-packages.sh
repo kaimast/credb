@@ -8,7 +8,7 @@ sudo echo "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main" >> /etc
 wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
 
 # We need openssl 1.1
-sudo add-apt-repository ppa:hola-launchpad/openssl
+sudo add-apt-repository ppa:hola-launchpad/openssl -y
 
 sudo apt-get update
 
