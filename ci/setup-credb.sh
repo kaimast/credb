@@ -15,10 +15,9 @@ export LIBRARY_PATH=$HOME/local/lib:$HOME/local/lib/x86_64-linux-gnu:/usr/local/
 export PYTHONPATH=${INSTALL_DIR}/lib/${PY_VERSION}/site-packages:${INSTALL_DIR}/lib/${PY_VERSION}/dist-packages
 export PATH=${PATH}:${INSTALL_DIR}/bin
 
-meson build --prefix=$HOME/local
+meson build -Dsgx_mode=$SGX_MODE -Dbuildtype=$BUILDTYPE -Dalways_page=true -Dsgx_sdk_dir=${SGX_DIR}/sgxsdk --prefix=$HOME/local
 cd build
-meson configure -Dsgx_mode=$SGX_MODE -Dbuildtype=$BUILDTYPE -Dalways_page=true -Dsgx_sdk_dir=${SGX_DIR}/sgxsdk
-ninja
+ninja -v
 ninja install
 
 ninja tidy

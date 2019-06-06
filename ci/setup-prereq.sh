@@ -30,6 +30,7 @@ if clone-repo "bitstream" "https://github.com/kaimast/bitstream.git"; then
     cd bitstream
     meson build --prefix=${INSTALL_DIR}
     cd build
+    ninja -v
     ninja install
 fi
 
@@ -38,7 +39,7 @@ if clone-repo "yael" "https://github.com/kaimast/yael.git"; then
     cd yael
     meson build -Dbotan_dir=$INSTALL_DIR/include/botan-2 -Dbuildtype=$BUILDTYPE  --prefix=$INSTALL_DIR
     cd build
-    ninja
+    ninja -v
     ninja install
 fi
 
