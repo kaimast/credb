@@ -1,17 +1,15 @@
-#!/bin/bash
+#! /bin/bash
+
+WORKDIR=$HOME/prereq
+INSTALL_DIR=$HOME/local
+PY_VERSION=python3.5
 
 export LD_LIBRARY_PATH=$HOME/local/lib:$HOME/local/lib/x86_64-linux-gnu:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
 export LIBRARY_PATH=$HOME/local/lib:$HOME/local/lib/x86_64-linux-gnu:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
 export PYTHONPATH=${HOME}/local/lib/python3.6/site-packages:${HOME}/local/lib/python3.6/dist-packages
 
-
-if [[ "$sgx_mode" == "simulation" ]]; then
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/intel/sgxsdk/lib64
-    export LIBRARY_PATH=$LIBRARY_PATH:/opt/intel/sgxsdk/lib64
-fi
-
-set -e
-set -x
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/intel/sgxsdk/lib64
+export LIBRARY_PATH=$LIBRARY_PATH:/opt/intel/sgxsdk/lib64
 
 unit_test_upstream_only() {
     ./credb testserver > /dev/null 2>&1 &
