@@ -56,7 +56,7 @@ fi
 cd $WORKDIR
 if clone-repo "cowlang" "https://github.com/kaimast/cowlang.git"; then
     cd cowlang
-    meson build --prefix=${INSTALL_DIR} -Dbuildtype=$BUILDTYPE
+    meson build --prefix=${INSTALL_DIR} -Dbuildtype=$BUILDTYPE -Dsgx_sdk_dir=${SGX_DIR}/sgxsdk
     cd build
     ninja -v
     ninja install
