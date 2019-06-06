@@ -3,6 +3,7 @@
 WORKDIR=$HOME/prereq
 INSTALL_DIR=$HOME/local
 PY_VERSION=python3.5
+SGX_DIR=${INSTALL_DIR}/intel
 
 BUILDTYPE=release
 export CC=gcc-9
@@ -46,19 +47,17 @@ fi
 cd $WORKDIR
 if clone-repo "libdocument" "https://github.com/kaimast/libdocument.git"; then
     cd libdocument
-    meson build --prefix=${INSTALL_DIR}
+    meson build --prefix=${INSTALL_DIR} -Dsgx_sdk_dir=${SGX_DIR}/sgxsdk
     cd build
-    meson configure -Dbuildtype=$BUILDTYPE
-    ninja
+    ninja -v
     ninja install
 fi
 
 cd $WORKDIR
 if clone-repo "cowlang" "https://github.com/kaimast/cowlang.git"; then
     cd cowlang
-    meson build --prefix=${INSTALL_DIR}
+    meson build --prefix=${INSTALL_DIR} -Dbuildtype=$BUILDTYPE
     cd build
-    meson configure -Dbuildtype=$BUILDTYPE
-    ninja
+    ninja -v
     ninja install
 fi
