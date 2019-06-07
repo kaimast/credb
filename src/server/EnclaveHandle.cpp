@@ -158,7 +158,7 @@ EnclaveHandle::EnclaveHandle(std::string name, Disk &disk)
     ex_features_p[2] = &kss_config;
 
     auto home_dir = std::filesystem::path(getenv("HOME"))
-            / std::string("/local");
+            / std::string("local");
     auto local_dir = std::filesystem::path("./");
     auto install_dir = std::filesystem::path("/usr/local/");
 
