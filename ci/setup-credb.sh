@@ -3,7 +3,6 @@
 export CC=gcc-9
 export CXX=g++-9
 
-WORKDIR=$HOME/prereq
 INSTALL_DIR=$HOME/local
 PY_VERSION=python3.5
 SGX_DIR=${INSTALL_DIR}/intel
@@ -21,3 +20,4 @@ ninja -v
 ninja install
 
 ninja tidy
+./credb-test
