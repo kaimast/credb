@@ -14,7 +14,7 @@ PYBIND11_MODULE(credb, m)
    // doc_options.disable_signatures();
     
     m.def("create_client", credb::create_client, 
-            py::arg("client_name"), py::arg("server_name"), py::arg("host"), py::arg("port"), "@DocString(create_client)");
+            py::arg("client_name"), py::arg("server_name"), py::arg("host"), py::arg("port")=0, py::arg("unsafe_mode")=false, "@DocString(create_client)");
 
     py::enum_<IsolationLevel>(m, "IsolationLevel", "@DocString(IsolationLevel)")
     .export_values()

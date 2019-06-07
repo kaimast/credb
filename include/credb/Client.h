@@ -155,7 +155,6 @@ typedef std::shared_ptr<Client> ClientPtr;
  * @param server_port [optional]
  *      Port of the server (if non-standard)
  */
-ClientPtr create_client(const std::string &client_name, const std::string &server_name,
-                        const std::string &server_addr, uint16_t server_port = 0);
+ClientPtr create_client(const std::string &client_name, const std::string &server_name, const std::string &server_addr, uint16_t server_port = 0, bool unsafe_mode = false);
 
 } // namespace credb

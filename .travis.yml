@@ -21,3 +21,4 @@ jobs:
             - bash ci/install-packages.sh
             - env run_test=multi_get ci/run-test.sh
             - env run_test=multi_update ci/run-test.sh
+            - env run_test=multi_put ci/run-test.sh

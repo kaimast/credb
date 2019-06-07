@@ -1,6 +1,8 @@
 #include "credb/Client.h"
 #include "credb/Collection.h"
 
+#include "global.h"
+
 #include <assert.h>
 #include <iostream>
 #include <mutex>
@@ -16,7 +18,8 @@ protected:
 
     void SetUp() override
     {
-        conn = credb::create_client("test", "testserver", "localhost");
+        conn = credb::create_client("test", "testserver", "localhost", 0, g_unsafe_mode);
+
         c = conn->get_collection("default");
     }
 

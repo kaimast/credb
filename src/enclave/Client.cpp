@@ -63,7 +63,9 @@ void Client::handle_message(const uint8_t *data, uint32_t len)
             bitstream output;
             OpContext context(identity(), "");
 
+            lock.unlock();
             handle_op_request(input, output, context);
+            lock.lock();
 
             if(!output.empty())
             {

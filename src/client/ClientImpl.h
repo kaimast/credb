@@ -36,7 +36,7 @@ enum class ClientState
 class ClientImpl : public Client, public yael::NetworkSocketListener
 {
 public:
-    ClientImpl(std::string client_name, std::string server_name, const std::string &address, uint16_t port);
+    ClientImpl(std::string client_name, std::string server_name, const std::string &address, uint16_t port, bool unsafe_mode);
 
     ~ClientImpl() = default;
 
@@ -134,6 +134,7 @@ private:
     const std::string m_name;
     const std::string m_server_name;
     bool m_downstream_mode;
+    bool m_unsafe_mode;
 
     std::string m_error_str;
 

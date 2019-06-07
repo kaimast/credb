@@ -78,8 +78,8 @@ sample_spid_t g_spid;
 namespace credb
 {
 
-ClientImpl::ClientImpl(std::string client_name, std::string server_name, const std::string &address, uint16_t port)
-    : m_name(std::move(client_name)), m_server_name(std::move(server_name))
+ClientImpl::ClientImpl(std::string client_name, std::string server_name, const std::string &address, uint16_t port, bool unsafe_mode)
+    : m_name(std::move(client_name)), m_server_name(std::move(server_name)), m_unsafe_mode(unsafe_mode)
 {
     const std::string KEYS_FILENAME = m_name + ".identity";
 
@@ -231,41 +231,42 @@ std::shared_ptr<Transaction> ClientImpl::init_transaction(IsolationLevel isolati
     return std::make_shared<TransactionImpl>(*this, isolation);
 }
 
-#ifdef FAKE_ENCLAVE
 void ClientImpl::encrypt(bitstream &data, bitstream &outstream)
 {
-    uint32_t len = data.size();
-
-    outstream.move_to(0);
-    outstream.resize(sizeof(etype_data_t) + sizeof(len) + len);
-    outstream << static_cast<etype_data_t>(EncryptionType::Encrypted);
-    outstream << len;
-    outstream.write_raw_data(data.data(), data.size());
-}
-#else
-void ClientImpl::encrypt(bitstream &data, bitstream &outstream)
-{
-    uint32_t len = data.size();
-
-    std::array<uint8_t, SAMPLE_SP_IV_SIZE> aes_gcm_iv = { 0 };
-    std::array<uint8_t, SGX_AESGCM_MAC_SIZE> tag;
-
-    outstream.move_to(0);
-    outstream.resize(sizeof(etype_data_t) + sizeof(len) + len + sizeof(tag));
-    outstream << static_cast<etype_data_t>(EncryptionType::Encrypted);
-    outstream << len;
-
-    auto ret = sgx_rijndael128GCM_encrypt(&m_sk_key, const_cast<const uint8_t*>(data.data()), len, outstream.current(), aes_gcm_iv.data(), SAMPLE_SP_IV_SIZE, nullptr, 0, reinterpret_cast<sgx_aes_gcm_128bit_tag_t*>(tag.data()));
-
-    outstream.move_to(sizeof(etype_data_t) + sizeof(len) + len);
-    outstream << tag;
-
-    if(ret != SGX_SUCCESS)
+    if(m_unsafe_mode)
     {
-        LOG(FATAL) << "Encryption failed!";
+        uint32_t len = data.size();
+
+        outstream.move_to(0);
+        outstream.resize(sizeof(etype_data_t) + sizeof(len) + len);
+        outstream << static_cast<etype_data_t>(EncryptionType::Encrypted);
+        outstream << len;
+        outstream.write_raw_data(data.data(), data.size());
+    }
+    else
+    {
+        uint32_t len = data.size();
+
+        std::array<uint8_t, SAMPLE_SP_IV_SIZE> aes_gcm_iv = { 0 };
+        std::array<uint8_t, SGX_AESGCM_MAC_SIZE> tag;
+
+        outstream.move_to(0);
+        outstream.resize(sizeof(etype_data_t) + sizeof(len) + len + sizeof(tag));
+        outstream << static_cast<etype_data_t>(EncryptionType::Encrypted);
+        outstream << len;
+
+        auto ret = sgx_rijndael128GCM_encrypt(&m_sk_key, const_cast<const uint8_t*>(data.data()), len, outstream.current(), aes_gcm_iv.data(), SAMPLE_SP_IV_SIZE, nullptr, 0, reinterpret_cast<sgx_aes_gcm_128bit_tag_t*>(tag.data()));
+
+        outstream.move_to(sizeof(etype_data_t) + sizeof(len) + len);
+        outstream << tag;
+
+        if(ret != SGX_SUCCESS)
+        {
+            LOG(FATAL) << "Encryption failed!";
+        }
     }
 }
-#endif
+
 bool ClientImpl::create_witness(const std::vector<event_id_t> &events, Witness &witness)
 {
     auto op_id = get_next_operation_id();
@@ -565,10 +566,12 @@ void ClientImpl::decrypt(const uint8_t *data, uint32_t len, bitstream &out)
     uint32_t payload_len = 0;
     input >> payload_len;
 
-#ifdef FAKE_ENCLAVE
-    out = bitstream(const_cast<uint8_t *>(input.current()), payload_len);
-#else
-
+    if(m_unsafe_mode)
+    {
+        out = bitstream(const_cast<uint8_t *>(input.current()), payload_len);
+        return;
+    }
+    
     if(encryption != EncryptionType::Encrypted)
     {
         LOG(FATAL) << "Failed to decrypt message: not encrypted";
@@ -591,7 +594,6 @@ void ClientImpl::decrypt(const uint8_t *data, uint32_t len, bitstream &out)
     {
         LOG(FATAL) << "Could not decode server message: " << to_string(ret);
     }
-#endif
 }
 
 void ClientImpl::process_message_one(bitstream &input, bitstream &output)
@@ -636,58 +638,58 @@ void ClientImpl::process_message_one(bitstream &input, bitstream &output)
         LOG(FATAL) << "cannot generate key pair";
     }
 
-#ifndef FAKE_ENCLAVE
-    // Generate the client/SP shared secret
-    sgx_ec256_dh_shared_t dh_key;
-    ret = sgx_ecc256_compute_shared_dhkey(&m_dhke_private, const_cast<sgx_ec256_public_t *>(&m_dhke_server_public), reinterpret_cast<sgx_ec256_dh_shared_t*>(&dh_key), ecc_state);
-
-    if(ret != SGX_SUCCESS)
+    if(!m_unsafe_mode)
     {
-        LOG(FATAL) << "Failed to compute shared key";
-    }
+        // Generate the client/SP shared secret
+        sgx_ec256_dh_shared_t dh_key;
+        ret = sgx_ecc256_compute_shared_dhkey(&m_dhke_private, const_cast<sgx_ec256_public_t *>(&m_dhke_server_public), reinterpret_cast<sgx_ec256_dh_shared_t*>(&dh_key), ecc_state);
 
-    // smk is only needed for msg2->generation.
-    auto derive_ret = derive_key(&dh_key, SAMPLE_DERIVE_KEY_SMK, &m_smk_key);
-    if(!derive_ret)
-    {
-        LOG(FATAL) << "Failed to derive SMK key";
-    }
+        if(ret != SGX_SUCCESS)
+        {
+            LOG(FATAL) << "Failed to compute shared key";
+        }
 
-    // The rest of the keys are the shared secrets for future communication.
-    derive_ret = derive_key(&dh_key, SAMPLE_DERIVE_KEY_MK, &m_mk_key);
-    if(!derive_ret)
-    {
-        LOG(FATAL) << "Failed to derive MK key";
-    }
+        // smk is only needed for msg2->generation.
+        auto derive_ret = derive_key(&dh_key, SAMPLE_DERIVE_KEY_SMK, &m_smk_key);
+        if(!derive_ret)
+        {
+            LOG(FATAL) << "Failed to derive SMK key";
+        }
 
-    derive_ret = derive_key(&dh_key, SAMPLE_DERIVE_KEY_SK, &m_sk_key);
-    if(!derive_ret)
-    {
-        LOG(FATAL) << "Failed to derive SK key";
-    }
+        // The rest of the keys are the shared secrets for future communication.
+        derive_ret = derive_key(&dh_key, SAMPLE_DERIVE_KEY_MK, &m_mk_key);
+        if(!derive_ret)
+        {
+            LOG(FATAL) << "Failed to derive MK key";
+        }
 
-    derive_ret = derive_key(&dh_key, SAMPLE_DERIVE_KEY_VK, &m_vk_key);
-    if(!derive_ret)
-    {
-        LOG(FATAL) << "Failed to derive VK key";
-    }
+        derive_ret = derive_key(&dh_key, SAMPLE_DERIVE_KEY_SK, &m_sk_key);
+        if(!derive_ret)
+        {
+            LOG(FATAL) << "Failed to derive SK key";
+        }
 
-    memcpy_s(&msg2.g_b, sizeof(msg2.g_b), &m_dhke_public, sizeof(m_dhke_public));
-    memcpy_s(&msg2.spid, sizeof(sample_spid_t), &g_spid, sizeof(g_spid));
+        derive_ret = derive_key(&dh_key, SAMPLE_DERIVE_KEY_VK, &m_vk_key);
+        if(!derive_ret)
+        {
+            LOG(FATAL) << "Failed to derive VK key";
+        }
 
-    // The service provider is responsible for selecting the proper EPID
-    // signature type and to understand the implications of the choice!
-    msg2.quote_type = SAMPLE_QUOTE_LINKABLE_SIGNATURE;
+        memcpy_s(&msg2.g_b, sizeof(msg2.g_b), &m_dhke_public, sizeof(m_dhke_public));
+        memcpy_s(&msg2.spid, sizeof(sample_spid_t), &g_spid, sizeof(g_spid));
+
+        // The service provider is responsible for selecting the proper EPID
+        // signature type and to understand the implications of the choice!
+        msg2.quote_type = SAMPLE_QUOTE_LINKABLE_SIGNATURE;
 
 #ifdef SUPPLIED_KEY_DERIVATION
-// isv defined key derivation function id
+    // isv defined key derivation function id
 #define ISV_KDF_ID 2
-    msg2.kdf_id = ISV_KDF_ID;
+        msg2.kdf_id = ISV_KDF_ID;
 #else
-    msg2.kdf_id = SAMPLE_AES_CMAC_KDF_ID;
+        msg2.kdf_id = SAMPLE_AES_CMAC_KDF_ID;
 #endif
-
-#endif
+    }
 
     std::array<sgx_ec256_public_t, 2> gb_ga;
 
@@ -758,16 +760,19 @@ void ClientImpl::process_message_three(bitstream &input, bitstream &output)
 
     input >> msg3_size;
 
-#ifdef FAKE_ENCLAVE
-    (void)msg3;
-    m_state = ClientState::Connected;
+    if(m_unsafe_mode)
+    {
+        (void)msg3;
+        m_state = ClientState::Connected;
 
-    output << EncryptionType::Attestation;
-    output << MessageType::AttestationResult;
-    output << 0;
-    output << 0;
+        output << EncryptionType::Attestation;
+        output << MessageType::AttestationResult;
+        output << 0;
+        output << 0;
 
-#else
+        return;
+    }
+
     sample_report_data_t report_data = { 0 };
 
     input.read_raw_data(reinterpret_cast<uint8_t **>(&msg3), msg3_size);
@@ -927,7 +932,6 @@ void ClientImpl::process_message_three(bitstream &input, bitstream &output)
     }
 
     sgx_sha256_close(sha_handle);
-#endif
 }
 
 std::shared_ptr<Collection> ClientImpl::get_collection(const std::string &name)
@@ -936,7 +940,7 @@ std::shared_ptr<Collection> ClientImpl::get_collection(const std::string &name)
 }
 
 std::shared_ptr<Client>
-create_client(const std::string &client_name, const std::string &server_name, const std::string &server_addr, uint16_t server_port)
+create_client(const std::string &client_name, const std::string &server_name, const std::string &server_addr, uint16_t server_port, bool unsafe_mode)
 {
     if(client_name.empty())
     {
@@ -947,11 +951,11 @@ create_client(const std::string &client_name, const std::string &server_name, co
     auto &el = EventLoop::get_instance();
 
     try {
-        auto c = el.make_event_listener<ClientImpl>(client_name, server_name, server_addr, server_port);
+        auto c = el.make_event_listener<ClientImpl>(client_name, server_name, server_addr, server_port, unsafe_mode);
 
         if(!c->is_valid())
         {
-
+            LOG(FATAL) << "Failed to create client";
         }
 
         c->setup();
