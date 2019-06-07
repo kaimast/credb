@@ -15,5 +15,10 @@ jobs:
             - bash ci/setup-prereq-ext.sh
             - bash ci/setup-prereq.sh
             - bash ci/setup-credb.sh
-            - bash env run_test=unit_test -e downstream=0 credb ../ci/run-test.sh
-  
+
+        - name: "Test"
+          script:
+            - bash ci/install-packages.sh
+            - bash env run_test=unit_test ../ci/run-test.sh
+            - bash env run_test=multi_get ../ci/run-test.sh
+            - bash env run_test=multi_update ../ci/run-test.sh

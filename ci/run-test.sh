@@ -1,6 +1,5 @@
 #! /bin/bash
 
-WORKDIR=$HOME/prereq
 INSTALL_DIR=$HOME/local
 PY_VERSION=python3.5
 
@@ -11,17 +10,8 @@ export PYTHONPATH=${HOME}/local/lib/python3.6/site-packages:${HOME}/local/lib/py
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/intel/sgxsdk/lib64
 export LIBRARY_PATH=$LIBRARY_PATH:/opt/intel/sgxsdk/lib64
 
-unit_test_upstream_only() {
+unit_test() {
     ./credb testserver > /dev/null 2>&1 &
-    sleep 10
-    ./credb-test
-    killall -9 credb
-}
-
-unit_test_with_downstream() {
-    ./credb upstream --port=10010 --listen=10086 > /dev/null 2>&1 &
-    sleep 10
-    ./credb testserver --upstream=localhost:10086 > /dev/null 2>&1 &
     sleep 10
     ./credb-test
     killall -9 credb
@@ -81,11 +71,7 @@ witness() {
 
 case $run_test in
     unit_test)
-        if [[ $downstream == 0 ]]; then
-            unit_test_upstream_only
-        else
-            unit_test_with_downstream
-        fi
+        unit_test
         ;;
     multi_get)
         multi_get
