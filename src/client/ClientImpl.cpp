@@ -81,10 +81,12 @@ namespace credb
 ClientImpl::ClientImpl(std::string client_name, std::string server_name, const std::string &address, uint16_t port)
     : m_name(std::move(client_name)), m_server_name(std::move(server_name))
 {
-    const std::string KEYS_FILENAME = client_name + ".identity";
+    const std::string KEYS_FILENAME = m_name + ".identity";
 
     if(std::experimental::filesystem::exists(KEYS_FILENAME))
     {
+        LOG(INFO) << "Loaded keys from file '" << KEYS_FILENAME << "'";
+
         std::ifstream data(KEYS_FILENAME, std::ifstream::in | std::ifstream::binary);
 
         data.read(reinterpret_cast<char*>(&m_client_private_key), sizeof(m_client_private_key));
@@ -94,8 +96,13 @@ ClientImpl::ClientImpl(std::string client_name, std::string server_name, const s
     {
         sgx_ecc_state_handle_t ecc = nullptr;
         sgx_ecc256_open_context(&ecc);
-        sgx_ecc256_create_key_pair(&m_client_private_key, &m_client_public_key, ecc);
+        auto ret = sgx_ecc256_create_key_pair(&m_client_private_key, &m_client_public_key, ecc);
         sgx_ecc256_close_context(ecc);
+
+        if(ret != SGX_SUCCESS)
+        {
+            LOG(FATAL) << "Failed to generate client key pair";
+        }
 
         std::ofstream data(KEYS_FILENAME, std::ifstream::out | std::ifstream::binary);
         data.write(reinterpret_cast<const char*>(&m_client_private_key), sizeof(m_client_private_key));
@@ -530,10 +537,12 @@ void ClientImpl::on_network_message(yael::network::Socket::message_in_t &msg)
 
 void ClientImpl::on_disconnect()
 {
+    std::unique_lock lock(m_mutex);
+
     if(m_state != ClientState::Failure
        && m_state != ClientState::Closed)
     {
-        throw std::runtime_error("Lost connection to server");
+        LOG(FATAL) << "Lost connection to server";
     }
 }
 

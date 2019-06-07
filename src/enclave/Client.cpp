@@ -35,6 +35,8 @@ Client::~Client()
 
 void Client::handle_message(const uint8_t *data, uint32_t len)
 {
+    std::unique_lock lock(*this);
+
     bitstream input;
     decrypt(data, len, input);
 
@@ -61,9 +63,7 @@ void Client::handle_message(const uint8_t *data, uint32_t len)
             bitstream output;
             OpContext context(identity(), "");
 
-            unlock();
             handle_op_request(input, output, context);
-            lock();
 
             if(!output.empty())
             {

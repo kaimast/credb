@@ -20,4 +20,8 @@ ninja -v
 ninja install
 
 ninja tidy
+
+./credb testserver &
+sleep 1
 ./credb-test
+killall credb

@@ -224,9 +224,9 @@ BufferManager::metas_map_t::iterator BufferManager::shard_t::unload_page(page_no
     auto meta = it->second;
     auto next = m_metas.erase(it);
 
-    if(meta->cnt_pin == 0)
+    if(meta->cnt_pin != 0)
     {
-        log_fatal("Invalid state: pin count is 0");
+        log_fatal("Invalid state: pin count is != 0");
     }
     
     flush_page_internal(*meta);

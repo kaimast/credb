@@ -446,9 +446,7 @@ void RemoteParty::handle_call_request(bitstream &input, const OpContext &op_cont
 
         output << FunctionCallResult::PolicyRejected;
    
-        this->lock(); 
         send(output);
-        this->unlock();
     }
     else
     {

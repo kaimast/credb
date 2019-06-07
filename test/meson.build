@@ -3,11 +3,9 @@ test_cpp_files = files(
     'TransactionLedger.cpp',
     'Programs.cpp',
     'primitives.cpp',
-    'Workload.cpp',
-    'basic.cpp',
     'main.cpp',
     'Order.cpp',
-    'Transaction.cpp',
+    'Basic.cpp',
     'IsolationLevels.cpp',
     'BufferManager.cpp',
     'HashMap.cpp',
@@ -15,7 +13,8 @@ test_cpp_files = files(
     'Disk.cpp',
     'LockHandle.cpp',
     'RemoteTransaction.cpp',
-    'TransactionManager.cpp'
+    'TransactionManager.cpp',
+    'Transaction.cpp'
 )
 
 #FIXME provide cleaner abstractions so not all this stuff gets pulled in
