@@ -224,7 +224,6 @@ TEST_F(TransactionTest, cannot_see_uncommitted_data)
 
     for (size_t i = 0; i < 1000; ++i)
     {
-        event_id_t eid;
         const auto k = random_object_key(16);
         const auto v = value(rand());
         auto t1 = conn1->init_transaction(IsolationLevel::RepeatableRead);

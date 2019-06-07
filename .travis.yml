@@ -19,6 +19,6 @@ jobs:
         - name: "Test"
           script:
             - bash ci/install-packages.sh
-            - bash env run_test=unit_test ../ci/run-test.sh
-            - bash env run_test=multi_get ../ci/run-test.sh
-            - bash env run_test=multi_update ../ci/run-test.sh
+            - env run_test=unit_test ../ci/run-test.sh
+            - env run_test=multi_get ../ci/run-test.sh
+            - env run_test=multi_update ../ci/run-test.sh
