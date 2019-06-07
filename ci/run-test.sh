@@ -2,9 +2,11 @@
 
 INSTALL_DIR=$HOME/local
 PY_VERSION=python3.5
+SGX_DIR=${INSTALL_DIR}/intel
+SGX_SDK_DIR=${SGX_DIR}/sgxsdk
 
-export LD_LIBRARY_PATH=$HOME/local/lib:$HOME/local/lib/x86_64-linux-gnu:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
-export LIBRARY_PATH=$HOME/local/lib:$HOME/local/lib/x86_64-linux-gnu:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu
+export LD_LIBRARY_PATH=$HOME/local/lib:$HOME/local/lib/x86_64-linux-gnu:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu:${SGX_SDK_DIR}/lib64
+export LIBRARY_PATH=$HOME/local/lib:$HOME/local/lib/x86_64-linux-gnu:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu:${SGX_SDK_DIR}/lib64
 export PYTHONPATH=${INSTALL_DIR}/lib/${PY_VERSION}/site-packages:${INSTALL_DIR}/lib/${PY_VERSION}/dist-packages
 export PATH=${PATH}:${INSTALL_DIR}/bin
 
