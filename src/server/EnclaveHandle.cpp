@@ -157,25 +157,34 @@ EnclaveHandle::EnclaveHandle(std::string name, Disk &disk)
 
     ex_features_p[2] = &kss_config;
 
-    std::string path = "";
-    const std::string enclave_filename = "enclave.signed.so";
+    auto home_dir = std::filesystem::path(getenv("HOME"))
+            / std::string("/local");
+    auto local_dir = std::filesystem::path("./");
+    auto install_dir = std::filesystem::path("/usr/local/");
 
-    if(std::filesystem::is_regular_file("./"+enclave_filename))
+    std::filesystem::path enclave_path = "";
+    const std::filesystem::path enclave_filename = "credb_enclave.signed.so";
+
+    if(std::filesystem::is_regular_file(local_dir / enclave_filename))
     {
-        path = "./" + enclave_filename;
+        enclave_path = local_dir / enclave_filename;
     }
-    else if(std::filesystem::is_regular_file("/usr/local/"+enclave_filename))
+    else if(std::filesystem::is_regular_file(install_dir / enclave_filename))
     {
-        path = "/usr/local/"+enclave_filename;
+        enclave_path = install_dir / enclave_filename;
+    }
+    else if(std::filesystem::is_regular_file(home_dir / enclave_filename))
+    {
+        enclave_path = home_dir / enclave_filename;
     }
     else
     {
         LOG(FATAL) << "Failed to find enclave file";
     }
 
-    LOG(INFO) << "Loading enclave file from " << path;
+    LOG(INFO) << "Loading enclave file " << enclave_path;
 
-    auto ret = sgx_create_enclave_ex(path.c_str(), SGX_DEBUG_FLAG, &m_token, &updated, &m_enclave_id, nullptr, 1 << 2, const_cast<const void**>(ex_features_p));
+    auto ret = sgx_create_enclave_ex(enclave_path.c_str(), SGX_DEBUG_FLAG, &m_token, &updated, &m_enclave_id, nullptr, 1 << 2, const_cast<const void**>(ex_features_p));
 
     if(ret != SGX_SUCCESS)
     {

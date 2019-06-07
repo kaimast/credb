@@ -122,7 +122,7 @@ ulibcrypto = static_library('ucrypto',  ulibcrypto_cpp_files, dependencies: [ope
 subdir('src/enclave/')
 
 common_args = ['-DIS_ENCLAVE', '-nostdinc', '-fvisibility=hidden', '-fstack-protector'] + compile_args
-enclave_so = executable('enclave.so', enclave_cpp_files + enclave_asm_files, gen_trusted_enclave, c_args: common_args, pie: true,
+enclave_so = executable('credb_enclave.so', enclave_cpp_files + enclave_asm_files, gen_trusted_enclave, c_args: common_args, pie: true,
 cpp_args: common_args + cpp_compile_args + ['-nostdinc++'],
 link_args:['-Wl,--no-undefined','-nostdlib','-nodefaultlibs','-nostartfiles','-L'+sgx_sdk_dir+'/lib64',
 '-Wl,--whole-archive','-l'+sgx_trts_name,'-Wl,--no-whole-archive',
@@ -135,8 +135,8 @@ link_args:['-Wl,--no-undefined','-nostdlib','-nodefaultlibs','-nostartfiles','-L
 include_directories: [sgx_incdir, sgx_tlibc_incdir, sgx_stdcxx_incdir, local_incdir],
 dependencies: [json_sgx_dep, cowlang_sgx_dep])
 
-custom_target('enclave.signed.so', input: enclave_so, output:'enclave.signed.so', install:true, install_dir:'.',
-    command:[sgx_enclave_signer, 'sign', '-key', meson.source_root()+'/src/enclave/Enclave_private.pem', '-enclave','enclave.so', '-out', 'enclave.signed.so', '-config',meson.source_root()+'/src/enclave/Enclave.config.xml']
+custom_target('credb_enclave.signed.so', input: enclave_so, output: 'credb_enclave.signed.so', install:true, install_dir:'.',
+    command:[sgx_enclave_signer, 'sign', '-key', meson.source_root()+'/src/enclave/Enclave_private.pem', '-enclave','credb_enclave.so', '-out', 'credb_enclave.signed.so', '-config',meson.source_root()+'/src/enclave/Enclave.config.xml']
 )
 
 subdir('src/server/')
