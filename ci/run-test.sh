@@ -63,8 +63,6 @@ witness() {
     killall -9 credb
 }
 
-cd build
-
 case $run_test in
     multi_get)
         multi_get
