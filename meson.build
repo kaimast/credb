@@ -146,7 +146,12 @@ server_deps = [yael_dep, log_dep, boost_po_dep, sgx_uae_dep, ukey_exchange_dep, 
 
 server_unsafe = executable('credb-unsafe', server_cpp_files, include_directories: server_incs, dependencies: server_deps + [openssl_dep, cowlang_dep, json_dep], c_args: compile_args, cpp_args: compile_args + cpp_compile_args + ['-DFAKE_ENCLAVE'], install:true, link_with: [ulibcrypto, libfakeenclave], link_args: ['-rdynamic'])
     
-server = executable('credb', server_cpp_files, gen_untrusted_enclave, include_directories: server_incs, dependencies: server_deps, c_args: compile_args, cpp_args: cpp_compile_args, install:true, link_with: ulibcrypto)
+server = executable('credb', server_cpp_files, gen_untrusted_enclave, include_directories: server_incs,
+    dependencies: server_deps,
+    c_args: compile_args, cpp_args: cpp_compile_args, install:true,
+    link_with: ulibcrypto,
+    link_args: ['-lstdc++fs']
+)
 
 subdir('src/client')
 

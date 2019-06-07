@@ -18,6 +18,7 @@
 
 #include <fstream>
 #include <unordered_map>
+#include <filesystem>
 
 #ifdef FAKE_ENCLAVE
 #include "../enclave/Enclave.h"
@@ -25,7 +26,6 @@
 #include "FakeEnclave.h"
 #else
 #include "Enclave_u.h"
-static constexpr const char *ENCLAVE_FILE = "enclave.signed.so";
 #endif
 
 #include "Disk.h"
@@ -157,7 +157,25 @@ EnclaveHandle::EnclaveHandle(std::string name, Disk &disk)
 
     ex_features_p[2] = &kss_config;
 
-    auto ret = sgx_create_enclave_ex(ENCLAVE_FILE, SGX_DEBUG_FLAG, &m_token, &updated, &m_enclave_id, nullptr, 1 << 2, const_cast<const void**>(ex_features_p));
+    std::string path = "";
+    const std::string enclave_filename = "enclave.signed.so";
+
+    if(std::filesystem::is_regular_file("./"+enclave_filename))
+    {
+        path = "./" + enclave_filename;
+    }
+    else if(std::filesystem::is_regular_file("/usr/local/"+enclave_filename))
+    {
+        path = "/usr/local/"+enclave_filename;
+    }
+    else
+    {
+        LOG(FATAL) << "Failed to find enclave file";
+    }
+
+    LOG(INFO) << "Loading enclave file from " << path;
+
+    auto ret = sgx_create_enclave_ex(path.c_str(), SGX_DEBUG_FLAG, &m_token, &updated, &m_enclave_id, nullptr, 1 << 2, const_cast<const void**>(ex_features_p));
 
     if(ret != SGX_SUCCESS)
     {

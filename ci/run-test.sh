@@ -13,18 +13,24 @@ concurrent_transactions() {
 }
 
 multi_update() {
-    credb testserver > /dev/null 2>&1 &
+    credb testserver &
+    sleep 2
     test/multi_update.py --num_updates=10000 --num_clients=20 --no_server
+    killall credb
 }
 
 multi_get() {
-    credb testserver > /dev/null 2>&1 &
+    credb testserver &
+    sleep 2
     test/multi_get.py --num_gets=10000 --num_clients=20 --no_server
+    killall credb
 }
 
 multi_put() {
-    credb testserver > /dev/null 2>&1 &
+    credb testserver &
+    sleep 2
     test/multi_put.py --num_puts=10000 --num_clients=20 --no_server
+    killall credb
 }
 
 call_program() {
