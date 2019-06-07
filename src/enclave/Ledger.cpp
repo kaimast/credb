@@ -93,6 +93,7 @@ bitstream Ledger::prepare_call(const OpContext &op_context,
         return bitstream();
     }
 
+    //NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
     return val.as_bitstream().duplicate(true);
 }
 
