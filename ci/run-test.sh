@@ -69,6 +69,8 @@ witness() {
     killall -9 credb
 }
 
+cd build
+
 case $run_test in
     unit_test)
         unit_test
