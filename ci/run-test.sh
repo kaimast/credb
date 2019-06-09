@@ -18,21 +18,27 @@ multi_update() {
     credb testserver &
     sleep 2
     test/multi_update.py --num_updates=10000 --num_clients=20 --no_server
+    ret = $?
     killall credb
+    return ret
 }
 
 multi_get() {
     credb testserver &
     sleep 2
     test/multi_get.py --num_gets=10000 --num_clients=20 --no_server
+    ret = $?
     killall credb
+    return ret
 }
 
 multi_put() {
     credb testserver &
     sleep 2
     test/multi_put.py --num_puts=10000 --num_clients=20 --no_server
+    ret = $?
     killall credb
+    return ret
 }
 
 call_program() {

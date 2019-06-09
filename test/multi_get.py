@@ -5,7 +5,6 @@ from random import randint
 import argparse
 from test import *
 from multiprocessing import Process
-import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--num_clients", type=int, default=100)
@@ -55,7 +54,6 @@ processes=[]
 count = 0
 
 print("Running get operations")
-st = time.perf_counter()
 for pos in range(args.num_clients):
    p = Process(target=run_gets, args=[pos])
    p.start()
@@ -68,8 +66,6 @@ for p in processes:
        exitcode = p.exitcode
    count += 1
    print(str((count / args.num_clients) * 100) + "%")
-ed = time.perf_counter()
-print(ed-st)
 
 server.stop()
 print("Done")
