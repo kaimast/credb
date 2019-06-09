@@ -9,10 +9,10 @@
 #include <tuple>
 #include <map>
 
-#ifdef TEST
-#include <fstream>
+#if defined(FAKE_ENCLAVE) || !defined(IS_ENCLAVE)
+#include <iostream>
+#include <sstream>
 #endif
-
 
 namespace credb
 {
@@ -68,7 +68,13 @@ struct event_id_t
     /**
      * Test whether or not the identifier is valid
      */
-    explicit operator bool() const { return block != INVALID_BLOCK; }
+    explicit operator bool() const { return is_valid(); }
+    
+    bool is_valid() const { return block != INVALID_BLOCK; }
+
+#if defined(FAKE_ENCLAVE) || !defined(IS_ENCLAVE)
+    std::string str() const;
+#endif
 
 }__attribute__((packed));
 
@@ -109,10 +115,17 @@ constexpr event_id_t INVALID_EVENT = { static_cast<shard_id_t>(INVALID_BLOCK), I
 constexpr event_id_t UNCOMMITTED_EVENT = { static_cast<shard_id_t>(-2), static_cast<block_id_t>(-2),
                                            static_cast<block_index_t>(-2) };
 
-#ifdef TEST
+#if defined(FAKE_ENCLAVE) || !defined(IS_ENCLAVE)
 inline ::std::ostream &operator<<(::std::ostream &os, const event_id_t &eid)
 {
     return os << "event_id_t{shard=" << eid.shard << ", block=" << eid.block << ", index=" << eid.index << "}";
+}
+
+inline std::string event_id_t::str() const
+{
+    std::stringstream ss;
+    ss << *this;
+    return ss.str();
 }
 #endif
 

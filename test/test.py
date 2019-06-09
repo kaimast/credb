@@ -19,12 +19,12 @@ def create_test_client(server="localhost", port=0, server_name=DEFAULT_SERVER_NA
     return credb.create_client(name, server_name, server, port=port)
 
 def assert_false(val):
-    if val != False:
-        raise Exception(str(val) + " is not true")
+    if val:
+        raise Exception(str(val) + " is true")
 
 def assert_true(val):
-    if val != True:
-        raise Exception(str(val) + " is not true")
+    if not val:
+        raise Exception(str(val) + " is false")
 
 def assert_equals_unordered(val, expected):
     equal = True

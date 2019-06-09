@@ -90,12 +90,10 @@ bool Disk::write(const std::string &filename, uint8_t const* data, uint32_t leng
         shard.files[filename] = file;
         m_num_files++;
 
-#ifndef IS_TEST
         if(num_files() % 1000 == 0)
         {
             LOG(INFO) << num_files() << " files so far";
         }
-#endif
     }
     else
     {
@@ -171,14 +169,10 @@ bool Disk::read(const std::string &filename, uint8_t *data, uint32_t buffer_size
 
     auto num_loads = ++m_num_loads;
 
-#ifndef IS_TEST
     if(num_loads % 10000 == 0)
     {
         LOG(INFO) << num_loads << " loads so far.";
     }
-#else
-    (void)num_loads;
-#endif
 
     shard.unlock();
     return true;
@@ -196,12 +190,10 @@ bool Disk::read_undecrypted_from_disk(const std::string &full_name, bitstream &b
         file = it->second;
     }
     m_num_loads += 1;
-#ifndef IS_TEST
     if(m_num_loads % 10000 == 0)
     {
         LOG(INFO) << m_num_loads << " loads so far.";
     }
-#endif
     
     if(file == nullptr)
     {
@@ -418,13 +410,6 @@ bool dump_everything(const char *filename, uint8_t const* disk_key, size_t lengt
 
 bool load_everything(const char *filename, uint8_t* disk_key, size_t length)
 {
-#ifdef IS_TEST
-    (void)disk_key;
-    (void)length;
-    (void)filename;
-
-    memset(disk_key, 0, length); //clang-tidy
-#else
     if(length != sizeof(sgx_aes_gcm_128bit_key_t))
     {
         LOG(ERROR) << "len != sizeof(sgx_aes_gcm_128bit_key_t)";
@@ -442,6 +427,6 @@ bool load_everything(const char *filename, uint8_t* disk_key, size_t length)
     }
 
     g_disk->remove("___disk_key");
-#endif
+    
     return true;
 }
