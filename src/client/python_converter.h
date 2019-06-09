@@ -8,6 +8,7 @@
 #include <stack>
 #include PYTHON_DATETIME
 #include <credb/defines.h>
+#include <credb/Transaction.h>
 #include <credb/event_id.h>
 #include <json/json.h>
 
@@ -85,7 +86,7 @@ public:
 
     void handle_null(const std::string &key) override
     {
-        PyObject *obj = nullptr;
+        PyObject *obj = Py_None;
         
         if(!key.empty())
         {
@@ -308,53 +309,38 @@ private:
 namespace pybind11::detail
 {
 
-/*
-template <> struct type_caster<credb::event_id_t>
+template <> struct type_caster<credb::TransactionResult>
 {
 public:
-    bool load(handle src, bool)
+    bool load(handle, bool)
     {
-        if(!py::isinstance<py::tuple>(src))
-        {
-            return false;
-        }
-
-        auto t = py::cast<py::tuple>(src);
-
-        if(py::len(t) != 3)
-        {
-            return false;
-        }
-
-        if(!py::isinstance<py::int_>(t[0])
-            || !py::isinstance<py::int_>(t[1])
-            || !py::isinstance<py::int_>(t[2]))
-        {
-            return false;
-        }
-
-        auto shard = py::cast<credb::shard_id_t>(t[0]);
-        auto block = py::cast<credb::block_id_t>(t[1]);
-        auto index = py::cast<credb::block_index_t>(t[2]);
-
-        value = credb::event_id_t(shard, block, index);
-        return true;
+        return false;
     }
 
-    static handle cast(const credb::event_id_t &eid, return_value_policy return_policy, handle parent)
+    static handle cast(const credb::TransactionResult &result, return_value_policy return_policy, handle parent)
     {
         (void)return_policy;
         (void)parent;
 
-        auto shard = PyLong_FromLong(eid.shard);
-        auto block = PyLong_FromLong(eid.block);
-        auto index = PyLong_FromLong(eid.index);
+        auto t = PyTuple_New(2);
 
-        return PyTuple_Pack(3, shard, block, index);
+        if(result.success)
+        {
+            //FIXME expose witness
+            PyTuple_SetItem(t, 0, Py_True);
+            PyTuple_SetItem(t, 1, Py_None);
+        }
+        else
+        {
+            PyTuple_SetItem(t, 0, Py_False);
+            PyTuple_SetItem(t, 1, PyUnicode_FromString(result.error.c_str()));
+        }
+
+        return t;
     }
 
-    PYBIND11_TYPE_CASTER(credb::event_id_t, _("credb::event_id_t"));
-};*/
+    PYBIND11_TYPE_CASTER(credb::TransactionResult, _("credb::TransactionResult"));
+};
 
 template <> struct type_caster<json::Document>
 {

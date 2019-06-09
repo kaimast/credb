@@ -59,8 +59,12 @@ assert_equals(res, {"city":"Berkeley"})
 c.drop_index("cityindex")
 
 res = c.remove(k)
-res = c.find_one({"flag":1,"city":"Berkeley"})
-assert_equals(res, None)
+
+try:
+    res = c.find_one({"flag":1,"city":"Berkeley"})
+    assert_true(false) # we should not get here
+except RuntimeError:
+    pass
 
 k, res = c.find_one({"xyz.*.a" : 3})
 assert_equals(res, doc1)

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "IsolationLevel.h"
 #include "defines.h"
+#include "IsolationLevel.h"
+#include "Witness.h"
 
 namespace credb
 {
