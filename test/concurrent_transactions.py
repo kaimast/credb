@@ -35,9 +35,6 @@ def run_adds(pos):
 
             success, res = tx.commit(False)
 
-            if not success:
-                print('Retry, because "' + str(res) + '"')
-
     conn.close()
 
 def load_data():
