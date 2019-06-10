@@ -100,10 +100,10 @@ private:
     void process_message_one(bitstream &input, bitstream &output);
     void process_message_three(bitstream &input, bitstream &output);
 
-    void handle_message(bitstream &input, bitstream &output, std::unique_lock<std::mutex> &lock);
+    void handle_message(bitstream input, bitstream &output, std::unique_lock<std::mutex> &lock);
 
-    void handle_attestation_message(bitstream &input, bitstream &output);
-    void handle_operation_response(bitstream &input, bitstream &output);
+    void handle_attestation_message(bitstream input, bitstream &output);
+    void handle_operation_response(bitstream input, bitstream &output);
 
     std::mutex m_mutex;
 

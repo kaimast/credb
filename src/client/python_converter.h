@@ -11,6 +11,7 @@
 #include <credb/Transaction.h>
 #include <credb/event_id.h>
 #include <json/json.h>
+#include <cowlang/cow.h>
 
 #include <glog/logging.h>
 
@@ -87,6 +88,7 @@ public:
     void handle_null(const std::string &key) override
     {
         PyObject *obj = Py_None;
+        Py_INCREF(obj);
         
         if(!key.empty())
         {
@@ -160,17 +162,18 @@ private:
         if(PyDict_Check(top))
         {
             PyDict_SetItem(top, PyUnicode_FromString(key.c_str()), obj);
+            Py_DECREF(obj);
             return;
         }
 
         if(PyList_Check(top))
         {
             PyList_Append(top, obj);
+            Py_DECREF(obj);
             return;
         }
 
-        throw std::runtime_error("Failed to convert from binary to python document: Cannot append "
-                                 "child to this type of object.");
+        throw std::runtime_error("Failed to convert from binary to python document: Cannot append child to this type of object.");
     }
 
     std::stack<PyObject*> parse_stack;
@@ -323,17 +326,20 @@ public:
         (void)parent;
 
         auto t = PyTuple_New(2);
+        PyTuple_SetItem(t, 0, PyBool_FromLong(result.success));
+
+        auto none_ptr = Py_None;
+        Py_INCREF(none_ptr);
 
         if(result.success)
         {
             //FIXME expose witness
-            PyTuple_SetItem(t, 0, Py_True);
-            PyTuple_SetItem(t, 1, Py_None);
+            PyTuple_SetItem(t, 1, none_ptr);
         }
         else
         {
-            PyTuple_SetItem(t, 0, Py_False);
-            PyTuple_SetItem(t, 1, PyUnicode_FromString(result.error.c_str()));
+            auto str = PyUnicode_FromString(result.error.c_str());
+            PyTuple_SetItem(t, 1, str);
         }
 
         return t;
@@ -367,9 +373,11 @@ public:
 
     static handle cast(const json::Document &src, return_value_policy, handle)
     {
-        if(src.empty() || !src.valid())
+        if(!src.valid() || src.empty())
         {
-            return py::handle();
+            PyObject *obj = Py_None;
+            Py_INCREF(obj);
+            return obj;
         }
 
         DocumentToPythonConverter converter;
@@ -378,5 +386,26 @@ public:
         return converter.get_result();
     }
 };
+
+template <> struct type_caster<cow::ValuePtr>
+{
+public:
+    PYBIND11_TYPE_CASTER(cow::ValuePtr, _("cow::ValuePtr"));
+
+    bool load(handle src, bool)
+    {
+        (void)src;
+        //TODO
+        return false;
+    }
+
+    static handle cast(const cow::ValuePtr& ptr, return_value_policy return_policy, handle parent)
+    {
+        auto doc = cow::value_to_document(ptr);
+        return type_caster<json::Document>::cast(doc, return_policy, parent);
+    }
+};
+
+
 
 } // namespace pybind11::detail

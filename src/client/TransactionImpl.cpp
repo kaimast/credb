@@ -50,10 +50,10 @@ TransactionResult TransactionImpl::commit(bool generate_witness)
 
     m_done = true;
     TransactionResult res;
-    res.success = !bstream.empty();
 
-    if(!res.success)
+    if(bstream.empty())
     {
+        res.success = false;
         res.error = "empty response";
         return res;
     }

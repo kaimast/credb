@@ -16,11 +16,12 @@ parser.add_argument("--server", type=str, default="localhost")
 parser.add_argument("--server_port", type=int, default=52424)
 parser.add_argument("--no_server", action="store_true")
 parser.add_argument("--verbose", action="store_true")
+parser.add_argument("--unsafe_mode", action="store_true")
 
 args = parser.parse_args()
 
 def run_adds(pos):
-    conn = create_test_client(server=args.server, port=args.server_port, name="testclient" + str(pos))
+    conn = create_test_client(server=args.server, port=args.server_port, name="testclient" + str(pos), unsafe_mode=args.unsafe_mode)
 
     for _ in range(args.num_ops):
         success = False
@@ -29,23 +30,27 @@ def run_adds(pos):
             tx = conn.init_transaction()
             c = tx.get_collection(COLLECTION)
 
-            i = c.get("foo")
-            c.put("foo", i+1)
+            val = c.get("foo")
+            c.put("foo.count", val["count"] +1)
 
             success, res = tx.commit(False)
+
+            if not success:
+                print('Retry, because "' + str(res) + '"')
 
     conn.close()
 
 def load_data():
-    conn = create_test_client(server=args.server, port=args.server_port)
+    conn = create_test_client(server=args.server, port=args.server_port, unsafe_mode=args.unsafe_mode)
+
     c = conn.get_collection(COLLECTION)
-    c.put("foo", 0)
+    c.put("foo", {"count": 0})
     conn.close()
 
 server = Testserver()
 
 if not args.no_server:
-    server.start(args.server_port, quiet=(not args.verbose))
+    server.start(args.server_port, quiet=(not args.verbose), unsafe_mode=args.unsafe_mode)
 
 print("Loading data...")
 p = Process(target=load_data)
@@ -69,10 +74,10 @@ for p in processes:
    count += 1
    print(str((count / args.num_clients) * 100) + "%")
 
-conn = create_test_client(server=args.server, port=args.server_port)
+conn = create_test_client(server=args.server, port=args.server_port, unsafe_mode=args.unsafe_mode)
 c = conn.get_collection(COLLECTION)
 
-assert_equals(c.get("foo"), args.num_clients * args.num_ops)
+assert_equals(c.get("foo.count"), args.num_clients * args.num_ops)
 
 conn.close()
 sleep(1)

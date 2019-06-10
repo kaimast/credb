@@ -367,7 +367,7 @@ bitstream ClientImpl::receive_response(uint32_t msg_id)
     return resp;
 }
 
-void ClientImpl::handle_attestation_message(bitstream &input, bitstream &output)
+void ClientImpl::handle_attestation_message(bitstream input, bitstream &output)
 {
     MessageType type;
     input >> reinterpret_cast<mtype_data_t &>(type);
@@ -442,7 +442,7 @@ void ClientImpl::handle_attestation_message(bitstream &input, bitstream &output)
     };
 }
 
-void ClientImpl::handle_message(bitstream &input, bitstream &output,
+void ClientImpl::handle_message(bitstream input, bitstream &output,
         std::unique_lock<std::mutex> &lock)
 {
     if(m_state != ClientState::Connected)
@@ -456,7 +456,7 @@ void ClientImpl::handle_message(bitstream &input, bitstream &output,
     switch(type)
     {
     case MessageType::OperationResponse:
-        handle_operation_response(input, output);
+        handle_operation_response(std::move(input), output);
         break;
     case MessageType::NotifyTrigger:
     {
@@ -482,7 +482,7 @@ void ClientImpl::handle_message(bitstream &input, bitstream &output,
     }
 }
 
-void ClientImpl::handle_operation_response(bitstream &input, bitstream &output)
+void ClientImpl::handle_operation_response(bitstream input, bitstream &output)
 {
     taskid_t task_id;
     operation_id_t op_id;
@@ -515,14 +515,14 @@ void ClientImpl::on_network_message(yael::network::Socket::message_in_t &msg)
         // consume the encryption field
         input.assign(msg.data, msg.length, true);
         input >> reinterpret_cast<etype_data_t &>(encryption);
-        handle_attestation_message(input, output);
+        handle_attestation_message(std::move(input), output);
         break;
     case EncryptionType::Encrypted:
         decrypt(msg.data, msg.length, input);
-        handle_message(input, output, lock);
+        handle_message(std::move(input), output, lock);
         break;
     case EncryptionType::PlainText:
-        handle_message(peeker, output, lock);
+        handle_message(std::move(peeker), output, lock);
         break; // no encryption in fake enclave mode
     default:
         LOG(ERROR) << "Unknown encryption header field: " << static_cast<int>(encryption);

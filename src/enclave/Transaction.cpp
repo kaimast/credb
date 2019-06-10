@@ -131,6 +131,7 @@ bool Transaction::prepare(bool generate_witness)
     catch(const would_block_exception& e)
     {
         // We can't wait here as it may cause a deadlock
+        set_error("Lock contention");
         this->abort();
         return false;
     }
@@ -165,6 +166,7 @@ bool Transaction::prepare(bool generate_witness)
         if(!op->validate(generate_witness))
         {
             result = false;
+            break;
         }
     }
 

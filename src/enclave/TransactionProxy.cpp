@@ -68,6 +68,7 @@ operation_info_t* TransactionProxy::new_operation_info_from_req(bitstream &req)
     default:
         get_transaction().set_error("Unknown OperationType " + std::to_string(static_cast<uint8_t>(op)));
         log_error(get_transaction().error());
+        get_transaction().abort();
         return nullptr;
     }
 }
@@ -94,7 +95,14 @@ void TransactionProxy::work()
 {
     if(!phase_one(m_generate_witness))
     {
-        m_result << false << get_transaction().error();
+        auto &e = get_transaction().error();
+
+        if(e.empty())
+        {
+            log_warning("Transaction failed but got no error message");
+        }
+
+        m_result << false << e;
     }
     else
     {

@@ -202,7 +202,14 @@ bool put_info_t::validate(bool generate_witness)
     (void)generate_witness;
     auto [key, path] = parse_path(m_key);
 
-    return transaction().ledger.prepare_write(op_context(), m_collection, key, path, OperationType::PutObject, &transaction().lock_handle());
+    auto res = transaction().ledger.prepare_write(op_context(), m_collection, key, path, OperationType::PutObject, &transaction().lock_handle());
+
+    if(!res)
+    {
+        transaction().set_error("Failed to prepare write");
+    }
+    
+    return res;
 }
 
 void put_info_t::do_write(ledger_pos_t transaction_ref,
@@ -245,7 +252,15 @@ bool add_info_t::validate(bool generate_witness)
     (void)generate_witness;
     auto [key, path] = parse_path(m_key);
 
-    return transaction().ledger.prepare_write(op_context(), m_collection, key, path, OperationType::AddToObject, &transaction().lock_handle());
+    auto res = transaction().ledger.prepare_write(op_context(), m_collection, key, path, OperationType::AddToObject, &transaction().lock_handle());
+
+    if(!res)
+    {
+        transaction().set_error("Failed to prepare write");
+    }
+    
+    return res;
+
 }
 
 void add_info_t::extract_writes(std::array<uint16_t, NUM_SHARDS> &write_set)
@@ -291,7 +306,15 @@ bool remove_info_t::validate(bool generate_witness)
 {
     (void)generate_witness;
 
-    return transaction().ledger.prepare_write(op_context(), m_collection, m_key, "", OperationType::RemoveObject, &transaction().lock_handle());
+    auto res = transaction().ledger.prepare_write(op_context(), m_collection, m_key, "", OperationType::RemoveObject, &transaction().lock_handle());
+
+    if(!res)
+    {
+        transaction().set_error("Failed to prepare write");
+    }
+    
+    return res;
+
 }
 
 void remove_info_t::extract_writes(std::array<uint16_t, NUM_SHARDS> &write_set)

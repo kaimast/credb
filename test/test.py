@@ -15,8 +15,8 @@ def random_string(length):
 def random_id():
     return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(15))
 
-def create_test_client(server="localhost", port=0, server_name=DEFAULT_SERVER_NAME, name="pythontestclient"):
-    return credb.create_client(name, server_name, server, port=port)
+def create_test_client(server="localhost", port=0, server_name=DEFAULT_SERVER_NAME, name="pythontestclient", unsafe_mode=False):
+    return credb.create_client(name, server_name, server, port=port, unsafe_mode=unsafe_mode)
 
 def assert_false(val):
     if val:
@@ -60,8 +60,13 @@ class Testserver:
     def __init__(self):
         self.p = None
 
-    def start(self, port, listen=None, server_name=DEFAULT_SERVER_NAME, sleep_time=3, quiet=True):
-        args = ["./credb", server_name, "--port", str(port)]
+    def start(self, port, listen=None, server_name=DEFAULT_SERVER_NAME, sleep_time=3, quiet=True, unsafe_mode=False):
+        if unsafe_mode:
+            exe = './credb-unsafe'
+        else:
+            exe = './credb'
+
+        args = [exe, server_name, "--port", str(port)]
         if listen:
             args.append("--listen="+str(listen))
         self.p = Popen(args,
