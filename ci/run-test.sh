@@ -16,7 +16,7 @@ concurrent_transactions() {
 
 multi_update() {
     credb testserver &
-    sleep 2
+    sleep 4
     test/multi_update.py --num_updates=10000 --num_clients=20 --no_server
     ret = $?
     killall credb
@@ -25,7 +25,7 @@ multi_update() {
 
 multi_get() {
     credb testserver &
-    sleep 2
+    sleep 4
     test/multi_get.py --num_gets=10000 --num_clients=20 --no_server
     ret = $?
     killall credb
@@ -34,7 +34,7 @@ multi_get() {
 
 multi_put() {
     credb testserver &
-    sleep 2
+    sleep 4
     test/multi_put.py --num_puts=10000 --num_clients=20 --no_server
     ret = $?
     killall credb
@@ -66,10 +66,6 @@ debug_snapshot() {
     killall -9 credb
 }
 
-multi_downstream() {
-    test/multi_downstream.py --num_objs=5000 --num_clients=8
-}
-
 witness() {
     credb testserver > /dev/null 2>&1 &
     sleep 10
@@ -95,9 +91,6 @@ case $run_test in
         ;;
     concurrent_transactions)
         concurrent_transactions
-        ;;
-    multi_downstream)
-        multi_downstream
         ;;
     witness)
         witness
