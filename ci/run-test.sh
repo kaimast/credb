@@ -5,6 +5,8 @@ PY_VERSION=python3.5
 SGX_DIR=${INSTALL_DIR}/intel
 SGX_SDK_DIR=${SGX_DIR}/sgxsdk
 
+TEST_PORT=52424
+
 export LD_LIBRARY_PATH=$HOME/local/lib:$HOME/local/lib/x86_64-linux-gnu:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu:${SGX_SDK_DIR}/lib64
 export LIBRARY_PATH=$HOME/local/lib:$HOME/local/lib/x86_64-linux-gnu:/usr/local/lib:/usr/local/lib/x86_64-linux-gnu:${SGX_SDK_DIR}/lib64
 export PYTHONPATH=${INSTALL_DIR}/lib/${PY_VERSION}/site-packages:${INSTALL_DIR}/lib/${PY_VERSION}/dist-packages
@@ -15,8 +17,8 @@ concurrent_transactions() {
 }
 
 multi_update() {
-    credb testserver &
-    sleep 4
+    credb testserver --port $TEST_PORT &
+    sleep 2
     test/multi_update.py --num_updates=10000 --num_clients=20 --no_server
     ret = $?
     killall credb
@@ -24,8 +26,8 @@ multi_update() {
 }
 
 multi_get() {
-    credb testserver &
-    sleep 4
+    credb testserver --port $TEST_PORT &
+    sleep 2
     test/multi_get.py --num_gets=10000 --num_clients=20 --no_server
     ret = $?
     killall credb
@@ -33,8 +35,8 @@ multi_get() {
 }
 
 multi_put() {
-    credb testserver &
-    sleep 4
+    credb testserver --port $TEST_PORT &
+    sleep 2
     test/multi_put.py --num_puts=10000 --num_clients=20 --no_server
     ret = $?
     killall credb
