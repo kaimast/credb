@@ -13,34 +13,39 @@ export PYTHONPATH=${INSTALL_DIR}/lib/${PY_VERSION}/site-packages:${INSTALL_DIR}/
 export PATH=${PATH}:${INSTALL_DIR}/bin
 
 concurrent_transactions() {
-    test/concurrent_transactions.py
+    credb testserver --port $TEST_PORT &
+    sleep 2
+    test/concurrent_transactions.py --no_server
+    ret=$?
+    killall credb
+    return $ret
 }
 
 multi_update() {
     credb testserver --port $TEST_PORT &
     sleep 2
     test/multi_update.py --num_updates=10000 --num_clients=20 --no_server
-    ret = $?
+    ret=$?
     killall credb
-    return ret
+    return $ret
 }
 
 multi_get() {
     credb testserver --port $TEST_PORT &
     sleep 2
     test/multi_get.py --num_gets=10000 --num_clients=20 --no_server
-    ret = $?
+    ret=$?
     killall credb
-    return ret
+    return $ret
 }
 
 multi_put() {
     credb testserver --port $TEST_PORT &
     sleep 2
     test/multi_put.py --num_puts=10000 --num_clients=20 --no_server
-    ret = $?
+    ret=$?
     killall credb
-    return ret
+    return $ret
 }
 
 call_program() {

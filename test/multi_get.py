@@ -11,7 +11,7 @@ parser.add_argument("--num_clients", type=int, default=100)
 parser.add_argument("--num_objs", type=int, default=100*1000)
 parser.add_argument("--num_gets", type=int, default=1000)
 parser.add_argument("--server", type=str, default="localhost")
-parser.add_argument("--server_port", type=int, default=5042)
+parser.add_argument("--server_port", type=int, default=52424)
 parser.add_argument("--no_server", action="store_true")
 
 args = parser.parse_args()

@@ -22,3 +22,4 @@ jobs:
             - env run_test=multi_get ci/run-test.sh
             - env run_test=multi_update ci/run-test.sh
             - env run_test=multi_put ci/run-test.sh
+            - env run_test=concurrent_transactions ci/run-test.sh
