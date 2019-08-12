@@ -144,18 +144,18 @@ EnclaveHandle::EnclaveHandle(std::string name, Disk &disk)
 
     LOG(INFO) << "Starting enclave as '" << m_name << "'";
 
-    void* ex_features_p[32]; //NOLINT
+ /*   void* ex_features_p[32]; //NOLINT
 
     memset(reinterpret_cast<void*>(ex_features_p), 0, sizeof(ex_features_p));
     memset(&m_token, 0, sizeof(m_token));
 
-    sgx_kss_config_t kss_config;
+   sgx_kss_config_t kss_config;
     memset(reinterpret_cast<void*>(kss_config.config_id), 0, sizeof(kss_config.config_id));
     kss_config.config_svn = 0;
 
     memset(&kss_config, 0, sizeof(kss_config));
 
-    ex_features_p[2] = &kss_config;
+    ex_features_p[2] = &kss_config;*/
 
     auto home_dir = std::filesystem::path(getenv("HOME"))
             / std::string("local");
@@ -184,7 +184,9 @@ EnclaveHandle::EnclaveHandle(std::string name, Disk &disk)
 
     LOG(INFO) << "Loading enclave file " << enclave_path;
 
-    auto ret = sgx_create_enclave_ex(enclave_path.c_str(), SGX_DEBUG_FLAG, &m_token, &updated, &m_enclave_id, nullptr, 1 << 2, const_cast<const void**>(ex_features_p));
+    //auto ret = sgx_create_enclave_ex(enclave_path.c_str(), SGX_DEBUG_FLAG, &m_token, &updated, &m_enclave_id, nullptr, 1 << 2, const_cast<const void**>(ex_features_p));
+
+    auto ret = sgx_create_enclave(enclave_path.c_str(), SGX_DEBUG_FLAG, &m_token, &updated, &m_enclave_id, nullptr);
 
     if(ret != SGX_SUCCESS)
     {
