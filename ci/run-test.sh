@@ -59,6 +59,15 @@ bank_test() {
     test/bank_test.py
 }
 
+tpcc_docs() {
+    credb testserver --port $TEST_PORT &
+    sleep 10
+    test/tpcc-docs.py
+    ret=$?
+    killall credb
+    return $ret
+}
+
 debug_snapshot() {
     credb testserver > /dev/null 2>&1 &
     sleep 10
@@ -101,6 +110,9 @@ case $run_test in
         ;;
     witness)
         witness
+        ;;
+    tpcc-docs)
+        tpcc_docs
         ;;
     *)
         echo unknown run_test=$run_test
