@@ -46,6 +46,8 @@ public:
 
     void handle_datetime(const std::string &key, const tm &value) override
     {
+        PyDateTime_IMPORT;
+
         auto obj = PyDateTime_FromDateAndTime(
             value.tm_year, value.tm_mon, value.tm_mday,
             value.tm_hour, value.tm_min, value.tm_sec, 0);

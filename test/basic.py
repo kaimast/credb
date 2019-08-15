@@ -4,6 +4,7 @@ from test import *
 from test_skeleton import *
 
 import credb
+from datetime import datetime
 
 conn, server = single_server_setup()
 
@@ -74,6 +75,12 @@ c.put(a, "foobar")
 assert_equals(c.get(a), "foobar")
 c.put(a, 4242)
 assert_equals(c.get(a), 4242)
+
+#Put a datetime object
+now = datetime(1984,5,11, hour=12, minute=50, second=2, microsecond=0)
+
+c.put(a, now)
+assert_equals(c.get(a), now)
 
 c.clear()
 conn.close()
