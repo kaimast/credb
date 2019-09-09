@@ -72,7 +72,7 @@ void ClientHandler::handle_plain_text_message(bitstream &msg)
     }
 }
 
-void ClientHandler::on_network_message(yael::network::Socket::message_in_t &msg)
+void ClientHandler::on_network_message(yael::network::message_in_t &msg)
 {
     bitstream peeker;
     peeker.assign(msg.data, msg.length, true);

@@ -69,7 +69,7 @@ void PeerHandler::setup(remote_party_id id, bool is_initiator)
     get_attestation().init();
 }
 
-void PeerHandler::on_network_message(yael::network::Socket::message_in_t &msg)
+void PeerHandler::on_network_message(yael::network::message_in_t &msg)
 {
     bitstream peeker;
     peeker.assign(msg.data, msg.length, true);

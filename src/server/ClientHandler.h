@@ -40,7 +40,7 @@ public:
 protected:
     void handle_plain_text_message(bitstream &msg);
 
-    void on_network_message(yael::network::Socket::message_in_t &msg) override;
+    void on_network_message(yael::network::message_in_t &msg) override;
 
 private:
     void init(bitstream &input);

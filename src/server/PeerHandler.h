@@ -43,7 +43,7 @@ public:
     uint16_t port() const { return socket().get_remote_address().PortNumber; }
 
 protected:
-    void on_network_message(yael::network::Socket::message_in_t &msg) override;
+    void on_network_message(yael::network::message_in_t &msg) override;
 
 private:
     void handle_op_request(bitstream &input);

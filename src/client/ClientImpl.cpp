@@ -492,7 +492,7 @@ void ClientImpl::handle_operation_response(bitstream input, bitstream &output)
     (void)output;
 }
 
-void ClientImpl::on_network_message(yael::network::Socket::message_in_t &msg)
+void ClientImpl::on_network_message(yael::network::message_in_t &msg)
 {
     std::unique_lock lock(m_mutex);
 
