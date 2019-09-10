@@ -50,7 +50,7 @@ fi
 cd $WORKDIR
 if clone-repo "linux-sgx" "https://github.com/01org/linux-sgx.git"; then
     cd linux-sgx
-#    git checkout sgx_2.5
+    git checkout sgx_2.5
     ./download_prebuilt.sh
     make sdk_install_pkg
     printf "no\n${SGX_DIR}\n" | sudo $(ls linux/installer/bin/sgx_linux_x64_sdk_*.bin)

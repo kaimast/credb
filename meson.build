@@ -97,6 +97,7 @@ sgx_trts_dep = cpp.find_library(sgx_trts_name, dirs: sgx_library_path)
 sgx_tcrypto_dep = cpp.find_library(sgx_tcrypto_name, dirs:sgx_library_path)
 sgx_tstdc_dep = cpp.find_library('sgx_tstdc', dirs: sgx_library_path)
 sgx_tstdcxx_dep = cpp.find_library('sgx_tcxx', dirs: sgx_library_path)
+
 log_dep = cpp.find_library('glog')
 gflags_dep = cpp.find_library('gflags')
 yael_dep = cpp.find_library('yael', dirs: prefix_library_path)
@@ -142,12 +143,13 @@ custom_target('credb_enclave.signed.so', input: enclave_so, output: 'credb_encla
 subdir('src/server/')
 
 server_incs = [credb_incdir, sgx_incdir]
-server_deps = [yael_dep, log_dep, boost_po_dep, sgx_uae_dep, ukey_exchange_dep, sgx_urts_dep, thread_dep, gflags_dep]
+server_deps = [yael_dep, log_dep, boost_po_dep, thread_dep, gflags_dep]
+sgx_deps = [sgx_uae_dep, ukey_exchange_dep, sgx_urts_dep]
 
 server_unsafe = executable('credb-unsafe', server_cpp_files, include_directories: server_incs, dependencies: server_deps + [openssl_dep, cowlang_dep, json_dep], c_args: compile_args, cpp_args: compile_args + cpp_compile_args + ['-DFAKE_ENCLAVE'], install:true, link_with: [ulibcrypto, libfakeenclave], link_args: ['-rdynamic'])
     
 server = executable('credb', server_cpp_files, gen_untrusted_enclave, include_directories: server_incs,
-    dependencies: server_deps,
+    dependencies: server_deps + sgx_deps,
     c_args: compile_args, cpp_args: cpp_compile_args, install:true,
     link_with: ulibcrypto,
     link_args: ['-lstdc++fs']
